@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macropol°s | The Architecture of Tomorrow's Business</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font (Apple-like) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0D0D0D; /* Near black */
+            color: #E0E0E0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Custom "glow" effect for primary elements */
+        .primary-glow {
+            box-shadow: 0 0 15px 5px rgba(212, 175, 55, 0.1), 0 0 5px 1px rgba(212, 175, 55, 0.1);
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'dark-bg': '#0D0D0D', // Near black
+                        'dark-surface': '#1A1A1A', // Off-black for cards
+                        'primary': '#D4AF37', // Luxurious Gold
+                        'primary-hover': '#E0C56A',
+                        'secondary': '#2563EB', // Deep B2B Blue
+                        'light-text': '#E0E0E0', // Main text
+                        'subtle-text': '#A0A0A0', // Secondary text
+                    },
+                    animation: {
+                        'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
+                    },
+                    keyframes: {
+                        'fade-in-up': {
+                            '0%': { opacity: '0', transform: 'translateY(30px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-dark-bg text-light-text">
+
+    <!-- Header / Navigation -->
+    <header class="fixed top-0 left-0 w-full z-50 bg-dark-bg/80 backdrop-blur-md border-b border-gray-800">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-20">
+            <!-- Logo -->
+            <a href="#home" class="text-3xl font-bold tracking-tighter">
+                Macropol<span class="text-primary">°</span>s
+            </a>
+            
+            <!-- Desktop Nav -->
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#solutions" class="text-subtle-text hover:text-white transition duration-300">Solutions</a>
+                <a href="#hubs" class="text-subtle-text hover:text-white transition duration-300">AI & Data Hubs</a>
+                <a href="#industries" class="text-subtle-text hover:text-white transition duration-300">Industries</a>
+                <a href="#about" class="text-subtle-text hover:text-white transition duration-300">About Us</a>
+                <a href="#contact" class="bg-primary text-dark-bg px-5 py-2.5 rounded-full font-medium hover:bg-primary-hover transition duration-300 shadow-lg primary-glow">
+                    Contact Sales
+                </a>
+            </div>
+            
+            <!-- Mobile Menu Button -->
+            <button id="menu-btn" class="md:hidden p-2 rounded-md text-subtle-text hover:text-white">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </nav>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-dark-surface border-t border-gray-800">
+            <a href="#solutions" class="block py-3 px-4 text-lg hover:bg-gray-800" onclick="toggleMenu()">Solutions</a>
+            <a href="#hubs" class="block py-3 px-4 text-lg hover:bg-gray-800" onclick="toggleMenu()">AI & Data Hubs</a>
+            <a href="#industries" class="block py-3 px-4 text-lg hover:bg-gray-800" onclick="toggleMenu()">Industries</a>
+            <a href="#about" class="block py-3 px-4 text-lg hover:bg-gray-800" onclick="toggleMenu()">About Us</a>
+            <a href="#contact" class="block py-3 px-4 text-lg bg-primary/20 text-primary hover:bg-primary/30" onclick="toggleMenu()">Contact Sales</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Section 1: Hero -->
+        <section id="home" class="min-h-screen flex items-center pt-20 bg-gradient-to-b from-dark-bg via-dark-bg to-dark-surface">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-white mb-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+                    The Architecture
+                    <br>
+                    of Tomorrow's <span class="text-primary">Business</span>.
+                </h1>
+                <p class="max-w-3xl mx-auto text-xl md:text-2xl text-subtle-text mb-10 animate-fade-in-up" style="animation-delay: 0.4s;">
+                    Macropol°s builds intelligent, scalable B2B ecosystems—from advanced logistics optimization to a federated AI marketplace.
+                </p>
+                <div class="flex justify-center items-center gap-4 animate-fade-in-up" style="animation-delay: 0.6s;">
+                    <a href="#solutions" class="bg-primary text-dark-bg px-8 py-4 rounded-full font-semibold text-lg hover:bg-primary-hover transition duration-300 shadow-lg primary-glow transform hover:scale-105">
+                        Explore Solutions
+                    </a>
+                    <a href="#contact" class="border border-subtle-text text-subtle-text px-8 py-4 rounded-full font-semibold text-lg hover:text-white hover:border-white transition duration-300 transform hover:scale-105">
+                        Request Consult
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Core Solutions -->
+        <section id="solutions" class="py-24 bg-dark-surface">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-center text-4xl md:text-5xl font-bold tracking-tighter text-white mb-4">Integrated B2B Ecosystems</h2>
+                <p class="text-center text-xl text-subtle-text mb-16 max-w-2xl mx-auto">
+                    We don't just provide software. We build the operating system for your industry.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+                    <!-- Solution Card 1: Logistics -->
+                    <div class="bg-dark-bg p-8 rounded-2xl border border-gray-800 transition-all duration-300 hover:border-primary">
+                        <i data-lucide="map-pin" class="w-12 h-12 text-primary mb-4"></i>
+                        <h3 class="text-2xl font-bold text-white mb-3">Dynamic Logistics Optimization</h3>
+                        <p class="text-subtle-text text-lg">Uber-like mapping, real-time fleet management, and predictive routing for enterprise-grade delivery and logistics networks.</p>
+                    </div>
+                    <!-- Solution Card 2: Cartography -->
+                    <div class="bg-dark-bg p-8 rounded-2xl border border-gray-800 transition-all duration-300 hover:border-primary">
+                        <i data-lucide="compass" class="w-12 h-12 text-primary mb-4"></i>
+                        <h3 class="text-2xl font-bold text-white mb-3">Architectural & GIS Cartography</h3>
+                        <p class="text-subtle-text text-lg">High-precision 3D mapping and spatial data solutions for architects, urban planners, and real estate developers.</p>
+                    </div>
+                    <!-- Solution Card 3: CRM -->
+                    <div class="bg-dark-bg p-8 rounded-2xl border border-gray-800 transition-all duration-300 hover:border-secondary">
+                        <i data-lucide="users" class="w-12 h-12 text-secondary mb-4"></i>
+                        <h3 class="text-2xl font-bold text-white mb-3">Bespoke Client Relationship Mgmt</h3>
+                        <p class="text-subtle-text text-lg">Intelligent CRM platforms tailored for complex B2B sales cycles, long-term client nurturing, and deep data analytics.</p>
+                    </div>
+                    <!-- Solution Card 4: ERP -->
+                    <div class="bg-dark-bg p-8 rounded-2xl border border-gray-800 transition-all duration-300 hover:border-secondary">
+                        <i data-lucide="factory" class="w-12 h-12 text-secondary mb-4"></i>
+                        <h3 class="text-2xl font-bold text-white mb-3">Industrial-Grade ERP</h3>
+                        <p class="text-subtle-text text-lg">Holistic Enterprise Resource Planning for manufacturing, textile supply chains, and industrial automation. Full visibility, from raw material to end-user.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: AI & Data Hubs -->
+        <section id="hubs" class="py-24 bg-dark-bg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-center text-4xl md:text-5xl font-bold tracking-tighter text-white mb-16">The Nexus of AI & Data</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- AI Hub Card -->
+                    <div class="bg-dark-surface p-10 rounded-2xl border border-gray-800 flex flex-col items-center text-center">
+                        <i data-lucide="brain-circuit" class="w-16 h-16 text-primary mb-6"></i>
+                        <h3 class="text-3xl font-bold text-white mb-4">Federated AI Marketplace</h3>
+                        <p class="text-xl text-subtle-text mb-6">
+                            We connect AI leaders with the best offers and market needs. A central hub for the most powerful, tested, and integration-ready AI models.
+                        </p>
+                        <a href="#contact" class="font-semibold text-primary hover:text-primary-hover transition duration-300 text-lg">
+                            Access the Hub <i data-lucide="arrow-right" class="inline w-5 h-5"></i>
+                        </a>
+                    </div>
+                    <!-- Data Hub Card -->
+                    <div class="bg-dark-surface p-10 rounded-2xl border border-gray-800 flex flex-col items-center text-center">
+                        <i data-lucide="database-zap" class="w-16 h-16 text-secondary mb-6"></i>
+                        <h3 class="text-3xl font-bold text-white mb-4">The Trustful Data Hub</h3>
+                        <p class="text-xl text-subtle-text mb-6">
+                            The most reliable data collections and analytics platform. Secure, compliant, and verified data to power your most critical business decisions.
+                        </p>
+                        <a href="#contact" class="font-semibold text-secondary hover:text-blue-400 transition duration-300 text-lg">
+                            Explore Analytics <i data-lucide="arrow-right" class="inline w-5 h-5"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Industries -->
+        <section id="industries" class="py-24 bg-dark-surface">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-center text-4xl md:text-5xl font-bold tracking-tighter text-white mb-16">Empowering Global Industries</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Industry: Luxury & Textile -->
+                    <div class="bg-dark-bg rounded-2xl overflow-hidden border border-gray-800">
+                        <div class="p-8">
+                            <i data-lucide="gem" class="w-12 h-12 text-primary mb-4"></i>
+                            <h3 class="text-2xl font-bold text-white mb-3">Luxury, Brand & Textile</h3>
+                            <p class="text-subtle-text text-lg">
+                                Deep brand integration, supply chain transparency, and digital passports for the luxury and textile industries.
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Industry: Sports & Luxury Trends -->
+                    <div class="bg-dark-bg rounded-2xl overflow-hidden border border-gray-800">
+                        <div class="p-8">
+                            <i data-lucide="trophy" class="w-12 h-12 text-primary mb-4"></i>
+                            <h3 class="text-2xl font-bold text-white mb-3">Global Sports Support</h3>
+                            <p class="text-subtle-text text-lg">
+                                Engaging worldwide players and fans with the best luxury trend deals and next-generation engagement platforms.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 5: About (Placeholder) -->
+        <section id="about" class="py-24 bg-dark-bg">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">We Build for Leaders</h2>
+                <p class="text-xl text-subtle-text mb-8">
+                    Macropol°s was founded on the principle that technology should be a silent, powerful partner to business. Our teams are composed of industry veterans, cloud architects, and AI researchers dedicated to solving the most complex B2B challenges.
+                </p>
+                <div class="flex justify-center gap-8">
+                    <div class="text-center">
+                        <span class="block text-5xl font-bold text-primary">100+</span>
+                        <span class="text-subtle-text">Enterprise Partners</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="block text-5xl font-bold text-primary">$5B+</span>
+                        <span class="text-subtle-text">In Client Transactions</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="block text-5xl font-bold text-primary">24/7</span>
+                        <span class="text-subtle-text">Global Support</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Contact -->
+        <section id="contact" class="py-24 bg-dark-surface">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-center text-4xl md:text-5xl font-bold tracking-tighter text-white mb-6">Start the Conversation</h2>
+                <p class="text-center text-xl text-subtle-text mb-10">
+                    Let's discuss how our platform can be tailored to your precise needs.
+                </p>
+                <form id="contact-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-subtle-text mb-2">Full Name</label>
+                            <input type="text" id="name" class="w-full p-4 rounded-lg bg-dark-bg border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="John Doe">
+                        </div>
+                        <div>
+                            <label for="company" class="block text-sm font-medium text-subtle-text mb-2">Company Name</label>
+                            <input type="text" id="company" class="w-full p-4 rounded-lg bg-dark-bg border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Acme Inc.">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-subtle-text mb-2">Work Email</label>
+                        <input type="email" id="email" class="w-full p-4 rounded-lg bg-dark-bg border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="you@company.com">
+                    </div>
+                    <div>
+                        <label for="message" class="block text-sm font-medium text-subtle-text mb-2">How can we help?</label>
+                        <textarea id="message" rows="5" class="w-full p-4 rounded-lg bg-dark-bg border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="I'm interested in the logistics optimization solution..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-4 px-8 bg-primary text-dark-bg text-lg font-semibold rounded-full hover:bg-primary-hover transition duration-300 shadow-lg primary-glow">
+                        Submit Request
+                    </button>
+                </form>
+                <p id="form-message" class="text-center text-lg mt-6"></p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark-bg border-t border-gray-800 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <a href="#home" class="text-3xl font-bold tracking-tighter mb-4 inline-block">
+                Macropol<span class="text-primary">°</span>s
+            </a>
+            <div class="flex justify-center space-x-6 my-6">
+                <a href="#" class="text-subtle-text hover:text-white" aria-label="LinkedIn"><i data-lucide="linkedin" class="w-6 h-6"></i></a>
+                <a href="#" class="text-subtle-text hover:text-white" aria-label="Twitter"><i data-lucide="twitter" class="w-6 h-6"></i></a>
+                <a href="#" class="text-subtle-text hover:text-white" aria-label="GitHub"><i data-lucide="github" class="w-6 h-6"></i></a>
+            </div>
+            <p class="text-subtle-text">
+                &copy; 2025 Macropol°s Inc. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // Mobile Menu Toggle
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        function toggleMenu() {
+            mobileMenu.classList.toggle('hidden');
+            const icon = menuBtn.querySelector('i');
+            if (mobileMenu.classList.contains('hidden')) {
+                icon.setAttribute('data-lucide', 'menu');
+            } else {
+                icon.setAttribute('data-lucide', 'x');
+            }
+            lucide.createIcons(); // Redraw icon
+        }
+        
+        menuBtn.addEventListener('click', toggleMenu);
+
+        // Contact Form Simulation
+        const contactForm = document.getElementById('contact-form');
+        const formMessage = document.getElementById('form-message');
+
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            // In a real app, you'd send this data to a backend.
+            formMessage.textContent = "Thank you for your inquiry. Our team will contact you shortly.";
+            formMessage.classList.add('text-green-400');
+            contactForm.reset();
+            
+            setTimeout(() => {
+                formMessage.textContent = "";
+                formMessage.classList.remove('text-green-400');
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
+
+
