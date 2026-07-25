@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Test and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Gratimos workspaces: generated code, staged payloads, and traces are run
+# artifacts. Check in a workspace deliberately if you want its history.
+.gratimos/
