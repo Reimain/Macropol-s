@@ -5,9 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gratimos"
 version = "0.1.0"
-description = "Gratimos generator — a self-building agent kernel: data-shaped code generation, ContextFlow versioning, sandboxed transformations, and A2A agent interop."
+description = "Gratimos generator and SLPIE — a self-building agent kernel plus a universal package and architecture intelligence engine."
 readme = "docs/README.md"
-requires-python = ">=3.10"
+# 3.11 for stdlib tomllib: SLPIE reads pyproject.toml and Cargo.toml during
+# discovery, and a third-party TOML parser would breach the zero-dependency rule.
+requires-python = ">=3.11"
 license = { text = "Proprietary" }
 authors = [{ name = "Macropol-s" }]
 dependencies = []
@@ -23,9 +25,11 @@ all = ["openpyxl>=3.1", "SQLAlchemy>=2.0", "alembic>=1.13", "boto3>=1.34", "delt
 
 [project.scripts]
 gratimos = "gratimos.cli:main"
+# `slpie = "slpie.cli:main"` is added in phase 13, with the CLI it points at —
+# a console script for a module that does not exist yet is a broken command.
 
 [tool.setuptools.packages.find]
-include = ["gratimos*"]
+include = ["gratimos*", "slpie*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
