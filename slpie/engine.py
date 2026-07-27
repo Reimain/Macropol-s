@@ -56,6 +56,7 @@ class Engine:
     station: Station | None = None
     resolver: Resolver | None = None
     world: Any = None
+    registry: Any = None
     snapshots: SnapshotStore | None = None
     stream: Any = None
     started_at: int = 0
@@ -188,6 +189,7 @@ class Engine:
         return merge_gaps(
             self.station.gaps() if self.station else (),
             self.resolver.gaps() if self.resolver else (),
+            self.registry.gaps() if self.registry is not None else (),
         )
 
     def ask(self, question: str) -> Guidance:
@@ -215,13 +217,35 @@ class Engine:
             ),
         )
 
-    def scan(self) -> dict[str, Any]:
-        """Run discovery over every attached element. Filled in from phase 7."""
-        return {
-            "attached": len(self.station.attached) if self.station else 0,
-            "discovered": 0,
-            "note": "discoverers are registered from phase 7",
-        }
+    def plugins(self) -> Any:
+        """The plugin registry, with the built-in discoverers registered.
+
+        Built lazily so an engine that only ingests a manifest never pays for
+        it, and cached so a scan does not re-register on every call.
+        """
+        from .discovery.registry import register_builtins
+        from .plugins.registry import Registry
+
+        if self.registry is None:
+            self.registry = register_builtins(Registry(commands=self.commands))
+        return self.registry
+
+    def scan(self, *, actor: str = "scan") -> dict[str, Any]:
+        """Run discovery over every bound element.
+
+        Everything discovery produces goes through the same command as the
+        manifest skeleton did, so the graph cannot tell where an observation
+        came from — only what evidence supports it.
+        """
+        from .discovery.registry import Scanner
+
+        if self.resolver is None:
+            raise SlpieError("nothing is bound; call simulate() or bind() first")
+
+        report = Scanner(self.plugins(), commands=self.commands).scan(
+            self.resolver.bindings, actor=actor,
+        )
+        return report.to_dict()
 
     # -- status ----------------------------------------------------------
 
@@ -236,6 +260,7 @@ class Engine:
             "ledger_digest": (self.ledger.digest[:16] if self.ledger else ""),
             "graph": counts,
             "attached": len(self.station.attached) if self.station else 0,
+            "plugins": len(self.registry) if self.registry is not None else 0,
             "gaps": len(self.gaps()),
             "simulated": self.world is not None,
             "uptime_ns": time.time_ns() - self.started_at,
