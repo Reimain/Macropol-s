@@ -228,6 +228,44 @@ class Resolver:
         """Bound but unreachable — every one of these becomes a gap."""
         return tuple(b for b in self._bindings.values() if not b.available)
 
+    def gaps(self) -> tuple["Gap", ...]:
+        """What the binding itself limits about an answer.
+
+        This lives here rather than in the engine because it is the one thing
+        only the binding layer knows: where an answer came from. Deciding
+        "these observations are simulated" anywhere above would mean branching
+        on the target outside the layer that owns it.
+        """
+        from ..domain.finding import Gap, GapKind
+
+        found: list[Gap] = [
+            Gap(
+                kind=GapKind.NOT_ATTACHED,
+                subject=binding.element,
+                detail=f"{binding.element} is declared but unreachable",
+                remediation=f"check that {binding.element} exists and is accessible",
+                confidence_impact=0.4,
+            )
+            for binding in self.unavailable
+        ]
+
+        simulated = [
+            binding.element for binding in self._bindings.values()
+            if binding.connector.mode == "simulated"
+        ]
+        if simulated:
+            found.append(Gap(
+                kind=GapKind.SIMULATED_ONLY,
+                subject=", ".join(sorted(simulated)[:3]) + ("…" if len(simulated) > 3 else ""),
+                detail=(
+                    f"{len(simulated)} element(s) answer from the simulator; nothing "
+                    f"they report has been seen in the real environment"
+                ),
+                remediation="set target: live and confirm, to bind against reality",
+                confidence_impact=0.1,
+            ))
+        return tuple(found)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "bindings": [b.to_dict() for b in self._bindings.values()],

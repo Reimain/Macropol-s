@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SLPIE</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="brand">SLPIE <span id="environment">—</span></div>
+    <nav>
+      <button data-view="console" class="active">Console</button>
+      <button data-view="graph">Graph</button>
+      <button data-view="station">Station</button>
+      <button data-view="reconciliation">Reconciliation</button>
+      <button data-view="findings">Findings</button>
+      <button data-view="simulator">Simulator</button>
+      <button data-view="enterprise">Enterprise</button>
+    </nav>
+    <span id="target" class="pill simulated">simulated</span>
+    <span id="connection" class="pill" title="live event stream">offline</span>
+  </header>
+
+  <main>
+    <!-- Console: the guided conversation. -->
+    <section class="view active" id="view-console">
+      <div class="ask">
+        <input id="question" placeholder="Ask about this environment — what breaks if lodash 5 lands?"
+               autocomplete="off">
+        <button class="go" id="ask">Ask</button>
+      </div>
+      <div class="grid">
+        <div class="card" style="grid-column: 1 / -1">
+          <h2>Conversation</h2>
+          <div id="conversation"><p class="empty">Ask a question to begin.</p></div>
+          <div id="suggestions"></div>
+        </div>
+        <div class="card">
+          <h2>Gaps limiting every answer</h2>
+          <div id="console-gaps"><p class="empty">None.</p></div>
+        </div>
+        <div class="card">
+          <h2>Live activity</h2>
+          <div id="feed"><p class="empty">Waiting for events…</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Graph -->
+    <section class="view" id="view-graph">
+      <div class="grid" id="graph-metrics"></div>
+      <div class="card" style="margin-top:16px">
+        <h2>Nodes</h2>
+        <div class="row" style="margin-bottom:10px">
+          <input id="graph-search" class="mono" placeholder="search…"
+                 style="flex:1;background:var(--panel-2);border:1px solid var(--line);
+                        color:var(--text);padding:7px 11px;border-radius:6px">
+        </div>
+        <div class="scroll"><table id="graph-nodes"></table></div>
+      </div>
+    </section>
+
+    <!-- Station -->
+    <section class="view" id="view-station">
+      <div class="card">
+        <h2>Attached elements</h2>
+        <div class="scroll"><table id="station-table"></table></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h2>Refused capabilities</h2>
+        <div id="station-refusals"><p class="empty">Nothing refused.</p></div>
+      </div>
+    </section>
+
+    <!-- Reconciliation -->
+    <section class="view" id="view-reconciliation">
+      <div class="grid" id="reconcile-metrics"></div>
+      <div class="grid" style="margin-top:16px">
+        <div class="card">
+          <h2>Declared, never observed</h2>
+          <div id="declared-not-found"></div>
+        </div>
+        <div class="card">
+          <h2>Observed, never declared</h2>
+          <div id="undeclared"></div>
+        </div>
+        <div class="card">
+          <h2>Contradicted</h2>
+          <div id="contradictions"></div>
+        </div>
+        <div class="card">
+          <h2>Boundary violations</h2>
+          <div id="violations"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Findings -->
+    <section class="view" id="view-findings">
+      <div class="card">
+        <h2>Open findings</h2>
+        <div id="findings-list"><p class="empty">No findings.</p></div>
+      </div>
+    </section>
+
+    <!-- Simulator -->
+    <section class="view" id="view-simulator">
+      <div class="grid">
+        <div class="card">
+          <h2>Target</h2>
+          <p class="muted" style="margin-top:0">
+            One tag decides where every answer comes from. Flipping to live binds
+            against the real environment and needs explicit confirmation.
+          </p>
+          <div class="row">
+            <button class="go" id="target-simulated">Use simulated</button>
+            <button class="go danger" id="target-live">Go live…</button>
+          </div>
+          <p id="target-note" class="muted" style="font-size:12px"></p>
+        </div>
+        <div class="card">
+          <h2>Fire a scenario</h2>
+          <p class="muted" style="margin-top:0;font-size:12px">
+            A scenario changes the materialised world. The platform then has to
+            find the new state through discovery.
+          </p>
+          <div id="scenario-chips"></div>
+          <div id="scenario-result" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <h2>Ledger integrity</h2>
+          <div id="integrity"></div>
+        </div>
+        <div class="card">
+          <h2>Projections</h2>
+          <div class="scroll"><table id="projections"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Enterprise -->
+    <section class="view" id="view-enterprise">
+      <div class="card">
+        <h2>Enterprise architecture</h2>
+        <p class="muted">
+          TOGAF application and data views, deployment topology and the risk
+          register generate into <span class="mono">./architecture/</span> as
+          importable code. This view arrives with them in a later phase.
+        </p>
+        <div id="cycles"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
