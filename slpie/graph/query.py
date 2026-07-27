@@ -92,14 +92,23 @@ class GraphProjection(Projection):
         evidence = Evidence(
             kind=EvidenceKind(payload.get("kind", "name_heuristic")),
             location=SourceLocation(
-                str(payload.get("uri", event.subject)), line=int(payload.get("line", 0))
+                str(payload.get("uri", event.subject)),
+                line=int(payload.get("line", 0)),
+                column=int(payload.get("column", 0)),
+                commit_sha=str(payload.get("commit_sha", "")),
             ),
             extractor=str(payload.get("extractor", "unknown")),
+            extractor_version=str(payload.get("extractor_version", "0")),
             content_digest=str(payload.get("content_digest", "")),
             excerpt=str(payload.get("excerpt", "")),
             observed_at=event.occurred_at,
+            labels=dict(payload.get("labels", {})),
         )
-        self._evidence[evidence.id] = evidence
+        # Keyed by the id the ledger recorded, not by recomputing it. The
+        # payload is a projection of the evidence and may be lossy — a truncated
+        # excerpt alone would change the hash — and a node must resolve the
+        # evidence it actually cites, not a near-identical reconstruction.
+        self._evidence[str(payload.get("evidence_id", evidence.id))] = evidence
 
     def _assert_node(self, event: DomainEvent) -> None:
         evidence = self._resolve(event.payload.get("evidence_ids", ()), event.subject)

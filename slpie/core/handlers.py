@@ -246,9 +246,16 @@ def handle_observation(command: RecordObservation) -> list[DomainEvent]:
                 "uri": item.location.uri,
                 "kind": item.kind.value,
                 "line": item.location.line,
+                "column": item.location.column,
+                "commit_sha": item.location.commit_sha,
                 "extractor": item.extractor,
+                # Part of the evidence id. Omitting it made every rebuilt
+                # evidence hash differently from the one the node cites, so the
+                # node was dropped as unjustified on replay.
+                "extractor_version": item.extractor_version,
                 "content_digest": item.content_digest,
                 "excerpt": item.excerpt[:500],
+                "labels": dict(item.labels),
             }
             events.append(
                 root.caused(EventKind.EVIDENCE_RECORDED, item.location.uri, **payload)
