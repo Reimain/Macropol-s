@@ -86,6 +86,39 @@ def test_the_crawler_never_imports_the_reuse_layer():
     assert not offenders, f"crawl must not depend on reuse; found {offenders}"
 
 
+def test_importing_gratimos_does_not_drag_in_the_crawler():
+    """The reuse path is lazy, so `import gratimos` stays cheap.
+
+    Asserted in a subprocess because by the time this test file is collected the
+    modules are already imported by other tests, and an in-process check would
+    pass for the wrong reason.
+    """
+    import subprocess
+    import sys
+
+    probe = (
+        "import gratimos, sys;"
+        "assert 'gratimos.crawl' not in sys.modules;"
+        "assert 'slpie.domain.license' not in sys.modules;"
+        "gratimos.ReuseAssessor;"
+        "assert 'gratimos.crawl' in sys.modules"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", probe],
+        capture_output=True,
+        text=True,
+        cwd=str(GRATIMOS.parent),
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_an_unknown_attribute_still_raises_attribute_error():
+    import gratimos
+
+    with pytest.raises(AttributeError, match="no attribute 'nonsense'"):
+        gratimos.nonsense
+
+
 @pytest.mark.parametrize(
     "module",
     [m for m in GRATIMOS.rglob("crawl/**/*.py")] + [m for m in GRATIMOS.rglob("reuse/**/*.py")],
