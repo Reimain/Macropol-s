@@ -40,9 +40,11 @@ pip install -e .            # kernel: zero dependencies
 pip install -e '.[all]'     # optional backends: xlsx, sql, s3, delta, media
 ```
 
-Python 3.10+. The kernel itself imports nothing outside the standard library —
-including the `.xlsx` reader, which parses OOXML directly. Optional packages
-widen coverage; they are never required to start.
+Python 3.11+ (for stdlib `tomllib`, which SLPIE reads `pyproject.toml` and
+`Cargo.toml` with). The kernel itself imports nothing outside the standard
+library — including the `.xlsx` reader, which parses OOXML directly, and the
+package-registry crawler, which is built on `urllib`. Optional packages widen
+coverage; they are never required to start.
 
 ## Command line
 
@@ -145,6 +147,80 @@ starting an Orchestrator job and mapping its lifecycle onto A2A — including
 `Suspended → input-required`, which is the one state both systems mean the same
 thing by.
 
+## Not writing the code at all
+
+The cheapest module is the one that already exists. Gratimos will go and look
+for it, prove it fits, and remember the answer.
+
+```python
+from gratimos import ReuseAssessor, need_from_text
+from gratimos.crawl import Crawler, Fetcher, PyPISource, SourceRegistry, official_policy
+from gratimos.ontology.need import Constraint, ConstraintKind
+
+fetcher = Fetcher(official_policy())
+crawler = Crawler(SourceRegistry(PyPISource(fetcher)))
+need = need_from_text(
+    "I need to retry failed HTTP requests with exponential backoff",
+    constraints=[Constraint(ConstraintKind.ECOSYSTEM, "pypi")],
+)
+
+print(ReuseAssessor(crawler=crawler).assess(need).reasoning)
+```
+
+```
+need: I need to retry failed HTTP requests with exponential backoff
+crawled pypi for retry-with-backoff, backoff, exponential backoff, retry, … → 2 artifacts
+refused 1:
+  - pkg:pypi/backoff@2.2.1: blocked — licence: AGPL-3.0-only triggers on
+    network_service: network use obliges you to offer the complete corresponding
+    source of the whole work
+admitted 1, best first:
+  1. pkg:pypi/retry@0.9.2 → 0.71 = fit 0.67×0.30 — covers 67% of the required
+     concepts, 2 of them exactly; maintenance 1.00×0.20 — last release 89 days
+     ago; licence 0.95×0.10 — permissive obligations to absorb; …
+gaps:
+  ! pkg:pypi/retry@0.9.2 matches on naming alone (0.34); nothing has confirmed
+    it does what the need asks
+```
+
+Four things that are load-bearing rather than decorative:
+
+**The refusal is part of the answer.** A shortlist that silently omits the
+obvious library looks like the tool never found it. Every excluded candidate
+comes back with its blocker and a remediation.
+
+**The score reconstructs itself.** Every component carries its weight, its raw
+measurement and a sentence. Popularity is the weakest input on purpose — it is
+the easiest signal to get and the least related to whether a package does what
+you need.
+
+**Needs are keyed by meaning, not phrasing.** "I need to retry failed HTTP
+requests with exponential backoff" and "HTTP client retry, exponential backoff"
+hash to one signature, because the signature is computed over canonical concepts
+from the ontology rather than over the words.
+
+**The agent gets turned off.** Attach a validator and it is consulted once per
+distinct need; every later phrasing is answered from memory. Two things stop
+that becoming a machine for repeating stale answers: verdicts decay on
+volatility half-lives and the escalation floor applies to the *decayed*
+confidence, and a sampled fraction of hits is re-validated anyway — without it
+the base can only ever confirm itself.
+
+```python
+loop = DistillationLoop(KnowledgeBase(), claude, engine=engine)
+assessor = ReuseAssessor(crawler=crawler, loop=loop)
+
+assessor.assess(need)                  # agent consulted
+assessor.assess(reworded_need).turn.route   # Route.RECALLED — not consulted
+```
+
+The crawler is polite by construction: an allow-list of hosts that publish a
+documented API, one request per host per second, `robots.txt` per origin,
+conditional requests so a second crawl is a sequence of 304s, and `Retry-After`
+obeyed literally and capped. It runs entirely offline against recorded
+responses — which is how its own tests exercise the real rate limiter rather
+than a stand-in for it.
+
 ## Layout
 
 | Package | What lives there |
@@ -161,6 +237,11 @@ thing by.
 | `gratimos.migrations` | Reversible revision ledger, Alembic rendering |
 | `gratimos.a2a` | Types, transports, server, client, registry, adapters |
 | `gratimos.orchestrator` | Depth, budget, and the loop that spends them |
+| `gratimos.ontology` | The concept lattice; needs keyed by meaning, not phrasing |
+| `gratimos.reason` | Forward chaining to propagate, backward chaining to answer |
+| `gratimos.crawl` | Polite, cached, offline-capable registry discovery |
+| `gratimos.reuse` | The licence gate that excludes, the ranking that explains |
+| `gratimos.distill` | Calling the validating agent only when memory cannot answer |
 
 `docs/ARCHITECTURE.md` explains why each boundary sits where it does.
 
@@ -170,6 +251,8 @@ thing by.
 pip install -e '.[dev]' && pytest
 ```
 
-169 tests, no network, no fixtures that mock the thing under test — the XLSX
-tests parse a real workbook, the SQLite tests open a real database, the sandbox
-tests actually get killed by the kernel's CPU limiter.
+No network, no fixtures that mock the thing under test — the XLSX tests parse a
+real workbook, the SQLite tests open a real database, the sandbox tests actually
+get killed by the kernel's CPU limiter, and the crawler tests drive the real
+fetcher over a recorded transport so the rate limiter, the robots gate and the
+retry loop all genuinely run.
