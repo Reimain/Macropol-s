@@ -7,9 +7,17 @@ and *refuses* anything outside it rather than guessing. A configuration file
 silently misread is worse than one that fails to load: the platform would run
 against an environment nobody described.
 
-Anchors, aliases, flow-style collections and multi-document streams are
-deliberately not supported. A manifest that uses them gets a clear error naming
-the line, which is a better outcome than a partial parse.
+Anchors and aliases are deliberately not supported. A manifest that uses them
+gets a clear error naming the line, which is a better outcome than a partial
+parse.
+
+A *manifest* is still a single document — :func:`parse_yaml` refuses a stream,
+because a second document would be silently discarded and the platform would run
+against half an environment. But Kubernetes ships multi-document files as a
+matter of course, so :func:`split_documents` and :func:`parse_documents` expose
+the stream form for discoverers that legitimately need it. They keep the line
+number each document started on, so evidence from the third document in a file
+still cites the right line.
 """
 
 from __future__ import annotations
@@ -58,6 +66,53 @@ def parse_yaml(text: str) -> Any:
             f"a manifest is a single mapping"
         )
     return value
+
+
+def split_documents(text: str) -> list[tuple[str, int]]:
+    """Split a YAML stream into `(document text, first line number)` pairs.
+
+    A document boundary is a line that is exactly ``---`` or ``...`` once
+    trailing whitespace is removed. That is the whole rule, and it is stated
+    rather than inferred: a `---` indented under a key is content, not a
+    separator, and treating it as one would silently truncate a manifest.
+
+    Documents that are entirely blank or comments are dropped, so a file that
+    opens with the customary leading `---` does not yield an empty first
+    document.
+    """
+    documents: list[tuple[list[str], int]] = []
+    current: list[str] = []
+    start = 1
+    for number, raw in enumerate(text.splitlines(), start=1):
+        if raw.rstrip() in ("---", "..."):
+            documents.append((current, start))
+            current = []
+            start = number + 1
+            continue
+        current.append(raw)
+    documents.append((current, start))
+
+    return [
+        ("\n".join(lines), first)
+        for lines, first in documents
+        if any(line.strip() and not line.lstrip().startswith("#") for line in lines)
+    ]
+
+
+def parse_documents(text: str) -> list[tuple[Any, int]]:
+    """Every document in a YAML stream, each with the line it started on.
+
+    A document that will not parse is *skipped* rather than fatal: a Kubernetes
+    file whose fourth document is malformed still has three that describe real
+    workloads, and losing them would be a worse answer than a partial one.
+    """
+    parsed: list[tuple[Any, int]] = []
+    for body, first in split_documents(text):
+        try:
+            parsed.append((parse_yaml(body), first))
+        except ManifestError:
+            continue
+    return parsed
 
 
 def _significant_lines(text: str) -> list[tuple[int, str, int]]:
