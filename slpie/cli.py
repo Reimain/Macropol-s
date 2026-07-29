@@ -99,6 +99,8 @@ class Cli:
         if head == "verbs":
             self._out(json.dumps(self.verbs.to_dict(), indent=2))
             return OK
+        if head == "contract":
+            return self._contract(arguments[1:])
         if head == "plan":
             return self._plan(arguments[1:])
 
@@ -128,6 +130,29 @@ class Cli:
             self._out(f"slpie {version('gratimos')}")
         except Exception:  # noqa: BLE001 - not installed as a distribution
             self._out("slpie (from source)")
+        return OK
+
+    def _contract(self, arguments: Sequence[str]) -> int:
+        """`slpie contract --openapi | --typescript` — the generated contract.
+
+        Emitted rather than maintained, so the stdlib server, the FastAPI adapter
+        and every client build from one source and cannot drift.
+        """
+        from .ui.contract import openapi, typescript
+
+        if "--typescript" in arguments or "--ts" in arguments:
+            self._out(typescript(verbs=self.verbs))
+            return OK
+
+        try:
+            from .ui.api import Api
+
+            routes = Api(engine=None).routes
+        except Exception:  # noqa: BLE001 - the document is still useful without them
+            routes = ()
+        self._out(json.dumps(
+            openapi(verbs=self.verbs, routes=routes), indent=2,
+        ))
         return OK
 
     # -- planning --------------------------------------------------------

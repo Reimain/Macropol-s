@@ -89,7 +89,12 @@ class Api:
                 status=404,
             )
         try:
-            return Response(handler(request))
+            outcome = handler(request)
+            # A handler that already chose its status says so by returning a
+            # Response. Re-wrapping it produced a Response whose body was another
+            # Response, which serialised as a string and lost the status the
+            # handler had deliberately set.
+            return outcome if isinstance(outcome, Response) else Response(outcome)
         except TargetRefused as error:
             # A refusal is an answer, not a server fault. 403 so the UI can
             # render the reason rather than a generic failure.
@@ -257,3 +262,121 @@ class Api:
         @self.route("POST", "/api/scan")
         def scan(_request: Request) -> Any:
             return engine.scan()
+
+        # --- the composition surface, generated from the verb registry ------
+        #
+        # Every verb gets a route automatically. That is what makes the registry
+        # *authoritative* rather than merely adjacent: there is no file to edit and
+        # therefore nowhere to forget to wire a capability. A verb added once
+        # appears in the CLI, this API, the manual, the planner and every client.
+        self._register_composition()
+
+    def _register_composition(self) -> None:
+        from ..compose import Composition, Context, VerbError, registry as verb_registry
+        from ..compose.pipeline import CompositionError
+        from ..compose.parse import ParseError
+
+        verbs = verb_registry()
+        self.verbs = verbs
+
+        def context(body: Mapping[str, Any]) -> Any:
+            return Context(
+                engine=self.engine, actor="ui",
+                confirmed=bool(body.get("confirmed", False)),
+                root=str(body.get("root", ".")),
+            )
+
+        @self.route("GET", "/api/verbs")
+        def api_verbs(_request: Request) -> Any:
+            return verbs.to_dict()
+
+        @self.route("GET", "/api/manual")
+        def api_manual(_request: Request) -> Any:
+            from ..manual import as_dict
+
+            return as_dict(verbs=verbs)
+
+        @self.route("GET", "/api/contract")
+        def api_contract(_request: Request) -> Any:
+            from .contract import openapi
+
+            return openapi(verbs=verbs, routes=self.routes)
+
+        @self.route("POST", "/api/compose/validate")
+        def api_validate(request: Request) -> Any:
+            """Check a composition without running any of it."""
+            try:
+                composition = Composition.read(
+                    str(request.body.get("pipeline", "")), verbs=verbs,
+                )
+            except ParseError as error:
+                return {"ok": False, "explanation": str(error)}
+            body = composition.validate().to_dict()
+            body["explain"] = composition.explain()
+            return body
+
+        @self.route("POST", "/api/run")
+        def api_run(request: Request) -> Any:
+            """Run a whole composition. The primary entry point for a client."""
+            text = str(request.body.get("pipeline", ""))
+            composition = Composition.read(text, verbs=verbs)
+            result = composition.run(context(request.body))
+            body = result.to_dict()
+            if not result.ok:
+                # A stage failing is a 400 with the partial flow attached, not a
+                # 500: the caller's composition did not work out, and they need
+                # the partial answer and the reason rather than a server error.
+                return Response(body, status=400)
+            return body
+
+        @self.route("POST", "/api/plan")
+        def api_plan(request: Request) -> Any:
+            from ..planner import plan_for
+
+            return plan_for(
+                str(request.body.get("question", "")), verbs=verbs,
+            ).to_dict()
+
+        # One route per verb, generated. `_verb_route` is a closure factory so
+        # each route captures its own verb rather than the loop variable.
+        for verb in verbs:
+            self.route("POST", f"/api/v/{verb.name}")(self._verb_route(verb, context))
+
+    def _verb_route(self, verb: Any, context: Any) -> Handler:
+        from ..compose import Flow
+        from ..compose.wire import decode
+
+        def run(request: Request) -> Any:
+            body = dict(request.body)
+            upstream = body.pop("upstream", None)
+            body.pop("confirmed", None)
+            body.pop("root", None)
+
+            flow = Flow.start()
+            if isinstance(upstream, Mapping) and upstream:
+                flow = decode(json.dumps(dict(upstream)))
+
+            if not verb.accepts(flow.kind):
+                return Response({
+                    "error": (
+                        f"{verb.name} consumes {verb.consumes.label}, but it was "
+                        f"given {flow.kind.label}"
+                    ),
+                    "type": "TypeMismatch",
+                }, status=400)
+
+            active = context({"confirmed": request.body.get("confirmed", False),
+                              "root": request.body.get("root", ".")})
+            if verb.mutates and not active.confirmed:
+                return Response({
+                    "error": (
+                        f"{verb.name} changes the environment and was not "
+                        f"confirmed; the same guard refuses it here as at the CLI"
+                    ),
+                    "refused": True,
+                }, status=403)
+
+            return verb.run(flow, verb.bind(body), active).to_dict()
+
+        run.__name__ = f"verb_{verb.name.replace('-', '_')}"
+        return run
