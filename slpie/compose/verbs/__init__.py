@@ -6,11 +6,12 @@ therefore proven by its own use rather than asserted — if registration were
 broken for plugins it would be broken for the built-ins too, and the suite would
 fail on the first verb.
 
-Three families, split by what they need rather than by what they are about:
+Four families, split by what they need rather than by what they are about:
 
 * `analysis` — needs nothing. Works the moment the package is installed.
 * `shaping` — the polymorphic shell filters.
 * `environment` — needs a manifest, a ledger and a graph.
+* `dispatch` — reaches an external tool instead of reimplementing it (§27).
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from __future__ import annotations
 from typing import Any, Sequence
 
 from ..verb import Verb
-from . import analysis, environment, shaping
+from . import analysis, dispatch, environment, shaping
 
 
 class _Family:
@@ -32,7 +33,10 @@ class _Family:
         return self._module.verbs()
 
 
-FAMILIES = (_Family(analysis), _Family(shaping), _Family(environment))
+FAMILIES = (
+    _Family(analysis), _Family(shaping),
+    _Family(dispatch), _Family(environment),
+)
 
 
 def register_builtins(registry: Any) -> Any:

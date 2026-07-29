@@ -296,8 +296,14 @@ class Cli:
         return self._exit_code(flow, options)
 
     def _body(self, flow: Flow) -> str:
-        """The value, rendered for a terminal. One line per item."""
-        if "json" in flow.facts:
+        """The value, rendered for a terminal. One line per item.
+
+        The `json` fact is only used when `json` was the *last* stage. Preferring
+        it whenever present meant a later stage's real output was hidden behind an
+        earlier stage's serialisation — `... | json | tool --name jq` printed the
+        document it had piped into jq rather than what jq returned.
+        """
+        if flow.stages and flow.stages[-1] == "json" and "json" in flow.facts:
             return str(flow.facts["json"])
 
         lines = [f"{flow}"]
