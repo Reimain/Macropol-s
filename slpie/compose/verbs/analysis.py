@@ -317,12 +317,27 @@ def _findings(flow: Flow, arguments: Mapping[str, Any], _context: Context) -> Fl
             ),
         ))
 
+    # A conflict names evidence *ids* (the requirements carry them); the Evidence
+    # objects themselves are in the reasoning path this flow accumulated. Matching
+    # by id is what lets the finding cite the manifest line that caused the
+    # conflict, rather than being refused for having nothing to cite.
+    upstream = {item.id: item for item in flow.reasoning.evidence}
     for conflict in getattr(flow.value, "conflicts", ()):
+        cited = tuple(
+            upstream[reference]
+            for side in (conflict.left, conflict.right)
+            if side is not None
+            for reference in side.derived_from
+            if reference in upstream
+        )[:4] or tuple(flow.reasoning.evidence)[:2]
+        if not cited:
+            continue
         found.append(Finding(
             kind=FindingKind.CONSTRAINT_CONFLICT, severity=Severity.HIGH,
             subject=conflict.coordinate,
             title=f"{conflict.name} cannot satisfy every requirement on it",
             detail=conflict.explain(),
+            evidence=cited,
             related=tuple(name for name in conflict.pair if name),
             remediation=Remediation(
                 summary="pin one side, upgrade the other, or drop a dependency",

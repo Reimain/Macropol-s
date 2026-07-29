@@ -175,15 +175,22 @@ class Composition:
 
     # -- validation ------------------------------------------------------
 
-    def validate(self) -> Validation:
-        """Whether it can run, without running any of it."""
+    def validate(self, upstream: Kind = Kind.NOTHING) -> Validation:
+        """Whether it can run, without running any of it.
+
+        `upstream` is what is already flowing in — `Kind.NOTHING` for a pipeline
+        starting fresh, and the incoming kind when a flow arrived on stdin from
+        another `slpie` process. Without it, `slpie discover . | slpie link` would
+        be rejected for starting with a transform verb, when in fact its input is
+        sitting right there on the pipe.
+        """
         unknown: list[str] = []
         mismatches: list[Mismatch] = []
         errors: list[str] = []
         mutating: list[str] = []
 
-        current = Kind.NOTHING
-        upstream = ""
+        current = upstream
+        producer = ""
 
         for position, stage in enumerate(self.stages, start=1):
             verb = self.verbs.get(stage.verb)
@@ -202,7 +209,7 @@ class Composition:
             if not verb.accepts(current):
                 mismatches.append(Mismatch(
                     position=position, verb=verb.name,
-                    expected=verb.consumes, received=current, upstream=upstream,
+                    expected=verb.consumes, received=current, upstream=producer,
                 ))
                 break
 
@@ -215,7 +222,7 @@ class Composition:
                 mutating.append(verb.name)
 
             current = verb.output_for(current)
-            upstream = verb.name
+            producer = verb.name
 
         ok = not unknown and not mismatches and not errors
         return Validation(
@@ -253,9 +260,19 @@ class Composition:
 
     def run(self, context: Context | None = None) -> Result:
         """Validate, gate, then execute. Never executes an invalid composition."""
+        return self.run_from(Flow.start(), context)
+
+    def run_from(self, upstream: Flow, context: Context | None = None) -> Result:
+        """Run with a flow already in hand — the OS-pipe entry point.
+
+        Everything the upstream process accumulated (its reasoning, its gaps)
+        continues into this one, so provenance survives a process boundary the
+        same way it survives a stage boundary. A pipeline that lost its gaps at
+        the `|` would be a pipeline whose honesty depended on how it was invoked.
+        """
         started = time.monotonic()
         active = context or Context()
-        validation = self.validate()
+        validation = self.validate(upstream.kind)
 
         if not validation.ok:
             raise CompositionError(validation.explain())
@@ -267,7 +284,7 @@ class Composition:
                 f"stage so that nothing has happened yet when you decide"
             )
 
-        flow = Flow.start()
+        flow = upstream
         completed = 0
 
         for stage in self.stages:
@@ -294,14 +311,14 @@ class Composition:
 
     # -- explanation -----------------------------------------------------
 
-    def explain(self) -> str:
+    def explain(self, upstream: Kind = Kind.NOTHING) -> str:
         """The composition, annotated — what `--explain` and `slpie plan` print.
 
         Shown before running, which is the point: you see what it will do and
         what it will cost while the decision is still free.
         """
         lines = [render(self.stages), ""]
-        current = Kind.NOTHING
+        current = upstream
 
         for position, stage in enumerate(self.stages, start=1):
             verb = self.verbs.get(stage.verb)
@@ -317,7 +334,7 @@ class Composition:
             lines.append(f"  {position}. {stage.verb:<14} {arrow:<28} {verb.summary}{mark}")
             current = produced
 
-        validation = self.validate()
+        validation = self.validate(upstream)
         lines.append("")
         lines.append(f"  {validation.explain()}")
         return "\n".join(lines)
