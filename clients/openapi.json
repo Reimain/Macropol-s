@@ -1,0 +1,3397 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SLPIE",
+    "version": "1.0.0",
+    "description": "Capabilities are verbs that compose. Every route below is a projection of the verb registry, so a capability added once appears in the CLI, this contract, the manual and every client. The x-slpie-consumes/produces extensions carry the type graph, so a client can reject an impossible composition before sending it."
+  },
+  "paths": {
+    "/api/causation": {
+      "get": {
+        "summary": "GET /api/causation",
+        "operationId": "get_api_causation",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/contract": {
+      "get": {
+        "summary": "GET /api/contract",
+        "operationId": "get_api_contract",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/cycles": {
+      "get": {
+        "summary": "GET /api/cycles",
+        "operationId": "get_api_cycles",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/findings": {
+      "get": {
+        "summary": "GET /api/findings",
+        "operationId": "get_api_findings",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/graph": {
+      "get": {
+        "summary": "GET /api/graph",
+        "operationId": "get_api_graph",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/history": {
+      "get": {
+        "summary": "GET /api/history",
+        "operationId": "get_api_history",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/impact": {
+      "get": {
+        "summary": "GET /api/impact",
+        "operationId": "get_api_impact",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/integrity": {
+      "get": {
+        "summary": "GET /api/integrity",
+        "operationId": "get_api_integrity",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/manifest": {
+      "get": {
+        "summary": "GET /api/manifest",
+        "operationId": "get_api_manifest",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/manual": {
+      "get": {
+        "summary": "GET /api/manual",
+        "operationId": "get_api_manual",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/node": {
+      "get": {
+        "summary": "GET /api/node",
+        "operationId": "get_api_node",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/projections": {
+      "get": {
+        "summary": "GET /api/projections",
+        "operationId": "get_api_projections",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/reconcile": {
+      "get": {
+        "summary": "GET /api/reconcile",
+        "operationId": "get_api_reconcile",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/routes": {
+      "get": {
+        "summary": "GET /api/routes",
+        "operationId": "get_api_routes",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/scenarios": {
+      "get": {
+        "summary": "GET /api/scenarios",
+        "operationId": "get_api_scenarios",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/search": {
+      "get": {
+        "summary": "GET /api/search",
+        "operationId": "get_api_search",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/station": {
+      "get": {
+        "summary": "GET /api/station",
+        "operationId": "get_api_station",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/status": {
+      "get": {
+        "summary": "GET /api/status",
+        "operationId": "get_api_status",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/verbs": {
+      "get": {
+        "summary": "GET /api/verbs",
+        "operationId": "get_api_verbs",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/ask": {
+      "post": {
+        "summary": "POST /api/ask",
+        "operationId": "post_api_ask",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/compose/validate": {
+      "post": {
+        "summary": "POST /api/compose/validate",
+        "operationId": "post_api_compose_validate",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/plan": {
+      "post": {
+        "summary": "POST /api/plan",
+        "operationId": "post_api_plan",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/run": {
+      "post": {
+        "summary": "POST /api/run",
+        "operationId": "post_api_run",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/scan": {
+      "post": {
+        "summary": "POST /api/scan",
+        "operationId": "post_api_scan",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/scenario": {
+      "post": {
+        "summary": "POST /api/scenario",
+        "operationId": "post_api_scenario",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/snapshot": {
+      "post": {
+        "summary": "POST /api/snapshot",
+        "operationId": "post_api_snapshot",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/target": {
+      "post": {
+        "summary": "POST /api/target",
+        "operationId": "post_api_target",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/v/attach": {
+      "post": {
+        "summary": "register every declared element and negotiate capabilities",
+        "description": "register every declared element and negotiate capabilities",
+        "operationId": "verb_attach",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "elements",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "capabilities": {
+                    "type": "array",
+                    "description": "capabilities to require",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/constraints": {
+      "post": {
+        "summary": "solve the version constraints, naming any conflict",
+        "description": "solve the version constraints, naming any conflict",
+        "operationId": "verb_constraints",
+        "tags": [
+          "analysis"
+        ],
+        "x-slpie-consumes": "resolution",
+        "x-slpie-produces": "solution",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ecosystem": {
+                    "type": "string",
+                    "description": "the version dialect",
+                    "default": "generic"
+                  },
+                  "max_steps": {
+                    "type": "integer",
+                    "description": "search budget",
+                    "default": 10000
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/count": {
+      "post": {
+        "summary": "count what is flowing, without changing it",
+        "description": "count what is flowing, without changing it",
+        "operationId": "verb_count",
+        "tags": [
+          "shaping"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "constraints",
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/declare": {
+      "post": {
+        "summary": "build the skeleton graph from the manifest, before reading a file",
+        "description": "build the skeleton graph from the manifest, before reading a file",
+        "operationId": "verb_declare",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "elements",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/discover": {
+      "post": {
+        "summary": "read a tree and record what every discoverer finds",
+        "description": "Needs no environment and no database, so it works the moment the package is installed.",
+        "operationId": "verb_discover",
+        "tags": [
+          "analysis"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "observations",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "the directory or file to read",
+                    "default": "."
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "maximum files to consider",
+                    "default": 5000
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/explain": {
+      "post": {
+        "summary": "render the reasoning, the sources and the gaps behind this",
+        "description": "Every stage upstream contributed to the reasoning path this renders. It is the verb that makes a long composition auditable rather than merely convenient.",
+        "operationId": "verb_explain",
+        "tags": [
+          "shaping"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "constraints",
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "remediation": {
+                    "type": "boolean",
+                    "description": "include how to close each gap",
+                    "default": true
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/filter": {
+      "post": {
+        "summary": "keep only what matches",
+        "description": "keep only what matches",
+        "operationId": "verb_filter",
+        "tags": [
+          "shaping"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "constraints",
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "the field to test"
+                  },
+                  "contains": {
+                    "type": "string",
+                    "description": "substring the field must contain"
+                  },
+                  "equals": {
+                    "type": "string",
+                    "description": "value the field must equal exactly"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/findings": {
+      "post": {
+        "summary": "rank everything wrong that is known so far",
+        "description": "rank everything wrong that is known so far",
+        "operationId": "verb_findings",
+        "tags": [
+          "analysis"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "findings",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "severity": {
+                    "type": "string",
+                    "description": "keep only this severity",
+                    "enum": [
+                      "critical",
+                      "high",
+                      "medium",
+                      "low",
+                      "info"
+                    ]
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/gaps": {
+      "post": {
+        "summary": "everything the platform currently cannot see",
+        "description": "everything the platform currently cannot see",
+        "operationId": "verb_gaps",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "gaps",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/graph": {
+      "post": {
+        "summary": "read nodes from the graph",
+        "description": "read nodes from the graph",
+        "operationId": "verb_graph",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "nodes",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "integer",
+                    "description": "maximum nodes",
+                    "default": 200
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/head": {
+      "post": {
+        "summary": "keep the first N",
+        "description": "keep the first N",
+        "operationId": "verb_head",
+        "tags": [
+          "shaping"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "constraints",
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "description": "how many to keep",
+                    "default": 10
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/history": {
+      "post": {
+        "summary": "recent commits, from git rather than from a reimplementation",
+        "description": "recent commits, from git rather than from a reimplementation",
+        "operationId": "verb_history",
+        "tags": [
+          "dispatch"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "description": "how many commits",
+                    "default": 20
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "the repository",
+                    "default": "."
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/impact": {
+      "post": {
+        "summary": "what depends on this, and how confidently",
+        "description": "what depends on this, and how confidently",
+        "operationId": "verb_impact",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nodes",
+        "x-slpie-produces": "impact",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "a node id, instead of piping nodes in"
+                  },
+                  "depth": {
+                    "type": "integer",
+                    "description": "how far to walk",
+                    "default": 10
+                  },
+                  "min_confidence": {
+                    "type": "number",
+                    "description": "ignore weaker edges",
+                    "default": 0.0
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/json": {
+      "post": {
+        "summary": "serialise the flow, provenance included",
+        "description": "serialise the flow, provenance included",
+        "operationId": "verb_json",
+        "tags": [
+          "shaping"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "constraints",
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "integer",
+                    "description": "maximum items to render",
+                    "default": 200
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/link": {
+      "post": {
+        "summary": "merge observations onto identities and join across files",
+        "description": "Merges on identity, never on similarity.",
+        "operationId": "verb_link",
+        "tags": [
+          "analysis"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "resolution",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "constraints",
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resolve_only": {
+                    "type": "boolean",
+                    "description": "skip the cross-file linkers",
+                    "default": false
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/reason": {
+      "post": {
+        "summary": "run the reasoning layers over what was observed",
+        "description": "run the reasoning layers over what was observed",
+        "operationId": "verb_reason",
+        "tags": [
+          "analysis"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "enrichments",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "element": {
+                    "type": "string",
+                    "description": "the element these belong to"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/reconcile": {
+      "post": {
+        "summary": "compare what was declared against what was observed",
+        "description": "compare what was declared against what was observed",
+        "operationId": "verb_reconcile",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "findings",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/scan": {
+      "post": {
+        "summary": "read every attached element and record what is found",
+        "description": "read every attached element and record what is found",
+        "operationId": "verb_scan",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "observations",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/search": {
+      "post": {
+        "summary": "find nodes by name",
+        "description": "find nodes by name",
+        "operationId": "verb_search",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "nodes",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "what to look for"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "maximum results",
+                    "default": 20
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/sort": {
+      "post": {
+        "summary": "order by a field",
+        "description": "order by a field",
+        "operationId": "verb_sort",
+        "tags": [
+          "shaping"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "constraints",
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "the field to order by"
+                  },
+                  "desc": {
+                    "type": "boolean",
+                    "description": "highest first",
+                    "default": false
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/status": {
+      "post": {
+        "summary": "the environment's current state",
+        "description": "the environment's current state",
+        "operationId": "verb_status",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/target": {
+      "post": {
+        "summary": "bind the environment to simulated or live",
+        "description": "The one dangerous tag. Refused unless confirmed, by the same guard that refuses it everywhere else.",
+        "operationId": "verb_target",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": true,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to": {
+                    "type": "string",
+                    "description": "simulated or live",
+                    "enum": [
+                      "simulated",
+                      "live"
+                    ]
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  },
+                  "confirmed": {
+                    "type": "boolean",
+                    "description": "required: this verb changes the environment and is refused without it, by the same guard the CLI hits"
+                  }
+                },
+                "required": [
+                  "to"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/tool": {
+      "post": {
+        "summary": "pipe the flow through a registered external tool",
+        "description": "Produces TEXT, because a binary reads bytes and returns bytes \u2014 the typed objects do not survive. That is the fidelity loss made visible in the signature, so downstream verbs needing objects correctly refuse to follow. Nothing here runs a shell: only registered capabilities can be named, and arguments are passed as argv.",
+        "operationId": "verb_tool",
+        "tags": [
+          "dispatch"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "text",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "the registered tool"
+                  },
+                  "args": {
+                    "type": "string",
+                    "description": "arguments, passed as argv"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/tools": {
+      "post": {
+        "summary": "which external tools are installed, and how reproducible each is",
+        "description": "A missing tool is a capability gap rather than a failure: the fallback runs and is announced, because an approximation that looks identical to the real answer is worse than a slower correct one.",
+        "operationId": "verb_tools",
+        "tags": [
+          "dispatch"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/unique": {
+      "post": {
+        "summary": "drop duplicates",
+        "description": "drop duplicates",
+        "operationId": "verb_unique",
+        "tags": [
+          "shaping"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "constraints",
+          "count",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "reason",
+          "sort",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "the field that identifies a duplicate"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Flow": {
+        "type": "object",
+        "description": "A value plus everything needed to justify it. Composing accumulates the reasoning and the gaps rather than discarding them.",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "nothing",
+              "any",
+              "same",
+              "manifest",
+              "elements",
+              "observations",
+              "resolution",
+              "enrichments",
+              "nodes",
+              "edges",
+              "graph",
+              "impact",
+              "requirements",
+              "solution",
+              "findings",
+              "gaps",
+              "judgements",
+              "plan",
+              "report",
+              "text"
+            ]
+          },
+          "size": {
+            "type": "integer"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
+            "type": "number",
+            "description": "the path's confidence, discounted by the gaps"
+          },
+          "grounded": {
+            "type": "boolean",
+            "description": "whether every claim traces to a file and a line"
+          },
+          "digest": {
+            "type": "string",
+            "description": "content-addressed over the answer, not the run \u2014 two surfaces executing the same composition must agree"
+          },
+          "gaps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Gap"
+            }
+          },
+          "reasoning": {
+            "type": "object"
+          },
+          "value": {},
+          "facts": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "kind",
+          "size",
+          "stages",
+          "digest"
+        ]
+      },
+      "Gap": {
+        "type": "object",
+        "description": "something the platform could not see, and what it cost",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "capability_refused",
+              "not_declared",
+              "not_attached",
+              "stale_heartbeat",
+              "low_confidence",
+              "unresolved_dependency",
+              "plugin_unavailable",
+              "plugin_quarantined",
+              "simulated_only",
+              "parse_failure",
+              "access_denied",
+              "not_implemented"
+            ]
+          },
+          "subject": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "remediation": {
+            "type": "string"
+          },
+          "confidence_impact": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "subject",
+          "detail"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "refused": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+    }
+  },
+  "x-slpie-kinds": [
+    {
+      "kind": "manifest",
+      "produced_by": [],
+      "consumed_by": []
+    },
+    {
+      "kind": "elements",
+      "produced_by": [
+        "attach",
+        "declare"
+      ],
+      "consumed_by": []
+    },
+    {
+      "kind": "observations",
+      "produced_by": [
+        "discover",
+        "scan"
+      ],
+      "consumed_by": [
+        "link",
+        "reason"
+      ]
+    },
+    {
+      "kind": "resolution",
+      "produced_by": [
+        "link"
+      ],
+      "consumed_by": [
+        "constraints"
+      ]
+    },
+    {
+      "kind": "enrichments",
+      "produced_by": [
+        "reason"
+      ],
+      "consumed_by": []
+    },
+    {
+      "kind": "nodes",
+      "produced_by": [
+        "graph",
+        "search"
+      ],
+      "consumed_by": [
+        "impact"
+      ]
+    },
+    {
+      "kind": "edges",
+      "produced_by": [],
+      "consumed_by": []
+    },
+    {
+      "kind": "graph",
+      "produced_by": [],
+      "consumed_by": []
+    },
+    {
+      "kind": "impact",
+      "produced_by": [
+        "impact"
+      ],
+      "consumed_by": []
+    },
+    {
+      "kind": "requirements",
+      "produced_by": [],
+      "consumed_by": []
+    },
+    {
+      "kind": "solution",
+      "produced_by": [
+        "constraints"
+      ],
+      "consumed_by": []
+    },
+    {
+      "kind": "findings",
+      "produced_by": [
+        "findings",
+        "reconcile"
+      ],
+      "consumed_by": []
+    },
+    {
+      "kind": "gaps",
+      "produced_by": [
+        "gaps"
+      ],
+      "consumed_by": []
+    },
+    {
+      "kind": "judgements",
+      "produced_by": [],
+      "consumed_by": []
+    },
+    {
+      "kind": "plan",
+      "produced_by": [],
+      "consumed_by": []
+    },
+    {
+      "kind": "report",
+      "produced_by": [
+        "history",
+        "status",
+        "target",
+        "tools"
+      ],
+      "consumed_by": []
+    },
+    {
+      "kind": "text",
+      "produced_by": [
+        "tool"
+      ],
+      "consumed_by": []
+    }
+  ],
+  "x-slpie-polymorphic": [
+    "count",
+    "explain",
+    "filter",
+    "findings",
+    "head",
+    "json",
+    "sort",
+    "tool",
+    "unique"
+  ]
+}

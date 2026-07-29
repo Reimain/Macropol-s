@@ -101,6 +101,10 @@ class Cli:
             return OK
         if head == "contract":
             return self._contract(arguments[1:])
+        if head == "demo":
+            from .demo import Demo
+
+            return Demo(stdout=self.stdout).run()
         if head == "plan":
             return self._plan(arguments[1:])
 

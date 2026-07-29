@@ -5,12 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SLPIE</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
   <header>
     <div class="brand">SLPIE <span id="environment">—</span></div>
     <nav>
       <button data-view="console" class="active">Console</button>
+      <button data-view="compose">Compose</button>
       <button data-view="graph">Graph</button>
       <button data-view="station">Station</button>
       <button data-view="reconciliation">Reconciliation</button>
@@ -44,6 +49,59 @@
           <h2>Live activity</h2>
           <div id="feed"><p class="empty">Waiting for events…</p></div>
         </div>
+      </div>
+    </section>
+
+
+    <!-- Compose: composition, made visible. -->
+    <section class="view" id="view-compose">
+      <div class="card">
+        <h2>Ask, and it writes the composition</h2>
+        <div class="ask">
+          <input id="compose-question" autocomplete="off"
+                 placeholder="what breaks if lodash 5 lands?">
+          <button class="go" id="compose-plan-go">Plan</button>
+        </div>
+        <div id="compose-plan"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>Or build one</h2>
+        <p class="muted" style="margin-top:0;font-size:12px">
+          Verbs that cannot follow what is currently flowing are disabled rather
+          than hidden, so the shape of the type graph stays visible. The check runs
+          here as you build; the server checks again before running anything.
+        </p>
+        <div id="compose-palette"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>Pipeline</h2>
+        <div id="compose-stages"></div>
+        <div id="compose-signature" class="mono" style="margin-top:10px"></div>
+        <div class="row" style="margin-top:10px">
+          <input id="compose-text" class="mono"
+                 style="flex:1;background:var(--panel-2);border:1px solid var(--line);
+                        color:var(--text);padding:7px 11px;border-radius:6px"
+                 placeholder="discover . | link | findings">
+          <button class="go" id="compose-run" disabled>Run</button>
+          <button class="go" id="compose-clear">Clear</button>
+        </div>
+        <label id="compose-confirm" class="param" hidden style="margin-top:8px">
+          <input type="checkbox" id="compose-confirmed">
+          I confirm this composition may change the environment
+        </label>
+      </div>
+
+      <div id="compose-result" style="margin-top:16px"></div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>Recipes</h2>
+        <p class="muted" style="margin-top:0;font-size:12px">
+          Every one is executed by the test suite — a documented composition that
+          does not run is worse than an undocumented one.
+        </p>
+        <div id="compose-recipes"></div>
       </div>
     </section>
 
@@ -154,5 +212,6 @@
   </main>
 
   <script src="/app.js"></script>
+  <script src="/compose.js"></script>
 </body>
 </html>

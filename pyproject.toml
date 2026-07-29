@@ -31,9 +31,14 @@ slpie = "slpie.cli:main"
 include = ["gratimos*", "slpie*"]
 
 # The interface ships as data files. Without this the UI installs with no
-# assets and `slpie ui` serves a 404 from a working server.
+# assets and `slpie ui` serves a 404 from a working server. The webmanifest and
+# the icon are listed too: omitting them installs a page that looks fine and
+# silently cannot be installed as an app, which is the worst kind of missing.
 [tool.setuptools.package-data]
-"slpie.ui" = ["app/*.html", "app/*.js", "app/*.css"]
+"slpie.ui" = [
+    "app/*.html", "app/*.js", "app/*.css",
+    "app/*.webmanifest", "app/*.svg",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

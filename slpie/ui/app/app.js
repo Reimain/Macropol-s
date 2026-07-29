@@ -434,3 +434,35 @@ function append(html) {
 
 loadStatus().then(() => show("console"));
 connect();
+
+
+/* --- installable ---------------------------------------------------------
+ * Registering the worker is what makes the same stdlib server usable as a
+ * desktop window and a phone app: the shell is cached, so it opens with no
+ * network, and API answers fall back to cache tagged as stale rather than being
+ * presented as live.
+ *
+ * Failure is silent by design. A worker that will not register (an insecure
+ * origin, a browser with it disabled) must not stop the interface working -- the
+ * app is fully functional without it, and offline capability is the bonus.
+ */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
+/* An API answer served from cache while offline is marked, never presented as
+ * live. The same honesty rule a lagging region gets. */
+const originalFetch = window.fetch;
+window.fetch = async (...args) => {
+  const response = await originalFetch(...args);
+  if (response.headers && response.headers.get("x-slpie-stale")) {
+    const badge = document.getElementById("connection");
+    if (badge) {
+      badge.textContent = "offline — showing cached answers";
+      badge.classList.add("live");
+    }
+  }
+  return response;
+};

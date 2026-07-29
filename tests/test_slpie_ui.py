@@ -366,3 +366,143 @@ def test_query_parameters_are_parsed_with_sane_fallbacks():
 
     assert request.integer("limit", 200) == 200
     assert request.param("missing", "default") == "default"
+
+
+# --- installable, responsive, and self-contained -------------------------
+#
+# The same stdlib server is the desktop window and the phone screen. That is only
+# true if the shell installs, holds at a phone width, and references nothing
+# outside itself — inside an air-gapped network this is the only client that runs.
+
+
+def test_every_shipped_asset_is_served(server):
+    """A page that looks fine and silently cannot be installed is the worst kind
+    of missing, so each asset is fetched rather than assumed present."""
+    for path, expected in (
+        ("/", "text/html"),
+        ("/app.js", "text/javascript"),
+        ("/compose.js", "text/javascript"),
+        ("/styles.css", "text/css"),
+        ("/sw.js", "text/javascript"),
+        ("/manifest.webmanifest", "application/manifest+json"),
+        ("/icon.svg", "image/svg+xml"),
+    ):
+        status, headers, body = _raw(server, path)
+        assert status == 200, f"{path} is not served"
+        assert expected in headers["Content-Type"], f"{path} has the wrong type"
+        assert body, f"{path} is empty"
+
+
+def test_the_webmanifest_has_what_a_browser_needs_to_install_it(server):
+    import json as _json
+
+    _status, _headers, body = _raw(server, "/manifest.webmanifest")
+    manifest = _json.loads(body)
+
+    assert manifest["name"] and manifest["short_name"]
+    assert manifest["start_url"] == "/"
+    assert manifest["display"] == "standalone"
+    assert manifest["icons"], "with no icon it cannot be added to a home screen"
+    assert manifest["icons"][0]["src"].startswith("/"), "a relative icon breaks in scope"
+
+
+def test_every_asset_the_worker_precaches_actually_exists(server):
+    """`addAll` semantics aside, a shell listing an asset that 404s is a shell
+    that installs incompletely and fails offline in a way nobody sees online."""
+    import re
+
+    _status, _headers, body = _raw(server, "/sw.js")
+    listed = re.findall(r'"(/[^"]*)"', body.decode("utf-8"))
+    paths = {path for path in listed if "." in path or path == "/"}
+
+    for path in sorted(paths):
+        status, _headers, _body = _raw(server, path)
+        assert status == 200, f"the worker precaches {path}, which is not served"
+
+
+def test_the_worker_never_caches_the_event_stream(server):
+    """A cached SSE response would replay history as though it were happening now."""
+    _status, _headers, body = _raw(server, "/sw.js")
+    source = body.decode("utf-8")
+
+    assert "/events" in source
+    assert "must never be cached" in source or "not a document" in source
+
+
+def test_a_cached_api_answer_is_marked_stale_rather_than_served_as_live(server):
+    """The honesty rule does not weaken because the client is a laptop on a plane."""
+    _status, _headers, body = _raw(server, "/sw.js")
+    source = body.decode("utf-8")
+
+    assert "x-slpie-stale" in source
+    assert "networkFirst" in source, "an environment answer must try the network first"
+
+
+def test_nothing_in_the_interface_reaches_an_external_origin(server):
+    """The kernel's zero-dependency rule applies to the UI too: no CDN, no fonts,
+    no analytics. Asserted rather than trusted, because one `<link>` would do it."""
+    import re
+
+    for path in ("/", "/app.js", "/compose.js", "/styles.css", "/sw.js"):
+        _status, _headers, body = _raw(server, path)
+        text = body.decode("utf-8")
+        external = re.findall(
+            r"""https?://(?!127\.0\.0\.1|localhost)[a-z0-9.\-]+""", text,
+        )
+        assert not external, f"{path} reaches {external}"
+
+
+def test_the_stylesheet_collapses_the_layout_for_a_phone(server):
+    _status, _headers, body = _raw(server, "/styles.css")
+    css = body.decode("utf-8")
+
+    assert "@media (max-width: 720px)" in css, "no phone breakpoint"
+    assert "grid-template-columns: 1fr" in css, "the grid never collapses"
+    assert "prefers-reduced-motion" in css
+
+
+def test_the_compose_view_is_reachable_from_the_navigation(server):
+    _status, _headers, body = _raw(server, "/")
+    html = body.decode("utf-8")
+
+    assert 'data-view="compose"' in html
+    assert 'id="view-compose"' in html
+    assert 'src="/compose.js"' in html
+    assert 'rel="manifest"' in html
+
+
+def test_the_compose_view_builds_itself_from_the_registry_not_from_a_hard_list(
+    server,
+):
+    """A palette listing verbs by hand would drift the moment one was added."""
+    _status, _headers, body = _raw(server, "/compose.js")
+    source = body.decode("utf-8")
+
+    assert 'api.get("verbs")' in source
+    assert 'api.get("manual")' in source
+    assert "checkPipeline" in source, "the client type-checks locally"
+    assert "api.post(\"run\"" in source
+
+
+def test_the_client_side_type_check_mirrors_the_servers_rule(server):
+    """It must agree with the server, or the builder offers compositions the
+    server then refuses — which reads as a bug in the platform."""
+    _status, _headers, body = _raw(server, "/compose.js")
+    source = body.decode("utf-8")
+
+    assert '"any"' in source, "polymorphic verbs accept anything"
+    assert '"same"' in source, "passthrough verbs keep the kind"
+    assert '"nothing"' in source, "a source verb starts from nothing"
+
+
+def _raw(server, path: str):
+    """One GET, returning status, headers and body. No JSON assumed."""
+    import urllib.error
+    import urllib.request
+
+    url = f"http://127.0.0.1:{server.port}{path}"
+    try:
+        with urllib.request.urlopen(url, timeout=10) as response:
+            return response.status, response.headers, response.read()
+    except urllib.error.HTTPError as error:
+        return error.code, error.headers, error.read()
