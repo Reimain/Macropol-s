@@ -24,11 +24,19 @@ import tomllib
 from typing import Any, Mapping
 
 from ...domain.evidence import EvidenceKind
-from ...domain.identity import Purl
+from ...domain.identity import Purl, Urn
 from ...domain.version import parse_range
 from ...errors import VersionError
 from ...plugins.protocol import DiscoveryResult, Observation
-from ..base import Source, declares, depends, evidence_at, result, workspace_purl
+from ..base import (
+    Source,
+    declares,
+    depends,
+    evidence_at,
+    result,
+    scope_of,
+    workspace_purl,
+)
 
 EXTRACTOR = "slpie.cargo"
 
@@ -38,6 +46,23 @@ DEPENDENCY_TABLES = {
     "dev-dependencies": "dev",
     "build-dependencies": "build",
 }
+
+
+def _target(crate: str, facts: Mapping[str, Any], source: Source) -> str:
+    """The identity of a dependency — which is not always a crates.io one.
+
+    `helper = { path = "../helper" }` and `x = { git = "..." }` name things that
+    have no crates.io existence. Minting `pkg:cargo/helper` for them invents a
+    package that *does* exist for somebody else: it would match the real
+    `helper` crate's advisories, appear in an SBOM as a public dependency, and
+    merge with it in the graph. A workspace-local module URN says what it
+    actually is.
+    """
+    if facts.get("path") or facts.get("git"):
+        return Urn.create(
+            "module", scope_of(source.element, "workspace"), crate
+        ).to_string()
+    return cargo_purl(crate).to_string()
 
 
 def cargo_purl(name: str, version: str = "") -> Purl:
@@ -145,7 +170,7 @@ def _table(
         line = source.line(f"{key} = ") or source.line(str(key))
         observations.append(depends(
             subject,
-            cargo_purl(crate).to_string(),
+            _target(crate, facts, source),
             evidence_at(
                 source.uri, kind=EvidenceKind.MANIFEST_DECLARED, extractor=EXTRACTOR,
                 line=line, excerpt=source.excerpt(line), digest=source.digest,

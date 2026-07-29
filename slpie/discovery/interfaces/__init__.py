@@ -11,13 +11,14 @@ Direction is the recurring hazard. AsyncAPI 2.x inverts the words `publish` and
 reverses every event edge in the graph — see
 :mod:`slpie.discovery.interfaces.asyncapi`.
 
-**Incomplete.** OpenAPI and AsyncAPI are written; GraphQL, gRPC and MQTT are
-not, and are therefore not exported. Nothing in this package is registered in
-:mod:`slpie.discovery.registry` yet, so it is inert until phase 8 is finished.
+All five are written and registered. MQTT's two wildcards are the subtlety
+most worth knowing about: `+` matches one level and `#` matches the rest, and
+flattening them makes a narrow subscriber look like it receives everything —
+see :mod:`slpie.discovery.interfaces.mqtt`.
 """
 
 from __future__ import annotations
 
-from . import asyncapi, openapi
+from . import asyncapi, graphql, grpc, mqtt, openapi
 
-__all__ = ["openapi", "asyncapi"]
+__all__ = ["openapi", "asyncapi", "graphql", "grpc", "mqtt"]

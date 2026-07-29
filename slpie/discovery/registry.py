@@ -62,17 +62,17 @@ def builtin_modules() -> tuple[Any, ...]:
     without thought, which quietly deletes the check.
     """
     from .code import javascript, python_ast
-    from .ecosystems import gradle, maven, npm, nuget, python
+    from .ecosystems import cargo, gomod, gradle, maven, npm, nuget, python
     from .infrastructure import compose, dockerfile, helm, kubernetes, terraform
-    from .interfaces import asyncapi, openapi
+    from .interfaces import asyncapi, graphql, grpc, mqtt, openapi
 
     return (
         # Packaging first — it names things, and everything else corroborates.
-        npm, python, maven, gradle, nuget,
+        npm, python, maven, gradle, nuget, cargo, gomod,
         # Then what deploys them.
         dockerfile, compose, kubernetes, helm, terraform,
         # Then the contracts between them.
-        openapi, asyncapi,
+        openapi, asyncapi, graphql, grpc, mqtt,
         # Source analysis last: it is corroboration, not naming.
         python_ast, javascript,
     )

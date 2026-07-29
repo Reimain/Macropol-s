@@ -182,14 +182,24 @@ def discover_go_mod(source: Source) -> DiscoveryResult:
         ))
 
     for number, path, version in excludes:
-        observations.append(depends(
-            subject, gomod_purl(path).to_string(),
-            evidence_at(
+        # `exclude` states a version the module refuses to build with. Emitting
+        # it as `depends_on` — even flagged — puts an edge into the graph that
+        # blast radius, SBOM export and advisory matching all read as a real
+        # dependency, which is the opposite of what the directive says. It is a
+        # reference to the package, and nothing more.
+        observations.append(Observation(
+            kind="references",
+            subject=subject,
+            object=gomod_purl(path).to_string(),
+            evidence=evidence_at(
                 source.uri, kind=EvidenceKind.MANIFEST_DECLARED, extractor=EXTRACTOR,
                 line=number, excerpt=source.excerpt(number), digest=source.digest,
             ),
             qualifier="exclude",
-            version=version, ecosystem="golang", scope="exclude", excluded=True,
+            properties={
+                "version": version, "ecosystem": "golang",
+                "scope": "exclude", "excluded": True,
+            },
         ))
 
     return result(observations, errors=errors)
