@@ -414,3 +414,71 @@ class LinkerSet:
 
     def __repr__(self) -> str:  # pragma: no cover - display only
         return f"<LinkerSet {list(self.names)}>"
+
+
+@dataclass(frozen=True, slots=True)
+class Linked:
+    """A resolution plus the cross-file joins made over it.
+
+    Exists so that the joins travel down the pipe with the resolution rather than
+    through a side channel. It matters more than the small amount of code it
+    costs: a stage-to-stage back door would let one verb hand data to another
+    without the type check seeing it, and the whole guarantee of §24 is that what
+    flows between stages is what the types say flows between them.
+
+    The resolution's own accessors are delegated, so anything already written
+    against `Resolution` — `requirements_from`, the graph layer — keeps working
+    against this without knowing it changed.
+    """
+
+    resolution: Any
+    joins: tuple[Joined, ...] = ()
+    abstentions: tuple[str, ...] = ()
+
+    @property
+    def resolved(self) -> tuple[Any, ...]:
+        return getattr(self.resolution, "resolved", ())
+
+    @property
+    def links(self) -> tuple[Any, ...]:
+        return getattr(self.resolution, "links", ())
+
+    @property
+    def unresolved(self) -> tuple[Any, ...]:
+        return getattr(self.resolution, "unresolved", ())
+
+    @property
+    def merged(self) -> int:
+        return int(getattr(self.resolution, "merged", 0))
+
+    def contradictions(self) -> tuple[Any, ...]:
+        """Both kinds, in one list.
+
+        A node contradicted by two lockfiles and a pin contradicting its declared
+        range are different mechanisms and the same problem to whoever has to fix
+        it, so a caller asking "what disagrees" gets both rather than having to
+        know there were two places to look.
+        """
+        return tuple(getattr(self.resolution, "contradictions", lambda: ())())
+
+    def contradicting_joins(self) -> tuple[Joined, ...]:
+        return tuple(entry for entry in self.joins if entry.contradicts)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "resolution": (
+                self.resolution.to_dict() if hasattr(self.resolution, "to_dict")
+                else str(self.resolution)
+            ),
+            "joins": [entry.to_dict() for entry in self.joins],
+            "abstentions": list(self.abstentions),
+        }
+
+    def __str__(self) -> str:
+        return (
+            f"{self.resolution}, {len(self.joins)} join(s)"
+            + (
+                f", {len(self.contradicting_joins())} contradicting"
+                if self.contradicting_joins() else ""
+            )
+        )

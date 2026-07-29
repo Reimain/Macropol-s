@@ -264,7 +264,16 @@ class Resolver:
             entry["kind"] = entry["kind"] or str(
                 observation.properties.get("node_kind") or ""
             )
-            self._record_version(entry, observation, identity=subject_identity)
+            # For a relationship, the version properties describe the *target* —
+            # `{"range": "^3.0.0"}` on a `depends_on` is what the dependency
+            # demands, not what the depender is. Reading them onto the subject
+            # made every package absorb its dependencies' versions, and a package
+            # holding two versions is reported as contradicted; so a real project
+            # produced a contradiction finding for its own root package.
+            self._record_version(
+                entry, observation, identity=subject_identity,
+                use_properties=not observation.object,
+            )
 
             if observation.kind in DECLARATIONS or not observation.object:
                 continue
@@ -276,7 +285,7 @@ class Resolver:
             target_entry = buckets[target]
             target_entry["observations"].append(observation)
             self._record_version(
-                target_entry, observation, identity=target_identity, from_edge=True,
+                target_entry, observation, identity=target_identity,
             )
 
             links.append(Link(
@@ -305,14 +314,20 @@ class Resolver:
         )
 
     def _record_version(self, entry: dict[str, Any], observation: Observation,
-                        *, identity: str, from_edge: bool = False) -> None:
+                        *, identity: str, use_properties: bool = True) -> None:
         """Keep pins and ranges apart. Collapsing them loses reconciliation.
 
         `identity` is *this observation's* canonical form, not the bucket's
-        display label. Reading the version off the bucket instead was a real
-        bug: two lockfiles pinning the same package to different versions both
+        display label. Reading the version off the bucket instead was a real bug:
+        two lockfiles pinning the same package to different versions both
         recorded whichever pin happened to be labelled first, so the
         contradiction they exist to reveal silently disappeared.
+
+        `use_properties` is false for the *source* of a relationship, because a
+        `depends_on`'s `range` and `version` describe the target. That was the
+        second bug: every package absorbed its dependencies' versions, and since
+        a package holding two versions reads as contradicted, a healthy project
+        raised a contradiction finding against its own root package.
         """
         from ..domain.evidence import EvidenceKind
 
@@ -323,12 +338,16 @@ class Resolver:
         )
 
         value = ""
-        for key in RANGE_KEYS:
-            candidate = properties.get(key)
-            if candidate:
-                value = str(candidate)
-                break
-        if not value and not from_edge and "@" in identity:
+        if use_properties:
+            for key in RANGE_KEYS:
+                candidate = properties.get(key)
+                # `resolved: true` is a flag in npm lockfiles, not a version.
+                # Coercing the boolean would record "True" as a pinned version.
+                if candidate and not isinstance(candidate, bool):
+                    value = str(candidate)
+                    break
+
+        if not value and "@" in identity:
             value = identity.rpartition("@")[2]
             pinned = True
 
