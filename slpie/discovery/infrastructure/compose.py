@@ -26,7 +26,7 @@ from ...domain.identity import Urn
 from ...environment.schema import parse_yaml
 from ...errors import ManifestError
 from ...plugins.protocol import DiscoveryResult, Observation
-from ..base import Source, declares, depends, evidence_at, result
+from ..base import Source, declares, depends, evidence_at, result, scope_of
 from .dockerfile import image_purl
 
 EXTRACTOR = "slpie.compose"
@@ -35,12 +35,12 @@ EXTRACTOR = "slpie.compose"
 def deployment_urn(source: Source) -> Urn:
     """The deployment a compose file describes — named for where it lives."""
     parts = [p for p in source.uri.replace("\\", "/").split("/") if p not in ("", ".")]
-    stack = parts[-2] if len(parts) > 1 else (source.element or "compose")
+    stack = parts[-2] if len(parts) > 1 else scope_of(source.element, "compose")
     return Urn.create("deployment", "compose", stack)
 
 
 def service_urn(source: Source, name: str) -> Urn:
-    return Urn.create("service", source.element or "compose", name)
+    return Urn.create("service", scope_of(source.element, "compose"), name)
 
 
 def discover_compose(source: Source) -> DiscoveryResult:
@@ -133,7 +133,7 @@ def discover_compose(source: Source) -> DiscoveryResult:
     for network in _keys(document.get("networks")):
         line = source.line(f"{network}:")
         observations.append(declares(
-            Urn.create("configuration", "compose-network", source.element or "compose", network).to_string(),
+            Urn.create("configuration", "compose-network", scope_of(source.element, "compose"), network).to_string(),
             evidence_at(
                 source.uri, kind=EvidenceKind.IAC_DECLARATION, extractor=EXTRACTOR,
                 line=line, excerpt=source.excerpt(line), digest=source.digest,

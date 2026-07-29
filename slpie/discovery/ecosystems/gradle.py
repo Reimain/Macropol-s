@@ -30,7 +30,7 @@ from ...domain.evidence import EvidenceKind
 from ...domain.version import parse_range
 from ...errors import VersionError
 from ...plugins.protocol import DiscoveryResult, Observation
-from ..base import Source, declares, depends, evidence_at, result, workspace_purl
+from ..base import Source, declares, depends, evidence_at, result, workspace_purl, scope_of
 from .maven import maven_purl
 
 EXTRACTOR = "slpie.gradle"
@@ -131,7 +131,7 @@ def _strip_comments(text: str) -> str:
 def discover_build_gradle(source: Source) -> DiscoveryResult:
     """Literal coordinates inside the dependency blocks, and nothing invented."""
     text = _strip_comments(source.text)
-    subject = workspace_purl("maven", source.element or "project").to_string()
+    subject = workspace_purl("maven", scope_of(source.element, "project")).to_string()
     kotlin = source.name.endswith(".kts")
 
     line = source.line("dependencies")
@@ -271,7 +271,7 @@ def discover_version_catalog(source: Source) -> DiscoveryResult:
         str(key): _catalog_version(value, {})
         for key, value in (document.get("versions") or {}).items()
     }
-    subject = workspace_purl("maven", source.element or "project").to_string()
+    subject = workspace_purl("maven", scope_of(source.element, "project")).to_string()
     observations: list[Observation] = []
     errors: list[str] = []
 

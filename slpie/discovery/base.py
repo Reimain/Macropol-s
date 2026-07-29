@@ -123,6 +123,38 @@ class Source:
         )
 
 
+def scope_of(element: str, default: str = "workspace") -> str:
+    """An element URN reduced to a name that can appear *inside* an identity.
+
+    `element` is a URN — `urn:slpie:codebase:payments`. Several discoverers need
+    a fallback name for something the artifact does not name itself: a Gradle
+    build with no `rootProject.name`, an unnamed compose stack, a Dockerfile
+    image. Reaching for `source.element` directly is the obvious move and it is
+    wrong: the URN gets percent-encoded into the purl, producing identities like
+    `pkg:maven/urn%3Aslpie%3Acodebase%3Apayments`.
+
+    That is not cosmetic. Node identity is a digest of the canonical string, so
+    a package named this way can never converge with the same package reported
+    by a lockfile reader — and convergence across discoverers is the single
+    property the linking layer exists to provide. Anything that silently
+    prevents it produces two nodes where the ecosystem has one, and every answer
+    built on top is quietly wrong.
+
+    So: last meaningful segment, or the stated default. One helper, used
+    everywhere, rather than each discoverer inventing its own fallback.
+    """
+    text = (element or "").strip()
+    if not text:
+        return default
+    if text.startswith("urn:"):
+        # urn:slpie:codebase:payments/api → payments/api → api
+        tail = text.split(":")[-1]
+    else:
+        tail = text
+    segment = tail.rstrip("/").rsplit("/", 1)[-1]
+    return segment or default
+
+
 def module_urn(element: str, path: str) -> Urn:
     """The identity of a source module inside an element."""
     cleaned = path.lstrip("./").replace("\\", "/")

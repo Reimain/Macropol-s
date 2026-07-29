@@ -27,7 +27,7 @@ from typing import Any, Iterator
 from ...domain.evidence import EvidenceKind
 from ...domain.identity import Purl
 from ...plugins.protocol import DiscoveryResult, Observation
-from ..base import Source, declares, depends, evidence_at, result
+from ..base import Source, declares, depends, evidence_at, result, scope_of
 
 EXTRACTOR = "slpie.dockerfile"
 
@@ -105,8 +105,8 @@ def built_image_purl(source: Source) -> Purl:
     elif name.startswith("Dockerfile."):
         name = name[len("Dockerfile.") :]
     elif name in ("Dockerfile", "Containerfile"):
-        name = parts[-2] if len(parts) > 1 else (source.element or "image")
-    return Purl.create("docker", name or "image", namespace=source.element or "")
+        name = parts[-2] if len(parts) > 1 else scope_of(source.element, "image")
+    return Purl.create("docker", name or "image")
 
 
 # --- lexing --------------------------------------------------------------

@@ -89,13 +89,22 @@ def parse_xml(text: str) -> tuple[ET.Element | None, tuple[ET.Element, ...], str
     except ET.ParseError as error:
         reason = str(error)
 
+    # XMLPullParser stores the parse error and re-raises it from
+    # `read_events()`, not from `feed()` or `close()` — so guarding only the
+    # feed leaves the salvage path raising on exactly the input it exists to
+    # salvage. A scanner meets binary files and half-written XML routinely, and
+    # neither may take the run down.
     parser = ET.XMLPullParser(events=("end",))
+    salvaged: tuple[Any, ...] = ()
     try:
         parser.feed(text)
         parser.close()
-    except ET.ParseError:
+    except (ET.ParseError, ValueError, TypeError):
         pass
-    salvaged = tuple(element for _event, element in parser.read_events())
+    try:
+        salvaged = tuple(element for _event, element in parser.read_events())
+    except (ET.ParseError, ValueError):
+        salvaged = ()
     return None, salvaged, reason
 
 

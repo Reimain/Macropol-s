@@ -486,12 +486,37 @@ def test_an_unknown_observation_kind_is_reported():
 
 
 def test_every_builtin_registers_through_the_public_plugin_path():
+    """Asserted as a property, not a count.
+
+    A hardcoded total breaks every time a discoverer is added, and the fix is
+    always to bump the number — which teaches nobody anything and quietly
+    removes the check. What actually matters is that *every* declared
+    discoverer arrives, none of them takes a private path, and each states the
+    evidence it may claim.
+    """
+    import slpie.discovery.registry as discovery_registry
+
     registry = register_builtins(Registry())
 
-    assert len(registry) == 9
+    declared = {
+        entry[0]
+        for module in discovery_registry.builtin_modules()
+        for entry in module.DISCOVERERS
+    }
+    assert declared, "no built-in discoverers were declared at all"
+    assert {plugin.id for plugin in registry} == declared
+
     assert all(not r.manifest.external for r in registry)
     # And each declares the evidence kinds it is allowed to claim.
     assert all(r.manifest.evidence_kinds for r in registry)
+
+
+def test_registering_twice_is_idempotent():
+    """`register_builtins` is called from several entry points."""
+    registry = register_builtins(Registry())
+    before = len(registry)
+    register_builtins(registry)
+    assert len(registry) == before
 
 
 def test_lockfiles_are_read_before_source_analysis():

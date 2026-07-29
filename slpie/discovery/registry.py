@@ -54,13 +54,39 @@ SKIP = ("/node_modules/", "/.venv/", "/__pycache__/", "/.tox/", "/dist/", "/buil
 MAX_SOURCE_BYTES = 4 * 1024 * 1024
 
 
+def builtin_modules() -> tuple[Any, ...]:
+    """Every module contributing built-in discoverers, in registration order.
+
+    Exposed rather than inlined so a test can assert that everything declared
+    actually arrives — a count in a test breaks on each addition and gets bumped
+    without thought, which quietly deletes the check.
+    """
+    from .code import javascript, python_ast
+    from .ecosystems import gradle, maven, npm, nuget, python
+    from .infrastructure import compose, dockerfile, helm, kubernetes, terraform
+    from .interfaces import asyncapi, openapi
+
+    return (
+        # Packaging first — it names things, and everything else corroborates.
+        npm, python, maven, gradle, nuget,
+        # Then what deploys them.
+        dockerfile, compose, kubernetes, helm, terraform,
+        # Then the contracts between them.
+        openapi, asyncapi,
+        # Source analysis last: it is corroboration, not naming.
+        python_ast, javascript,
+    )
+
+
 def register_builtins(registry: Registry) -> Registry:
     """Register every built-in discoverer, through the public plugin path."""
-    from .code import javascript, python_ast
-    from .ecosystems import npm, python
-
-    modules = (npm, python, python_ast, javascript)
-    for module in modules:
+    # Registration order *is* precedence order, and `builtin_modules()` states
+    # it: packaging names things, infrastructure says where they run, contracts
+    # say how they talk, source analysis corroborates. Deriving priority from
+    # that order replaces the old rule, which matched the substrings "npm" and
+    # "python" out of the plugin id — workable for four discoverers, and
+    # meaningless once there are twenty-two.
+    for tier, module in enumerate(builtin_modules()):
         for plugin_id, handler, handles, produces, evidence_kinds in module.DISCOVERERS:
             if plugin_id in registry:
                 continue
@@ -71,9 +97,9 @@ def register_builtins(registry: Registry) -> Registry:
                 handles=handles,
                 produces=produces,
                 evidence_kinds=evidence_kinds,
-                # Manifests and lockfiles before source: the packaging layer
-                # names things, and source analysis is corroboration.
-                priority=10 if "lock" in plugin_id else (20 if "npm" in plugin_id or "python" in plugin_id else 50),
+                # A lockfile outranks the manifest beside it: a pin is a
+                # stronger claim than a range.
+                priority=(10 + tier * 5) - (2 if "lock" in plugin_id else 0),
                 description=f"built-in {plugin_id} discoverer",
             )
     return registry
