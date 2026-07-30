@@ -56,6 +56,11 @@ RUNNER_FLAGS = frozenset({
     "--no-color", "--wire", "--root", "--actor", "--fail-on",
 })
 
+#: Facts a verb sets when it has prepared something for a human to read. Named
+#: here rather than sniffed, because a heuristic like "any multi-line string" would
+#: print internal state the moment a verb happened to store one.
+DISPLAY_FACTS = ("guidance", "routines", "quarantine", "chain")
+
 OK = 0
 FAILED = 1
 USAGE = 2
@@ -341,7 +346,7 @@ class Cli:
         # Guidance is printed after the answer, never instead of it. A suggestion
         # that displaced the result would make `| suggest` unsafe to append to a
         # command somebody depends on.
-        for name in ("guidance", "routines"):
+        for name in DISPLAY_FACTS:
             if name in flow.facts and not options.get("quiet"):
                 self._out("")
                 self._out(str(flow.facts[name]))
