@@ -298,51 +298,109 @@ def test_help_reaches_every_verb_the_demo_uses():
 
 
 # --- `slpie demo` itself -------------------------------------------------
+#
+# The demo is a Script of Beats, each stating what it demonstrates and whether
+# that claim held. These tests assert the claims rather than the transcript, which
+# is the point of making the demo data: a print-statement demo can only be checked
+# by grepping its output, and then the test breaks whenever the wording changes.
 
 
-def test_the_demo_runs_and_reports_that_the_surfaces_agree(tmp_path: Path):
-    """The narrated demo is exercised here too. A demo that only runs when
-    somebody is watching is a demo that breaks quietly."""
+def test_every_beat_in_the_demo_holds_its_claim(tmp_path: Path):
     from slpie.demo import Demo
 
-    out = io.StringIO()
-    code = Demo(stdout=out, root=tmp_path / "world").run()
-    text = out.getvalue()
+    demo = Demo(stdout=io.StringIO(), root=tmp_path / "world")
+    code = demo.run()
 
-    assert code == 0, text
-    assert "identical — the same composition is the same answer" in text
-    assert "THE SURFACES DISAGREE" not in text
+    assert code == 0
+    for key, outcome in demo.outcomes.items():
+        assert outcome.holds, f"beat {key!r} did not hold: {outcome.detail}"
 
 
-def test_the_demo_surfaces_the_contradiction_it_exists_to_show(tmp_path: Path):
+def test_the_thesis_beat_is_the_one_about_surfaces_agreeing(tmp_path: Path):
     from slpie.demo import Demo
 
-    out = io.StringIO()
-    Demo(stdout=out, root=tmp_path / "world").run()
-    text = out.getvalue()
+    demo = Demo(stdout=io.StringIO(), root=tmp_path / "world")
+    demo.run()
 
-    assert "4.17.21" in text
-    assert "^3.0.0" in text
-    assert "cited:" in text, "the demo must show its evidence, not just its answer"
+    agree = demo.outcomes["agree"]
+    assert agree.holds
+    assert "identical" in " ".join(agree.lines)
 
 
 def test_the_demo_shows_a_refusal_as_well_as_a_success(tmp_path: Path):
     """Showing only the happy path teaches that nothing is ever refused."""
     from slpie.demo import Demo
 
-    out = io.StringIO()
-    Demo(stdout=out, root=tmp_path / "world").run()
-    text = out.getvalue()
+    demo = Demo(stdout=io.StringIO(), root=tmp_path / "world")
+    demo.run()
 
-    assert "findings | attach" in text
-    assert "consumes NOTHING" in text
+    refusal = demo.outcomes["refusal"]
+    assert refusal.holds, "the refusal beat asserts that it WAS refused"
+    assert "consumes NOTHING" in " ".join(refusal.lines)
+
+
+def test_a_beat_that_does_not_hold_fails_the_run(tmp_path: Path):
+    """A demo that printed a failure and returned success would be worse than one
+    that did not run at all."""
+    from slpie.demo import Demo
+    from slpie.demo.script import Beat, Outcome, Script, Surface
+
+    broken = Script(
+        name="broken", thesis="a claim that does not hold",
+        beats=(Beat(
+            key="nope", title="a claim that fails", claim="this is true",
+            surface=Surface.CLI,
+            run=lambda stage: Outcome(holds=False, detail="it was not"),
+        ),),
+    )
+    out = io.StringIO()
+    code = Demo(stdout=out, root=tmp_path / "w", script=broken).run()
+
+    assert code == 1
+    assert "did not hold" in out.getvalue()
+
+
+def test_the_script_maps_beats_to_screens_so_the_ui_can_walk_it(tmp_path: Path):
+    """The reason the demo is data: a sequence of print statements can only ever
+    be a terminal transcript."""
+    from slpie.demo import script
+
+    body = script().to_dict()
+
+    assert body["beats"]
+    assert "compose" in body["screens"]
+    interactive = [beat for beat in body["beats"] if beat["interactive"]]
+    assert interactive, "no beat maps to a screen"
+    for beat in body["beats"]:
+        assert beat["claim"], f"{beat['key']} claims nothing"
+        assert beat["surface"]
+
+
+def test_the_demo_covers_more_than_one_surface():
+    from slpie.demo import Surface, script
+
+    surfaces = {beat.surface for beat in script()}
+    assert Surface.CLI in surfaces
+    assert Surface.API in surfaces
+    assert Surface.PIPE in surfaces
+
+
+def test_the_headless_run_returns_the_same_structure_the_ui_would_fetch(
+    tmp_path: Path,
+):
+    from slpie.demo import run as run_demo
+
+    code, body = run_demo(root=tmp_path / "world")
+
+    assert code == 0
+    assert body["held"] is True
+    assert all(beat["outcome"] is not None for beat in body["beats"])
 
 
 def test_the_demo_cleans_up_after_itself_when_it_made_its_own_world():
     from slpie.demo import Demo
 
-    out = io.StringIO()
-    demo = Demo(stdout=out)
+    demo = Demo(stdout=io.StringIO())
     assert demo.run() == 0
 
     assert demo._temporary is not None
@@ -361,10 +419,10 @@ def test_the_demo_is_reachable_from_the_cli_and_is_listed_in_help():
 def test_the_demo_materialises_real_files_rather_than_mocking_them(tmp_path: Path):
     """The same discoverers run against this as against a customer's tree, so a
     green demo is evidence about the real code path."""
-    from slpie.demo import WORLD, materialise
+    from slpie.demo import FILES, materialise
 
     root = materialise(tmp_path / "world")
 
-    for name in WORLD:
+    for name in FILES:
         assert (root / name).is_file()
     assert json.loads((root / "package.json").read_text())["dependencies"]

@@ -107,8 +107,33 @@ class Cli:
             return Demo(stdout=self.stdout).run()
         if head == "plan":
             return self._plan(arguments[1:])
+        if head == "routine":
+            return self._run([_routine_command(arguments[1:])])
+
+        resolved = self._routine_key(head)
+        if resolved is not None:
+            return self._run([resolved, *arguments[1:]])
 
         return self._run(arguments)
+
+    def _routine_key(self, head: str) -> str | None:
+        """A claimed key to its composition.
+
+        Checked only when the token is not a verb and not a pipeline, so a key can
+        never shadow a capability — `Routines.claim` refuses a key that collides
+        with a verb, and this is the second half of that guarantee.
+        """
+        if "|" in head or " " in head or head in self.verbs:
+            return None
+        try:
+            from .suggest import Routines
+
+            routines = Routines(Path(".slpie") / "routines.json", verbs=self.verbs)
+            pipeline = routines.resolve(head)
+        except Exception:  # noqa: BLE001 - no routine by that name is not an error
+            return None
+        routines.used(head)
+        return pipeline
 
     # -- help ------------------------------------------------------------
 
@@ -313,6 +338,14 @@ class Cli:
         if not options.get("quiet"):
             self._out(self._body(flow))
 
+        # Guidance is printed after the answer, never instead of it. A suggestion
+        # that displaced the result would make `| suggest` unsafe to append to a
+        # command somebody depends on.
+        for name in ("guidance", "routines"):
+            if name in flow.facts and not options.get("quiet"):
+                self._out("")
+                self._out(str(flow.facts[name]))
+
         if "explanation" in flow.facts and options.get("explain") is not False:
             self._out(flow.facts["explanation"])
         elif options.get("explain"):
@@ -424,3 +457,39 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - process entry point
     raise SystemExit(main())
+
+
+def _routine_command(arguments: Sequence[str]) -> str:
+    """`routine claim release-check '<pipeline>'` → one properly quoted stage.
+
+    A subcommand shape for one verb, because `routine --action claim --name x
+    --pipeline y` is what the composition grammar produces and not what anybody
+    would type. The verb keeps the general form; this is sugar over it.
+
+    The quoting is load-bearing rather than cosmetic: a routine's pipeline contains
+    `|`, and handing it back unquoted meant the runner re-split it into stages and
+    tried to run `link` as the second stage of `routine`.
+    """
+    import shlex
+
+    if not arguments:
+        return "routine"
+
+    action, *rest = arguments
+    if action not in ("list", "claim", "forget"):
+        return " ".join(shlex.quote(item) for item in ["routine", *arguments])
+
+    parts = ["routine", "--action", action]
+    positional = [item for item in rest if not item.startswith("--")]
+    passthrough = [item for item in rest if item.startswith("--")]
+
+    if positional:
+        parts += ["--name", positional[0]]
+    if len(positional) > 1:
+        parts += ["--pipeline", positional[1]]
+    parts += passthrough
+
+    return " ".join(
+        item if item.startswith("--") or item == "routine" else shlex.quote(item)
+        for item in parts
+    )

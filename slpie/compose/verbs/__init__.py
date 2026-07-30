@@ -6,12 +6,13 @@ therefore proven by its own use rather than asserted — if registration were
 broken for plugins it would be broken for the built-ins too, and the suite would
 fail on the first verb.
 
-Four families, split by what they need rather than by what they are about:
+Five families, split by what they need rather than by what they are about:
 
 * `analysis` — needs nothing. Works the moment the package is installed.
 * `shaping` — the polymorphic shell filters.
 * `environment` — needs a manifest, a ledger and a graph.
 * `dispatch` — reaches an external tool instead of reimplementing it (§27).
+* `guidance` — suggestion and routines: what to look at next, and keeping it.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from __future__ import annotations
 from typing import Any, Sequence
 
 from ..verb import Verb
-from . import analysis, dispatch, environment, shaping
+from . import analysis, dispatch, environment, guidance, shaping
 
 
 class _Family:
@@ -34,7 +35,7 @@ class _Family:
 
 
 FAMILIES = (
-    _Family(analysis), _Family(shaping),
+    _Family(analysis), _Family(shaping), _Family(guidance),
     _Family(dispatch), _Family(environment),
 )
 
