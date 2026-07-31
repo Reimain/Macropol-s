@@ -320,8 +320,13 @@ class Api:
             """Run a whole composition. The primary entry point for a client."""
             text = str(request.body.get("pipeline", ""))
             composition = Composition.read(text, verbs=verbs)
-            result = composition.run(context(request.body))
-            body = result.to_dict()
+            # One session per request, swept when the response body is built.
+            # Concurrent requests therefore never share blocks, and a request
+            # that fails mid-scan does not leave its spill behind — which under
+            # load is the difference between a bounded disk and a full one.
+            with context(request.body) as active:
+                result = composition.run(active)
+                body = result.to_dict()
             if not result.ok:
                 # A stage failing is a 400 with the partial flow attached, not a
                 # 500: the caller's composition did not work out, and they need
@@ -365,18 +370,22 @@ class Api:
                     "type": "TypeMismatch",
                 }, status=400)
 
-            active = context({"confirmed": request.body.get("confirmed", False),
-                              "root": request.body.get("root", ".")})
-            if verb.mutates and not active.confirmed:
-                return Response({
-                    "error": (
-                        f"{verb.name} changes the environment and was not "
-                        f"confirmed; the same guard refuses it here as at the CLI"
-                    ),
-                    "refused": True,
-                }, status=403)
+            # Serialised inside the session, for the same reason the whole-
+            # composition route is: `to_dict()` reads the flow, and a spilled
+            # flow whose blocks were already swept would serialise as empty.
+            with context({"confirmed": request.body.get("confirmed", False),
+                          "root": request.body.get("root", ".")}) as active:
+                if verb.mutates and not active.confirmed:
+                    return Response({
+                        "error": (
+                            f"{verb.name} changes the environment and was not "
+                            f"confirmed; the same guard refuses it here as at "
+                            f"the CLI"
+                        ),
+                        "refused": True,
+                    }, status=403)
 
-            return verb.run(flow, verb.bind(body), active).to_dict()
+                return verb.run(flow, verb.bind(body), active).to_dict()
 
         run.__name__ = f"verb_{verb.name.replace('-', '_')}"
         return run

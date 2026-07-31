@@ -56,35 +56,47 @@ def _discover(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flo
     limit = max(1, int(arguments.get("limit") or 5000))
     registry = register_builtins(Registry())
 
-    observations: list[Any] = []
     errors: list[str] = []
-    seen = read = 0
+    counters = {"seen": 0, "read": 0}
 
-    candidates = [root] if root.is_file() else sorted(root.rglob("*"))
-    for path in candidates:
-        if seen >= limit:
-            break
-        if not path.is_file():
-            continue
-        uri = path.resolve().as_uri()
-        if any(part in uri for part in SKIP):
-            continue
-        seen += 1
-        if not registry.for_uri(uri):
-            continue
-        try:
-            if path.stat().st_size > MAX_BYTES:
-                errors.append(f"{path.name}: too large to analyse")
+    def walk() -> Any:
+        """Yield observations as files are read, holding one file's worth.
+
+        A generator rather than a list, and that is the whole point: the list
+        grew linearly with the tree and had no ceiling, so a large monorepo was
+        an out-of-memory kill that took every other request in the worker with
+        it. Streaming lets `SpillSession` decide how much of this is allowed to
+        stay resident — and on a small tree it decides "all of it", so nothing
+        about the ordinary case changes.
+        """
+        candidates = [root] if root.is_file() else sorted(root.rglob("*"))
+        for path in candidates:
+            if counters["seen"] >= limit:
+                break
+            if not path.is_file():
                 continue
-            content = path.read_text(encoding="utf-8", errors="replace")
-        except OSError as error:
-            errors.append(f"{path.name}: {error}")
-            continue
+            uri = path.resolve().as_uri()
+            if any(part in uri for part in SKIP):
+                continue
+            counters["seen"] += 1
+            if not registry.for_uri(uri):
+                continue
+            try:
+                if path.stat().st_size > MAX_BYTES:
+                    errors.append(f"{path.name}: too large to analyse")
+                    continue
+                content = path.read_text(encoding="utf-8", errors="replace")
+            except OSError as error:
+                errors.append(f"{path.name}: {error}")
+                continue
 
-        read += 1
-        outcome = registry.discover(uri, content=content, element=str(root))
-        observations.extend(outcome.observations)
-        errors.extend(outcome.errors)
+            counters["read"] += 1
+            outcome = registry.discover(uri, content=content, element=str(root))
+            errors.extend(outcome.errors)
+            yield from outcome.observations
+
+    observations = context.session().keep(walk())
+    seen, read = counters["seen"], counters["read"]
 
     gaps = tuple(
         Gap(
@@ -96,13 +108,20 @@ def _discover(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flo
     )
 
     return flow.then(
-        Kind.OBSERVATIONS, tuple(observations), stage="discover",
+        # Passed through, never `tuple(...)`. When the session spilled, this is a
+        # `SpilledSequence` and wrapping it in a tuple would read every block
+        # straight back into memory — undoing the bound at the one line that has
+        # to preserve it. It satisfies `Sequence` completely, so every
+        # downstream verb treats it exactly as it treated a tuple.
+        Kind.OBSERVATIONS, observations, stage="discover",
         steps=[ReasoningStep(
             claim=(
                 f"read {read} of {seen} files under {root} and recorded "
                 f"{len(observations)} observations"
             ),
             layer="discovery", operation="discover",
+            # Sliced, not iterated: on a spilled sequence this reads one block
+            # rather than walking every one of them for six pieces of evidence.
             evidence=tuple(
                 item.evidence for item in observations[:6]
                 if item.evidence is not None
@@ -111,6 +130,7 @@ def _discover(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flo
         gaps=gaps,
         facts={
             "files_seen": seen, "files_read": read, "discover_errors": len(errors),
+            "spilled": bool(getattr(observations, "blocks", ())),
             # Recorded so a later stage governs the tree that was *read* rather
             # than the working directory. `discover /a/b | govern` was scanning
             # the cwd for secrets and reporting findings about a different

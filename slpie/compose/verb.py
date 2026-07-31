@@ -135,6 +135,45 @@ class Context:
     root: str = "."
     options: Mapping[str, Any] = field(default_factory=dict)
     facts: dict[str, Any] = field(default_factory=dict)
+    #: This run's isolated share of memory and disk. Created on first use, so a
+    #: composition that never accumulates anything large never creates a session
+    #: and never touches the filesystem.
+    spill: Any = None
+
+    def session(self) -> Any:
+        """The spill session for this run, created on demand.
+
+        On the `Context` rather than a module global because concurrency is the
+        point: two requests in one process must get two sessions, and anything
+        reached through module state would give them one. The `Context` is
+        already the per-run object every verb receives, so it is the right place
+        for the per-run isolation boundary.
+        """
+        if self.spill is None:
+            from ..spill import SpillSession
+
+            self.spill = SpillSession()
+        return self.spill
+
+    def close(self) -> int:
+        """Release this run's memory and delete its blocks. Idempotent.
+
+        Deliberately *not* called at the end of a composition. The result's flow
+        may still be a spilled sequence and the caller has not rendered it yet,
+        so sweeping there would delete the answer between producing it and
+        printing it. The owning lifetime is the request, and the request is what
+        holds the `Context` — so closing belongs here, where the surfaces (CLI,
+        HTTP, worker) each call it once they are done reading.
+        """
+        if self.spill is None:
+            return 0
+        return self.spill.close()
+
+    def __enter__(self) -> "Context":
+        return self
+
+    def __exit__(self, *_exception: Any) -> None:
+        self.close()
 
     def require_engine(self, verb: str) -> Any:
         if self.engine is None:

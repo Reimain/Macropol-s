@@ -261,16 +261,22 @@ class Cli:
             engine=self._engine(composition),
         )
 
-        try:
-            result = composition.run_from(upstream, context)
-        except CompositionError as error:
-            self._err(str(error))
-            return USAGE
-        except SlpieError as error:
-            self._err(str(error))
-            return FAILED
+        # The context owns this run's spill session, and rendering happens
+        # *inside* it: the flow may be a spilled sequence, so closing before the
+        # output is written would delete the answer between producing it and
+        # printing it. `with` also covers the failure paths, where a scan that
+        # died halfway would otherwise leave its blocks behind.
+        with context:
+            try:
+                result = composition.run_from(upstream, context)
+            except CompositionError as error:
+                self._err(str(error))
+                return USAGE
+            except SlpieError as error:
+                self._err(str(error))
+                return FAILED
 
-        return self._render(result, options)
+            return self._render(result, options)
 
     def _upstream(self, composition: Composition) -> Flow:
         """Read a flow from stdin, but only when a stage could consume one.

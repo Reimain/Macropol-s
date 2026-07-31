@@ -26,6 +26,7 @@ planner a search space instead of a guess. Two of them are special:
 
 from __future__ import annotations
 
+from collections.abc import Mapping as AbcMapping, Sequence as AbcSequence, Set as AbcSet
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Iterable, Iterator, Mapping, Sequence
@@ -155,7 +156,7 @@ class Flow:
     def empty(self) -> bool:
         if self.value is None:
             return True
-        if isinstance(self.value, (tuple, list, dict, str)):
+        if _is_many(self.value):
             return len(self.value) == 0
         return False
 
@@ -164,18 +165,24 @@ class Flow:
         """How many things this holds. 1 for a scalar, so `count` reads sanely."""
         if self.value is None:
             return 0
-        if isinstance(self.value, (tuple, list, dict, str)):
+        if _is_many(self.value):
             return len(self.value)
         return 1
 
     @property
     def items(self) -> tuple[Any, ...]:
-        """The value as a sequence, so the shaping verbs need no special cases."""
+        """The value as a sequence, so the shaping verbs need no special cases.
+
+        Materialises, and every caller that walks a large flow should prefer
+        iterating `flow.value` directly — but this is the shape the shaping verbs
+        were written against and narrowing it now would be a wider change than
+        the one it saves.
+        """
         if self.value is None:
             return ()
         if isinstance(self.value, tuple):
             return self.value
-        if isinstance(self.value, list):
+        if _is_many(self.value):
             return tuple(self.value)
         return (self.value,)
 
@@ -262,6 +269,26 @@ class Flow:
         route = " | ".join(self.stages) if self.stages else "start"
         tail = f", {len(self.gaps)} gap(s)" if self.gaps else ""
         return f"{head} via {route}{tail}"
+
+
+def _is_many(value: Any) -> bool:
+    """Whether `value` is a collection of things rather than one thing.
+
+    Asks the `Sequence` protocol, not `isinstance(value, (tuple, list))`. The
+    concrete check was the bug that made spilling change answers: a
+    `SpilledSequence` is neither a tuple nor a list, so `items` wrapped the whole
+    sequence in a one-element tuple and every downstream verb saw a flow holding
+    exactly one strange object. `link` then resolved one thing instead of twelve
+    thousand and produced a different, entirely plausible answer.
+
+    Strings and bytes are excluded deliberately: both are sequences, and a flow
+    holding one string holds *one* thing, not a flow of characters.
+    """
+    if isinstance(value, (str, bytes, bytearray)):
+        return True          # sized, and `len()` of a string is what `count` means
+    if isinstance(value, (AbcMapping, AbcSequence, AbcSet)):
+        return True
+    return False
 
 
 #: Keys that measure the run rather than the answer. Dropped when computing a
