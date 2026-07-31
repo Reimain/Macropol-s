@@ -30,9 +30,9 @@ dependency in a SaaS product into a silent pass.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
-from ...domain.evidence import Evidence, EvidenceKind, SourceLocation, strongest
+from ...domain.evidence import Evidence
 from ...domain.finding import Finding, FindingKind, Remediation
 from ...domain.license import (
     Distribution,

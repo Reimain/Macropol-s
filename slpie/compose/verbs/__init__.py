@@ -6,11 +6,12 @@ therefore proven by its own use rather than asserted — if registration were
 broken for plugins it would be broken for the built-ins too, and the suite would
 fail on the first verb.
 
-Nine families, split by what they need rather than by what they are about:
+Ten families, split by what they need rather than by what they are about:
 
 * `analysis` — needs nothing. Works the moment the package is installed.
 * `intelligence` — what L5–L8 concluded, and the guidance assembled from it.
 * `governance` — the rule plane: many findings, never one verdict.
+* `artifacts` — what a release ships: SBOM, C4, architecture as code.
 * `shaping` — the polymorphic shell filters.
 * `environment` — needs a manifest, a ledger and a graph.
 * `dispatch` — reaches an external tool instead of reimplementing it (§27).
@@ -25,8 +26,8 @@ from typing import Any, Sequence
 
 from ..verb import Verb
 from . import (
-    analysis, audit, capture, dispatch, environment, governance, guidance,
-    intelligence, shaping,
+    analysis, artifacts, audit, capture, dispatch, environment, governance,
+    guidance, intelligence, shaping,
 )
 
 
@@ -43,8 +44,8 @@ class _Family:
 
 FAMILIES = (
     _Family(analysis), _Family(intelligence), _Family(governance),
-    _Family(capture), _Family(audit), _Family(shaping), _Family(guidance),
-    _Family(dispatch), _Family(environment),
+    _Family(artifacts), _Family(capture), _Family(audit), _Family(shaping),
+    _Family(guidance), _Family(dispatch), _Family(environment),
 )
 
 

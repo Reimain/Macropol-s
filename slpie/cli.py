@@ -60,7 +60,8 @@ RUNNER_FLAGS = frozenset({
 #: here rather than sniffed, because a heuristic like "any multi-line string" would
 #: print internal state the moment a verb happened to store one.
 DISPLAY_FACTS = (
-    "answer", "guidance", "rules", "routines", "quarantine", "chain", "audit",
+    "answer", "guidance", "rules", "enterprise", "risk", "c4", "sbom",
+    "routines", "quarantine", "chain", "audit",
 )
 
 OK = 0

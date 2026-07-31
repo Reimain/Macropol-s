@@ -32,7 +32,7 @@ would be judging a mixture.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any, Iterable, Iterator, Sequence
+from typing import Any, Iterable, Iterator
 
 
 @contextmanager

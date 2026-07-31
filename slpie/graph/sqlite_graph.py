@@ -319,12 +319,14 @@ class SqliteGraph:
     def _store_evidence(self, evidence: Sequence[Evidence]) -> None:
         self.connection.executemany(
             "INSERT OR IGNORE INTO evidence (id, kind, uri, line, extractor, content_digest,"
-            " excerpt, observed_at, base_confidence) VALUES (?,?,?,?,?,?,?,?,?)",
+            " excerpt, observed_at, base_confidence, labels)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?)",
             [
                 (
                     item.id, item.kind.value, item.location.uri, item.location.line,
                     item.extractor, item.content_digest, item.excerpt[:500],
                     item.observed_at, item.base_confidence,
+                    json.dumps(dict(item.labels), sort_keys=True),
                 )
                 for item in evidence
             ],
@@ -673,7 +675,23 @@ def _row_to_evidence(row: sqlite3.Row) -> Evidence:
         content_digest=row["content_digest"],
         excerpt=row["excerpt"],
         observed_at=row["observed_at"],
+        labels=_labels(row),
     )
+
+
+def _labels(row: sqlite3.Row) -> dict[str, str]:
+    """Evidence labels, tolerating a row written before the column existed."""
+    try:
+        raw = row["labels"]
+    except (IndexError, KeyError):
+        return {}
+    if not raw:
+        return {}
+    try:
+        decoded = json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+    return {str(k): str(v) for k, v in decoded.items()} if isinstance(decoded, dict) else {}
 
 
 def _placeholder_evidence(subject: str) -> Evidence:

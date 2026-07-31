@@ -26,7 +26,7 @@ somebody has to remember to write.
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 from ...domain.reasoning import ReasoningStep
 from ..flow import Flow, Kind

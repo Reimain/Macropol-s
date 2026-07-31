@@ -288,11 +288,54 @@ class ArchitectureCodegen:
     # -- inspection ------------------------------------------------------
 
     def load(self, name: str) -> ModuleType:
-        """Import a generated view module, proving it is real Python."""
+        """Import a generated view module, proving it is real Python.
+
+        Falls back to importing straight from disk when this instance has no
+        generation history for the view. The history lives in memory, so a fresh
+        instance pointed at an `architecture/` directory written by an earlier
+        run has none — and refusing there would be refusing to open a file that
+        is sitting in front of it. The generated module is the artifact; the
+        history is only how a *merge* knows what changed.
+        """
         try:
             return self._registry.load(name, reload=True)
         except CodegenError as exc:
+            module = self._load_from_disk(name)
+            if module is not None:
+                return module
             raise ArtifactError(f"cannot load generated view {name!r}: {exc}") from exc
+
+    def _load_from_disk(self, name: str) -> ModuleType | None:
+        """The generated module, imported by path. `None` if it is not there."""
+        import importlib.util
+        import sys
+
+        path = self.root / f"{name}.py"
+        if not path.is_file():
+            return None
+
+        # No `spec is None` guard: the path is a `.py` file that exists — both
+        # already checked above — and `spec_from_file_location` always returns a
+        # loader for one. A branch no input can reach reads as though the
+        # invariant were in doubt and sends the next reader hunting for the case
+        # that triggers it.
+        qualified = f"slpie_architecture.{self.root.name}.{name}"
+        spec = importlib.util.spec_from_file_location(qualified, path)
+        module = importlib.util.module_from_spec(spec)
+        # Registered before exec: a frozen slotted dataclass resolves its
+        # annotations through `sys.modules[cls.__module__]` while the class body
+        # is still executing, and an absent entry there fails with an
+        # AttributeError that says nothing about the real cause.
+        sys.modules[qualified] = module
+        try:
+            spec.loader.exec_module(module)
+        except Exception as error:  # noqa: BLE001 - a broken generated file
+            sys.modules.pop(qualified, None)
+            raise ArtifactError(
+                f"the generated view {name!r} is on disk but does not import: "
+                f"{error}"
+            ) from error
+        return module
 
     def revisions(self, name: str) -> tuple[int, ...]:
         return tuple(g.revision for g in self._registry.history(name))

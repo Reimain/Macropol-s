@@ -87,7 +87,12 @@ CREATE TABLE IF NOT EXISTS evidence (
     content_digest TEXT NOT NULL DEFAULT '',
     excerpt        TEXT NOT NULL DEFAULT '',
     observed_at    INTEGER NOT NULL DEFAULT 0,
-    base_confidence REAL NOT NULL DEFAULT 0.0
+    base_confidence REAL NOT NULL DEFAULT 0.0,
+    -- Evidence labels, as JSON. Without this column they were accepted by
+    -- `Evidence` and silently dropped on the way to disk, so anything reading
+    -- them back got an empty mapping -- which disabled the SBOM's
+    -- evidence-derived hashes without failing anywhere a test would see.
+    labels         TEXT NOT NULL DEFAULT '{}'
 );
 -- The index incremental recomputation is built on.
 CREATE INDEX IF NOT EXISTS evidence_uri ON evidence(uri);

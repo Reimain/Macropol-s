@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Any, Iterable, Mapping
+from typing import Iterable
 
 from ...domain.evidence import Evidence, EvidenceKind, SourceLocation
 from ...domain.finding import Finding, FindingKind, Remediation

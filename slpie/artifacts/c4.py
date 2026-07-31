@@ -229,7 +229,6 @@ class C4View:
 
     def to_mermaid(self) -> str:
         """Render as a Mermaid flowchart. Stable line order by construction."""
-        by_alias = {e.alias: e for e in self.elements}
         lines = [
             f"%% C4 level {self.level.number} — {self.level.title}"
             + (f" — {self.scope}" if self.scope else ""),
@@ -247,9 +246,12 @@ class C4View:
                 lines.append("        " + _element_line(element))
             lines.append("    end")
 
+        # No endpoint check here. `_relationships` only ever emits edges whose
+        # *both* ends are in the same selection these elements came from, so a
+        # guard would be a branch no input can reach — and an unreachable guard
+        # is worse than none: it reads as though the invariant were in doubt,
+        # and it hides the one place the invariant is actually enforced.
         for relationship in self.relationships:
-            if relationship.source not in by_alias or relationship.target not in by_alias:
-                continue
             lines.append(
                 f"    {relationship.source} -->|\"{_escape(relationship.label)}\"| "
                 f"{relationship.target}"
@@ -313,15 +315,21 @@ def _relationships(graph: GraphView, nodes: Sequence[Node]) -> tuple[C4Relations
         for edge in graph.edges_from(node.id, live=True):
             if edge.dst not in selected or edge.kind not in DRAWN_KINDS:
                 continue
+            # Keyed rather than guarded. The graph already collapses two
+            # observations of the same relationship onto one edge id, so a
+            # `if key not in seen` branch could never be taken — and a
+            # never-taken guard reads as though duplicates were expected here,
+            # which sends the next reader looking for a problem that lives one
+            # layer down. Assigning into the dict is idempotent and says the
+            # same thing without the dead branch.
             key = (_alias(edge.src), _alias(edge.dst), edge.kind.value, edge.qualifier)
-            if key not in seen:
-                seen[key] = C4Relationship(
-                    source=_alias(edge.src),
-                    target=_alias(edge.dst),
-                    kind=edge.kind.value,
-                    qualifier=edge.qualifier,
-                    confidence=edge.confidence,
-                )
+            seen[key] = C4Relationship(
+                source=_alias(edge.src),
+                target=_alias(edge.dst),
+                kind=edge.kind.value,
+                qualifier=edge.qualifier,
+                confidence=edge.confidence,
+            )
     return tuple(sorted(seen.values(), key=lambda r: (r.source, r.target, r.kind, r.qualifier)))
 
 

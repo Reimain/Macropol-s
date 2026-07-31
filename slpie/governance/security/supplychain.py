@@ -30,7 +30,7 @@ missing fact makes a rule *decline* rather than guess.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Mapping
 
 from ...domain.evidence import strongest
 from ...domain.finding import Finding, FindingKind, Remediation

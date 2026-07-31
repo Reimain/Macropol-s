@@ -262,6 +262,55 @@ def recipes() -> tuple[Recipe, ...]:
             group="governance",
         ),
 
+        # -- what a release ships ---------------------------------------------
+        Recipe(
+            pipeline="discover . | sbom",
+            intent="what is in this thing, in a form a regulator accepts?",
+            produces=Kind.REPORT,
+            why=(
+                "packages are already purls -- the identifier CycloneDX, SPDX "
+                "and OSV all speak -- so identity passes through rather than "
+                "being translated. Nothing reads the clock, so the same tree "
+                "produces byte-identical bytes you can diff and attest."
+            ),
+            group="what ships",
+        ),
+        Recipe(
+            pipeline="discover . | govern | risk",
+            intent="which parts of this estate are actually dangerous?",
+            produces=Kind.REPORT,
+            why=(
+                "a findings list is a work queue; a register answers a different "
+                "question. Ranked by severity times reach, because a critical in "
+                "a leaf nobody imports is a smaller problem than a high one in "
+                "the package forty modules touch."
+            ),
+            group="what ships",
+        ),
+        Recipe(
+            pipeline="discover . | enterprise",
+            intent="what does the architecture look like from up here?",
+            produces=Kind.REPORT,
+            why=(
+                "TOGAF's three domains plus the topology, each a projection of "
+                "the graph rather than a second store. `--write` generates them "
+                "into ./architecture/ as importable Python, and a hand edit "
+                "marked `# gratimos:keep` survives the next regeneration."
+            ),
+            group="what ships",
+        ),
+        Recipe(
+            pipeline="discover . | c4 --level container",
+            intent="draw me what actually runs",
+            produces=Kind.REPORT,
+            why=(
+                "four levels, four filters over one graph -- so a container "
+                "diagram cannot disagree with the context diagram above it, "
+                "which is the failure mode of every C4 set maintained by hand."
+            ),
+            group="what ships",
+        ),
+
         # -- needs an environment -------------------------------------------
         Recipe(
             pipeline="declare",

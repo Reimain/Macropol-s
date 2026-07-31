@@ -31,9 +31,9 @@ of "inside" and this module does not invent a second.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping
+from typing import Any
 
-from ...domain.evidence import Evidence, strongest
+from ...domain.evidence import Evidence
 from ...domain.finding import Finding, FindingKind, Remediation
 from ...domain.lifecycle import Severity
 from ..rules import Rule, RuleContext, RuleSet, cite
