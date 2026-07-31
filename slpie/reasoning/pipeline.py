@@ -45,6 +45,10 @@ from .l1_discovery import DiscoveryLayer
 from .l2_normalization import NormalizationLayer
 from .l3_graph import GraphConstructionLayer
 from .l4_linking import SemanticLinkingLayer
+from .l5_validation import ArchitectureValidationLayer
+from .l6_constraints import ConstraintSolvingLayer
+from .l7_impact import ImpactLayer
+from .l8_optimize import OptimizationLayer
 from .layer import Layer, LayerContext, LayerError, LayerResult
 
 
@@ -79,7 +83,7 @@ class PipelineResult:
         Derived from what the layers reported, never assembled by hand — a gap
         that has to be remembered is a gap that eventually is not.
         """
-        found: list[Gap] = []
+        found: list[Gap] = list(self.context.limits)
 
         for result in self.abstained:
             found.append(Gap(
@@ -165,7 +169,7 @@ class PipelineResult:
 
 
 class Pipeline:
-    """The ten layers, of which phase 9 delivers four.
+    """The ten layers, of which eight are built.
 
     Layers are added rather than hard-coded so that L5–L10 attach without this
     file changing, and so a third-party layer registered through the plugin
@@ -179,6 +183,10 @@ class Pipeline:
             NormalizationLayer(),
             GraphConstructionLayer(),
             SemanticLinkingLayer(),
+            ArchitectureValidationLayer(),
+            ConstraintSolvingLayer(),
+            ImpactLayer(),
+            OptimizationLayer(),
         ]
 
     def add(self, layer: Layer) -> Layer:

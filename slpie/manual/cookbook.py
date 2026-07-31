@@ -178,6 +178,53 @@ def recipes() -> tuple[Recipe, ...]:
             group="reasoning",
         ),
 
+        # -- intelligence ----------------------------------------------------
+        Recipe(
+            pipeline="discover . | reason | ask",
+            intent="just tell me what you found, and what you could not see",
+            produces=Kind.GUIDANCE,
+            why=(
+                "never a bare value. The answer arrives with the reasoning that "
+                "produced it, the gaps that limit it, and the questions worth "
+                "asking next -- each one a composition that will actually run."
+            ),
+            group="intelligence",
+        ),
+        Recipe(
+            pipeline="discover . | reason | radius --min_size 2",
+            intent="what is depended on by more than one thing here?",
+            produces=Kind.IMPACT,
+            why=(
+                "blast radius on a bare checkout, with no database. Confidence "
+                "propagates as a minimum, so a radius reached only through a "
+                "dynamic load is reported as the weak thing it is."
+            ),
+            group="intelligence",
+        ),
+        Recipe(
+            pipeline="discover . | reason | options --safe",
+            intent="what can I upgrade right now without breaking anything?",
+            produces=Kind.REPORT,
+            why=(
+                "enumerates, never recommends. `--safe` keeps only the moves "
+                "every declared range still admits; drop it and the breaking "
+                "options appear too, each saying who it breaks."
+            ),
+            group="intelligence",
+        ),
+        Recipe(
+            pipeline="discover . | reason | ask | suggest",
+            intent="I do not know what to do with this answer",
+            produces=Kind.GUIDANCE,
+            why=(
+                "the deterministic answer, then the non-deterministic part: "
+                "candidates come from the type graph so a suggestion is never "
+                "something the platform cannot do, and only their order is "
+                "learned from what you have accepted before."
+            ),
+            group="intelligence",
+        ),
+
         # -- needs an environment -------------------------------------------
         Recipe(
             pipeline="declare",

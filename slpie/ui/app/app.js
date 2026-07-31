@@ -109,11 +109,33 @@ async function ask(question) {
         `<span class="cite">${escape(e.reference)}</span>`).join(" ")}
     </div>`).join("");
 
+  // The answer's own numbers, not a sentence about them. A reviewer comparing
+  // two runs needs values they can read off; the sentence is above.
+  const answer = guidance.answer && typeof guidance.answer === "object"
+    ? Object.entries(guidance.answer)
+        .filter(([, value]) => value !== 0 && value != null && value !== "" &&
+                               !(Array.isArray(value) && !value.length))
+        .map(([key, value]) => `
+          <div class="fact"><span class="k">${escape(key.replace(/_/g, " "))}</span>
+          <span class="v">${escape(Array.isArray(value) ? value.join(", ") : value)}</span></div>`)
+        .join("")
+    : "";
+
+  // Every action carries what it costs. Offering one without its consequence is
+  // how a console becomes a button somebody regrets pressing.
+  const actions = (guidance.actions || []).map((action) => `
+    <div class="action${action.breaking ? " breaking" : ""}">
+      ${escape(action.summary)}
+      ${action.breaking ? '<span class="cost">breaking</span>' : ""}
+    </div>`).join("");
+
   conversation.insertAdjacentHTML("beforeend", `
     <div class="turn">
       <div class="q">${escape(question)}</div>
       <div class="a">${escape(guidance.summary || guidance.answer || "no answer yet")}</div>
+      ${answer ? `<div class="facts">${answer}</div>` : ""}
       ${steps}
+      ${actions ? `<div class="actions">${actions}</div>` : ""}
       ${guidance.confidence != null
         ? `<div class="muted" style="font-size:12px;margin-top:4px">
              confidence ${Number(guidance.confidence).toFixed(2)}

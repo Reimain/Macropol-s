@@ -343,6 +343,14 @@ class Guidance:
             "actions": [action.to_dict() for action in self.actions],
         }
 
+    def __str__(self) -> str:
+        """The one line worth reading. The full rendering is `guidance.render`.
+
+        A dataclass repr here would print the whole answer structure into a
+        terminal, which buries the sentence somebody actually needed.
+        """
+        return self.summary or f"{len(self.next_questions)} question(s) to consider"
+
 
 @dataclass(frozen=True, slots=True)
 class Option:

@@ -278,6 +278,12 @@ def _arguments(
         found["query"] = intent.subject
     if verb == "findings" and intent.severity:
         found["severity"] = intent.severity
+    # `radius --package` is a subject slot, not a filter: a name that matches
+    # nothing raises a gap saying so rather than returning an empty radius that
+    # reads as "nothing depends on it". That is what makes it safe for the
+    # planner to fill in from a noun it extracted, where `filter` is not.
+    if verb == "radius" and intent.subject:
+        found["package"] = intent.subject
 
     # `filter` is deliberately never filled in. Injecting `--contains <subject>`
     # from a loosely-extracted noun produced plans like
@@ -298,6 +304,8 @@ def _because(
         return f"{base}" + (f" (under {intent.path})" if intent.path else "")
     if verb == "search" and intent.subject:
         return f"find {intent.subject} in the graph"
+    if verb == "radius" and intent.subject:
+        return f"what depends on {intent.subject}, and how confidently"
     if verb == "findings" and intent.severity:
         return f"{base}, kept to {intent.severity}"
     if verb == "explain":

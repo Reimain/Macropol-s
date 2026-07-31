@@ -223,6 +223,7 @@ class Resolver:
         started = time.monotonic()
         buckets: dict[str, dict[str, Any]] = {}
         links: list[Link] = []
+        pending: list[tuple[str, str, str, Any, str, dict[str, Any]]] = []
         unresolved: list[tuple[Observation, str]] = []
 
         def bucket(identity: str, observation: Observation) -> tuple[str, str] | None:
@@ -288,14 +289,29 @@ class Resolver:
                 target_entry, observation, identity=target_identity,
             )
 
-            links.append(Link(
-                kind=observation.kind,
-                source=entry["node_id"],
-                target=target_entry["node_id"],
-                evidence=observation.evidence,
-                qualifier=observation.qualifier,
-                properties=dict(observation.properties),
+            # Held by *coordinate*, not by node id, and materialised below once
+            # every bucket has settled. A bucket's node id changes the moment a
+            # more specific identity arrives — `pkg:npm/lodash` becomes
+            # `pkg:npm/lodash@4.17.21` when the lockfile is read — and a link
+            # built before that moment pointed at an id no resolved node carried.
+            # The graph was silently disconnected exactly where a manifest range
+            # and a lockfile pin met, which is precisely where impact and
+            # reconciliation need it to be joined.
+            pending.append((
+                observation.kind, subject, target,
+                observation.evidence, observation.qualifier,
+                dict(observation.properties),
             ))
+
+        links.extend(
+            Link(
+                kind=kind,
+                source=buckets[source]["node_id"],
+                target=buckets[target]["node_id"],
+                evidence=evidence, qualifier=qualifier, properties=properties,
+            )
+            for kind, source, target, evidence, qualifier, properties in pending
+        )
 
         resolved = tuple(
             Resolved(

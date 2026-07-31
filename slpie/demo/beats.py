@@ -112,6 +112,39 @@ def _run(stage: Stage) -> Outcome:
     )
 
 
+def _answer(stage: Stage) -> Outcome:
+    """The intelligence layers, reached the only way there is: through a verb."""
+    result = Composition.read(
+        f"discover {stage.root} | reason | ask",
+    ).run(Context(root=str(stage.root)))
+    if not result.ok:
+        return Outcome(holds=False, lines=(str(result),), detail=result.error)
+
+    guidance = result.flow.value
+    lines = [guidance.summary, ""]
+    lines.extend(f"limit: {gap.detail}" for gap in guidance.gaps[:2])
+    if guidance.gaps:
+        lines.append("")
+    for question in guidance.next_questions[:3]:
+        lines.append(f"next:  {question.text}")
+        lines.append(f"       slpie '{question.parameters.get('pipeline', '')}'")
+
+    runnable = all(
+        Composition.read(str(question.parameters.get("pipeline", ""))).validate().ok
+        for question in guidance.next_questions
+    )
+    stage.facts["questions"] = len(guidance.next_questions)
+
+    return Outcome(
+        # Three things at once, and all three are required for this to be
+        # guidance rather than a lookup: it answered, it said what limited the
+        # answer, and every question it offered is a composition that will run.
+        holds=bool(guidance.summary) and bool(guidance.next_questions) and runnable,
+        lines=tuple(lines),
+        detail="answer, limits, and next moves that all type-check",
+    )
+
+
 def _http(stage: Stage) -> Outcome:
     from ..ui.api import Api, Request
 
@@ -293,6 +326,20 @@ def script() -> Script:
                     "could have found it. That is what the linking layer is for.",
                 ),
                 run=_run,
+            ),
+            Beat(
+                key="answer", title="and it never answers with a bare value",
+                surface=Surface.CLI, screen="console",
+                call="slpie 'discover . | reason | ask'",
+                claim="the answer carries its limits and its next moves",
+                narration=(
+                    "The layers ran; `ask` is how you reach what they concluded. "
+                    "It states what it could not see as plainly as what it "
+                    "could, and every question it offers is a pipeline you can "
+                    "run — a console that offered a prompt it cannot act on "
+                    "would be a dictionary.",
+                ),
+                run=_answer,
             ),
             Beat(
                 key="http", title="the same pipeline through HTTP",

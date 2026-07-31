@@ -59,7 +59,7 @@ RUNNER_FLAGS = frozenset({
 #: Facts a verb sets when it has prepared something for a human to read. Named
 #: here rather than sniffed, because a heuristic like "any multi-line string" would
 #: print internal state the moment a verb happened to store one.
-DISPLAY_FACTS = ("guidance", "routines", "quarantine", "chain", "audit")
+DISPLAY_FACTS = ("answer", "guidance", "routines", "quarantine", "chain", "audit")
 
 OK = 0
 FAILED = 1
@@ -340,7 +340,10 @@ class Cli:
             return FAILED
 
         flow = result.flow
-        if not options.get("quiet"):
+        # A GUIDANCE flow's value *is* its rendering, which arrives below as the
+        # `answer` fact. Printing the body too would lead with the summary and
+        # then repeat it three lines later, which reads like a bug.
+        if not options.get("quiet") and flow.kind is not Kind.GUIDANCE:
             self._out(self._body(flow))
 
         # Guidance is printed after the answer, never instead of it. A suggestion

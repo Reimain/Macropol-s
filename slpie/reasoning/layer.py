@@ -51,7 +51,27 @@ class LayerContext:
     enrichments: dict[str, Enrichment] = field(default_factory=dict)
     evidence: dict[str, Evidence] = field(default_factory=dict)
     facts: dict[str, Any] = field(default_factory=dict)
+    limits: list[Any] = field(default_factory=list)
     started_at: float = 0.0
+
+    def limited_by(self, gap: Any) -> Any:
+        """Record something this layer could not decide, deduplicated by id.
+
+        A layer that declines to rule is not the same as a layer that ruled
+        weakly, and the difference has to survive to the answer. Before this,
+        declining was expressed as a step at confidence 0.0 — which, because the
+        path's confidence is the minimum across its steps, drove the *whole
+        answer* to zero. An honest abstention about one ecosystem was therefore
+        indistinguishable from having believed nothing at all.
+
+        A `Gap` is the right shape: it names the subject, says what it costs
+        through `confidence_impact`, and travels the length of the pipe.
+        """
+        for existing in self.limits:
+            if getattr(existing, "id", None) == getattr(gap, "id", None):
+                return existing
+        self.limits.append(gap)
+        return gap
 
     def remember(self, evidence: Evidence) -> str:
         """Index one piece of raw evidence by id, and return that id.

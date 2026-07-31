@@ -133,6 +133,11 @@ class ScanReport:
     skipped: tuple[str, ...] = ()
     elements: tuple[str, ...] = ()
     duration_ns: int = 0
+    #: What was actually read, kept so the reasoning layers can run over a scan
+    #: without walking the tree a second time. Deliberately absent from
+    #: `to_dict` — an HTTP client wants the counts, not ten thousand
+    #: observations, and shipping them would make every status call expensive.
+    captured: tuple[Any, ...] = ()
 
     @property
     def clean(self) -> bool:
@@ -240,6 +245,7 @@ class Scanner:
             files_seen=seen, files_read=read, observations=len(observations),
             nodes=len(nodes), edges=len(edges), errors=tuple(errors),
             elements=tuple(elements), duration_ns=time.time_ns() - started,
+            captured=tuple(observations),
         )
 
 

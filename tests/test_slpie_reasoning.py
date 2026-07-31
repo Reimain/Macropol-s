@@ -351,11 +351,21 @@ def test_an_unplaceable_observation_becomes_an_unresolved_dependency_gap():
     )
 
 
-def test_a_clean_run_over_a_healthy_repository_reports_no_gaps():
+def test_a_clean_run_reports_only_gaps_that_are_declared_limits():
+    """Clean means no layer failed. It does not mean nothing was out of reach.
+
+    This fixture declares an npm dependency and reads no npm code, so L5 declines
+    to judge whether that declaration is unused — and says so as a gap. A run
+    that reported no gap there would be claiming coverage it does not have,
+    which is exactly what the layer exists to refuse.
+    """
     result = Pipeline().run(repository(), element="repo")
 
-    assert result.clean
-    assert not result.gaps
+    assert result.clean, "no layer abstained"
+    assert not result.abstained
+    assert all(
+        "cannot be judged unused" in gap.detail for gap in result.gaps
+    ), "every gap here is a declared limit, not a failure"
     assert result.context.facts["nodes"] == 3
     assert result.context.facts["links"] == 2
 
@@ -373,5 +383,7 @@ def test_the_result_serialises_for_the_ui_without_losing_the_gaps():
     body = pipeline.run(repository()).to_dict()
 
     assert body["clean"] is False
-    assert len(body["gaps"]) == 1
-    assert [entry["number"] for entry in body["layers"]] == [1, 2, 3, 4, 9]
+    assert any(
+        "the broken layer abstained" in entry["detail"] for entry in body["gaps"]
+    ), "an abstention that does not reach the UI is an answer that looks complete"
+    assert [entry["number"] for entry in body["layers"]] == [1, 2, 3, 4, 5, 6, 7, 8, 9]

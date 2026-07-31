@@ -14,7 +14,7 @@ therefore builds every projection first and attaches the buses last.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -58,6 +58,10 @@ class Engine:
     world: Any = None
     registry: Any = None
     snapshots: SnapshotStore | None = None
+    #: What the last scan read. Kept so `ask` can reason over it without walking
+    #: the tree again — a console that re-scanned per question would be unusable
+    #: on any tree worth asking about.
+    observed: tuple[Any, ...] = ()
     stream: Any = None
     started_at: int = 0
 
@@ -193,29 +197,52 @@ class Engine:
         )
 
     def ask(self, question: str) -> Guidance:
-        """Answer a question. Placeholder until the console lands in phase 10.
+        """Answer a question: the layers' conclusions, their limits, what next.
 
-        Returning a `Guidance` with an honest empty answer and the real gaps is
-        deliberately better than raising: the UI can render the shape now, and
-        the shape is what later phases fill in.
+        The engine's own gaps — refused capabilities, stale heartbeats, elements
+        that were declared and never attached — are merged with the pipeline's,
+        because both limit the same answer and an operator reading it should not
+        have to consult two lists to learn what it rests on.
+
+        A question asked before anything has been scanned is answered honestly
+        rather than refused: the environment's gaps are real information, and
+        `Guidance` is the shape they travel in whether or not the layers ran.
         """
-        path = ReasoningPath(question=question)
-        return Guidance(
-            answer=None,
-            reasoning=path,
-            gaps=self.gaps(),
-            summary="the reasoning console arrives in a later phase",
-            next_questions=(
-                Question(
-                    text="what does the environment declare?",
-                    intent="manifest", information_gain=0.5,
+        from .reasoning.guidance import guidance_for
+        from .reasoning.pipeline import Pipeline
+
+        observations = self.observed
+        if not observations:
+            return Guidance(
+                answer=None,
+                reasoning=ReasoningPath(question=question),
+                gaps=self.gaps(),
+                summary=(
+                    "nothing has been scanned yet, so there is nothing to reason "
+                    "over; this is what the environment declares it cannot see"
                 ),
-                Question(
-                    text="what did discovery corroborate?",
-                    intent="reconcile", information_gain=0.4,
+                next_questions=(
+                    Question(
+                        text="what is actually in the elements that are attached?",
+                        intent="scan", information_gain=0.9,
+                        rationale="the graph is a skeleton until discovery corroborates it",
+                        parameters={"pipeline": "scan | link | findings"},
+                    ),
+                    Question(
+                        text="where does what I declared disagree with what is there?",
+                        intent="reconcile", information_gain=0.6,
+                        parameters={"pipeline": "reconcile"},
+                    ),
                 ),
-            ),
-        )
+            )
+
+        result = Pipeline().run(observations, element=self.environment)
+        guidance = guidance_for(result, question=question, root=".")
+        return replace(guidance, gaps=merge_gaps((*guidance.gaps, *self.gaps())))
+
+    @property
+    def environment(self) -> str:
+        return self.manifest.environment if self.manifest else ""
 
     def plugins(self) -> Any:
         """The plugin registry, with the built-in discoverers registered.
@@ -245,6 +272,7 @@ class Engine:
         report = Scanner(self.plugins(), commands=self.commands).scan(
             self.resolver.bindings, actor=actor,
         )
+        self.observed = report.captured
         return report.to_dict()
 
     # -- status ----------------------------------------------------------

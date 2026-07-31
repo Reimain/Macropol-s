@@ -62,6 +62,7 @@ class Kind(str, Enum):
     SOLUTION = "solution"
     FINDINGS = "findings"
     GAPS = "gaps"
+    GUIDANCE = "guidance"
     JUDGEMENTS = "judgements"
     PLAN = "plan"
     REPORT = "report"

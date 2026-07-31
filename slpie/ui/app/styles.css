@@ -141,6 +141,20 @@ button.go.danger { background: var(--bad); }
 .step { padding: 5px 0 5px 14px; border-left: 2px solid var(--line); font-size: 13px; }
 .step .cite { color: var(--muted); font-family: var(--mono); font-size: 11px; }
 
+/* The answer's own numbers, so two runs can be compared without reading prose. */
+.facts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 8px 0; }
+.facts .fact { font-size: 12px; }
+.facts .k { color: var(--muted); }
+.facts .v { font-family: var(--mono); margin-left: 6px; }
+
+/* An action always shows what it costs. The marker is not decoration. */
+.actions { margin-top: 8px; display: grid; gap: 4px; }
+.action { font-size: 13px; padding: 5px 8px; border: 1px solid var(--line);
+          border-radius: 6px; }
+.action.breaking { border-color: var(--warn); }
+.action .cost { font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+                color: var(--warn); margin-left: 8px; }
+
 /* --- feed -------------------------------------------------------------- */
 
 #feed { max-height: 460px; overflow-y: auto; font-family: var(--mono); font-size: 12px; }
