@@ -61,7 +61,7 @@ RUNNER_FLAGS = frozenset({
 #: print internal state the moment a verb happened to store one.
 DISPLAY_FACTS = (
     "answer", "guidance", "rules", "enterprise", "risk", "c4", "sbom",
-    "routines", "quarantine", "chain", "audit",
+    "changed", "agent_tools", "routines", "quarantine", "chain", "audit",
 )
 
 OK = 0
