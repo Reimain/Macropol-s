@@ -69,6 +69,67 @@ class RuleContext:
         return tuple(self.graph.nodes(**criteria))
 
 
+def cite(*candidates: Any) -> tuple[Evidence, ...]:
+    """Evidence for a finding, from the first candidate that carries any.
+
+    `Finding` refuses to exist without evidence, which is invariant 1 reaching
+    all the way to the report — so every rule needs this, and every rule that
+    hand-rolled it made the same two mistakes. `Edge.evidence` is *already* a
+    tuple, so `(edge.evidence,)` produces a tuple containing a tuple and any
+    renderer reaching for `.location` raises. `strongest()` returns `None` for a
+    node with no evidence, so `(strongest(x),)` produces `(None,)`, which passes
+    the emptiness check and fails later.
+
+    Both are quiet: the finding is constructed successfully and breaks at render
+    time, one stage away from the rule that caused it.
+    """
+    found: list[Evidence] = []
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        if isinstance(candidate, (tuple, list)):
+            found.extend(item for item in candidate if item is not None)
+        else:
+            found.append(candidate)
+        if found:
+            return tuple(found[:4])
+    return ()
+
+
+def packages(context: RuleContext) -> tuple[Any, ...]:
+    """Live package nodes, one per coordinate, most specific spelling kept.
+
+    The graph legitimately holds `pkg:npm/lodash` and `pkg:npm/lodash@4.17.21`
+    as separate nodes: a manifest range and a lockfile pin are different
+    evidence about the same thing, and the projection is right not to throw one
+    away. A *rule* judging both is wrong in two directions at once — it reports
+    every finding twice, and the versionless node carries none of the pin's
+    metadata, so `license.undeclared` fires against a package whose licence is
+    recorded on the node right next to it.
+
+    So rules judge one package once, and they judge the spelling that knows the
+    most. Deduplication belongs here rather than in the projection, because the
+    projection's job is to keep evidence and this one's is to reach a verdict.
+    """
+    best: dict[str, Any] = {}
+    for node in context.nodes(live=True):
+        if not getattr(node.kind, "carries_version", False):
+            continue
+        coordinate = node.coordinate or node.id
+        current = best.get(coordinate)
+        if current is None or _specificity(node) > _specificity(current):
+            best[coordinate] = node
+    return tuple(best.values())
+
+
+def _specificity(node: Any) -> tuple[int, int]:
+    """How much a node knows: a version first, then how much metadata."""
+    return (
+        1 if getattr(node, "version", "") else 0,
+        len(getattr(node, "properties", {}) or {}),
+    )
+
+
 def always(context: RuleContext) -> bool:
     """The default ``matches``: this rule has an opinion about everything."""
     return True

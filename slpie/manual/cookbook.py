@@ -225,6 +225,43 @@ def recipes() -> tuple[Recipe, ...]:
             group="intelligence",
         ),
 
+        # -- governance ------------------------------------------------------
+        Recipe(
+            pipeline="discover . | govern",
+            intent="what would stop this from shipping?",
+            produces=Kind.FINDINGS,
+            why=(
+                "fourteen rules across five families. A rule missing the data it "
+                "needs declines rather than guessing, and the count of declined "
+                "rules travels out as a gap -- so a short list never quietly "
+                "means nothing was checked."
+            ),
+            group="governance",
+        ),
+        Recipe(
+            pipeline="discover . | govern --severity critical | explain",
+            intent="show me only what blocks a release, and prove each one",
+            produces=Kind.FINDINGS,
+            why=(
+                "exits 3 when anything is found at that severity, so it works as "
+                "a CI gate; `explain` renders the file and line behind every "
+                "finding, which is what makes the gate arguable rather than "
+                "merely obstructive."
+            ),
+            group="governance",
+        ),
+        Recipe(
+            pipeline="rules --tag license",
+            intent="what does this build actually check, and has it changed?",
+            produces=Kind.REPORT,
+            why=(
+                "each rule carries a digest of its own logic, so a finding raised "
+                "last month can be checked against the rule as it stands today: "
+                "if the digest moved, the question moved."
+            ),
+            group="governance",
+        ),
+
         # -- needs an environment -------------------------------------------
         Recipe(
             pipeline="declare",

@@ -59,7 +59,9 @@ RUNNER_FLAGS = frozenset({
 #: Facts a verb sets when it has prepared something for a human to read. Named
 #: here rather than sniffed, because a heuristic like "any multi-line string" would
 #: print internal state the moment a verb happened to store one.
-DISPLAY_FACTS = ("answer", "guidance", "routines", "quarantine", "chain", "audit")
+DISPLAY_FACTS = (
+    "answer", "guidance", "rules", "routines", "quarantine", "chain", "audit",
+)
 
 OK = 0
 FAILED = 1

@@ -337,6 +337,20 @@ class Finding:
             suppression_reason=data.get("suppression_reason", ""),
         )
 
+    def __str__(self) -> str:
+        """The line a terminal prints. Leads with the title, not the node id.
+
+        Without this the dataclass repr is what a CLI shows, and `subject` is a
+        blake2b digest — so a findings list read as a column of hashes. The
+        title is the sentence somebody wrote for exactly this moment.
+        """
+        mark = " (waived)" if self.suppressed else ""
+        where = self.evidence[0].location.reference if self.evidence else ""
+        return (
+            f"[{self.severity.value}] {self.title or self.kind.value}{mark}"
+            + (f"  {where}" if where else "")
+        )
+
     def __repr__(self) -> str:  # pragma: no cover - display only
         mark = " (waived)" if self.suppressed else ""
         return f"<Finding {self.severity.value}/{self.kind.value} {self.subject}{mark}>"

@@ -109,7 +109,14 @@ def _discover(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flo
             ),
         )],
         gaps=gaps,
-        facts={"files_seen": seen, "files_read": read, "discover_errors": len(errors)},
+        facts={
+            "files_seen": seen, "files_read": read, "discover_errors": len(errors),
+            # Recorded so a later stage governs the tree that was *read* rather
+            # than the working directory. `discover /a/b | govern` was scanning
+            # the cwd for secrets and reporting findings about a different
+            # codebase entirely — which looked like a real result.
+            "scanned_root": str(root.resolve()),
+        },
     )
 
 

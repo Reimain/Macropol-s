@@ -44,7 +44,7 @@ from ...domain.identity import Purl
 from ...domain.lifecycle import Severity
 from ...domain.version import Version, VersionRange, parse_range
 from ...errors import VersionError
-from ..rules import Rule, RuleContext, RuleSet
+from ..rules import Rule, RuleContext, RuleSet, cite
 
 #: OSV ecosystem → purl type. OSV writes ``PyPI``, purl writes ``pypi``; the
 #: mapping is small, closed, and better stated than inferred.
@@ -634,7 +634,7 @@ def _finding(node: Any, match: AdvisoryMatch) -> Finding:
             + (f" Fixed in {fixed}." if fixed else " No fix has been published.")
         ),
         code=match.code,
-        evidence=(advisory_evidence(match), strongest(node.evidence)),
+        evidence=cite(advisory_evidence(match)) + cite(node.evidence),
         remediation=remediation,
         rule_id="security.vulnerable-dependency",
         related=(),
