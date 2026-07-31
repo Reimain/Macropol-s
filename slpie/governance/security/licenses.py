@@ -36,8 +36,8 @@ from ...domain.evidence import Evidence
 from ...domain.finding import Finding, FindingKind, Remediation
 from ...domain.license import (
     Distribution,
-    Linkage,
     LicenseExpression,
+    Linkage,
     Obligation,
     check_compatibility,
     parse_expression,

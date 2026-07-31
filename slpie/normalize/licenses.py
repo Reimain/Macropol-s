@@ -31,7 +31,12 @@ import re
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
-from ..domain.license import LicenseExpression, canonical_id, normalize, parse_expression
+from ..domain.license import (
+    LicenseExpression,
+    canonical_id,
+    normalize,
+    parse_expression,
+)
 from ..errors import LicenseError
 
 #: Values that explicitly mean "unknown", and must never become a licence.

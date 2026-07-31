@@ -26,7 +26,11 @@ planner a search space instead of a guess. Two of them are special:
 
 from __future__ import annotations
 
-from collections.abc import Mapping as AbcMapping, Sequence as AbcSequence, Set as AbcSet
+from collections.abc import (
+    Mapping as AbcMapping,
+    Sequence as AbcSequence,
+    Set as AbcSet,
+)
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Iterable, Iterator, Mapping, Sequence
@@ -34,7 +38,6 @@ from typing import Any, Iterable, Iterator, Mapping, Sequence
 from ..domain.finding import Gap
 from ..domain.identity import digest
 from ..domain.reasoning import ReasoningPath, ReasoningStep
-
 
 #: Operations that rearrange an answer without asserting anything about the world.
 #: Named once here so `Flow.grounded` can judge derivations only — a filter that

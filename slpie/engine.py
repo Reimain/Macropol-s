@@ -26,7 +26,11 @@ from .domain.finding import Gap, GapKind, merge_gaps
 from .domain.reasoning import Guidance, Question, ReasoningPath, ReasoningStep
 from .environment.loader import load, loads, skeleton
 from .environment.manifest import Manifest, Target
-from .environment.reconcile import Reconciliation, findings as reconciliation_findings, reconcile
+from .environment.reconcile import (
+    Reconciliation,
+    findings as reconciliation_findings,
+    reconcile,
+)
 from .errors import SlpieError
 from .graph.query import GraphProjection
 from .graph.snapshot import Snapshot, SnapshotStore

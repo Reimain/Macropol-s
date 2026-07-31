@@ -15,13 +15,13 @@ import pytest
 
 from gratimos.shell import (
     AUTOMATABLE,
+    PRODUCTION,
     Category,
     Environment,
     Guard,
     Ladder,
     Platform,
     Policy,
-    PRODUCTION,
     Risk,
     Shell,
     ShellError,

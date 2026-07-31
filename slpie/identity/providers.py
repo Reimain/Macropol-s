@@ -34,7 +34,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Protocol, Sequence, runtime_checkable
 
-from .jwt import Key, JwtError, b64url_decode, b64url_encode, verify
+from .jwt import JwtError, Key, b64url_decode, b64url_encode, verify
 from .principal import (
     Assurance,
     AuthMethod,

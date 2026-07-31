@@ -592,8 +592,8 @@ def test_the_console_merges_the_environment_gaps_with_the_pipeline_gaps(engine):
 
 
 def test_an_intelligence_verb_refuses_what_reason_did_not_produce(verbs):
-    from slpie.compose.verb import Context as VerbContext, VerbError
     from slpie.compose.flow import Flow
+    from slpie.compose.verb import Context as VerbContext, VerbError
 
     flow = Flow(kind=Kind.ENRICHMENTS, value=("not a pipeline result",))
     with pytest.raises(VerbError, match="reason"):

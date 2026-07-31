@@ -17,7 +17,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Iterator, Mapping, Sequence
 
 from ..ids import StorageName, digest, new_id, now_ns
-from .cast import CastMode, CastReport, Caster
+from .cast import Caster, CastMode, CastReport
 from .infer import DEFAULT_OPTIONS, InferenceOptions, infer_shape, infer_value
 from .shapes import DataShape, FieldShape, TypeTag
 

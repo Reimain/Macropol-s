@@ -19,7 +19,13 @@ import pytest
 
 from slpie.discovery.base import Source, scope_of
 from slpie.discovery.ecosystems import gradle, maven, nuget
-from slpie.discovery.infrastructure import compose, dockerfile, helm, kubernetes, terraform
+from slpie.discovery.infrastructure import (
+    compose,
+    dockerfile,
+    helm,
+    kubernetes,
+    terraform,
+)
 from slpie.discovery.interfaces import asyncapi, openapi
 from slpie.discovery.registry import builtin_modules, register_builtins
 from slpie.plugins.registry import Registry

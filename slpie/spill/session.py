@@ -39,10 +39,10 @@ from dataclasses import dataclass, field
 from types import TracebackType
 from typing import Any, Iterable, Iterator, Sequence
 
-from .budget import Budget, DEFAULT_CEILING
+from .budget import DEFAULT_CEILING, Budget
 from .codec import SpillError, Unspillable, spillable
 from .ident import new_session_key
-from .sequence import SpilledSequence, WINDOW
+from .sequence import WINDOW, SpilledSequence
 from .store import FileStore, SpillStore
 
 #: Sessions idle longer than this are fair game for `sweep_stale`. Long enough

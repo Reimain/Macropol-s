@@ -29,7 +29,12 @@ from typing import Any, Iterable, Iterator, Sequence
 from ..domain.edge import Edge, EdgeKind
 from ..domain.evidence import Evidence, EvidenceKind, SourceLocation
 from ..domain.identity import parse_identity
-from ..domain.lifecycle import ArchitectureClass, ComplianceState, LifecycleState, RiskClass
+from ..domain.lifecycle import (
+    ArchitectureClass,
+    ComplianceState,
+    LifecycleState,
+    RiskClass,
+)
 from ..domain.node import OPEN, Node, NodeKind
 from ..errors import GraphError, NodeNotFound
 from .schema import FTS_SCHEMA, SCHEMA, SCHEMA_VERSION, has_fts5

@@ -268,8 +268,8 @@ def test_a_missing_tool_passes_the_flow_through_and_says_it_did_nothing():
     tools = ToolRegistry()
     tools.add(Tool(name="pdftotext", argv=("slpie-no-such-binary",), summary="absent"))
 
-    from slpie.dispatch import registry as dispatch_registry, reset as reset_dispatch
     import slpie.dispatch.registry as module
+    from slpie.dispatch import registry as dispatch_registry, reset as reset_dispatch
 
     module._REGISTRY = tools
     try:

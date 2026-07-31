@@ -21,7 +21,12 @@ from ..core.events import DomainEvent, EventKind
 from ..domain.edge import Edge, EdgeKind
 from ..domain.evidence import Evidence, EvidenceKind, SourceLocation
 from ..domain.identity import parse_identity
-from ..domain.lifecycle import ArchitectureClass, ComplianceState, LifecycleState, RiskClass
+from ..domain.lifecycle import (
+    ArchitectureClass,
+    ComplianceState,
+    LifecycleState,
+    RiskClass,
+)
 from ..domain.node import OPEN, Node, NodeKind
 from ..domain.reasoning import Enrichment
 from ..ledger.projection import Projection

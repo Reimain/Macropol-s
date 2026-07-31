@@ -44,8 +44,8 @@ from ..domain.evidence import Evidence, EvidenceKind, SourceLocation, strongest
 from ..domain.finding import Finding, FindingKind, Remediation
 from ..domain.identity import Purl
 from ..domain.lifecycle import Severity
-from ..errors import ManifestError, PolicyError
 from ..environment.schema import parse_yaml
+from ..errors import ManifestError, PolicyError
 from .rules import Rule, RuleContext, RuleSet
 
 #: Every operator a policy file may use. Anything else is a load error, so a

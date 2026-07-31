@@ -20,8 +20,8 @@ sql = ["SQLAlchemy>=2.0", "alembic>=1.13"]
 s3 = ["boto3>=1.34"]
 delta = ["deltalake>=0.17"]
 media = ["Pillow>=10.0"]
-dev = ["pytest>=8.0"]
-all = ["openpyxl>=3.1", "SQLAlchemy>=2.0", "alembic>=1.13", "boto3>=1.34", "deltalake>=0.17", "Pillow>=10.0", "pytest>=8.0"]
+dev = ["pytest>=8.0", "pytest-timeout>=2.3", "coverage[toml]>=7.4", "black>=24.3", "isort>=5.13", "pre-commit>=3.7"]
+all = ["openpyxl>=3.1", "SQLAlchemy>=2.0", "alembic>=1.13", "boto3>=1.34", "deltalake>=0.17", "Pillow>=10.0", "pytest>=8.0", "pytest-timeout>=2.3", "coverage[toml]>=7.4", "black>=24.3", "isort>=5.13", "pre-commit>=3.7"]
 
 [project.scripts]
 gratimos = "gratimos.cli:main"
@@ -40,5 +40,50 @@ include = ["gratimos*", "slpie*"]
     "app/*.webmanifest", "app/*.svg",
 ]
 
+# --- tooling ---------------------------------------------------------------
+#
+# Shaped after python-rope/rope's `pyproject.toml`, which is a good model for a
+# stdlib-only library: the tools are configured in one file, they are declared
+# rather than assumed, and the settings say what they are for.
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# A hung test is worse than a failing one: it burns a CI runner and reports
+# nothing. Nothing here should take thirty seconds — the slowest suites
+# materialise a temp filesystem and run a subprocess plugin, which is seconds.
+timeout = 300
+markers = [
+    "slow: materialises a large tree or runs a real subprocess",
+    "network: needs outbound access — never run in the default suite",
+]
+filterwarnings = ["error::DeprecationWarning:slpie.*"]
+
+[tool.coverage.run]
+branch = true
+source = ["gratimos", "slpie"]
+
+[tool.coverage.report]
+# `exclude_also` rather than `exclude_lines`, so these add to coverage's
+# defaults instead of replacing them — replacing silently drops `# pragma: no
+# cover`, which is the one everything already relies on.
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.$",                  # Protocol method bodies
+    "if __name__ == .__main__.:",
+]
+show_missing = true
+skip_covered = true
+
+[tool.isort]
+profile = "black"
+# Keep `from x import A, b as c` on one line. Splitting it into three, which is
+# isort's default, fights a house style that puts a module's imports where they
+# can be read at a glance.
+combine_as_imports = true
+
+# No `[tool.black]`, and that is deliberate rather than an omission. Running it
+# would reformat 337 of this repository's 383 Python files: the code is written
+# to be read top to bottom, with aligned tuples and deliberate line breaks that
+# black flattens. isort is adopted because its diff is mechanical and its
+# ordering is genuinely worth enforcing; black's is neither, here.

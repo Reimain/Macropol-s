@@ -23,7 +23,15 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field, replace
-from typing import Any, Iterable, Iterator, Mapping, Protocol, Sequence, runtime_checkable
+from typing import (
+    Any,
+    Iterable,
+    Iterator,
+    Mapping,
+    Protocol,
+    Sequence,
+    runtime_checkable,
+)
 
 from ..domain.evidence import Evidence
 from ..domain.reasoning import Enrichment, LayerNumber, ReasoningStep

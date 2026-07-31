@@ -6,7 +6,14 @@ from .documents import JsonProbe, TextProbe, YamlProbe
 from .media import ImageProbe, MediaInfo, VideoProbe, image_size
 from .network import STRICT_POLICY, AccessDenied, AccessPolicy, ApiProbe, fetch
 from .registry import MIN_CONFIDENCE, Discovery, Match, ProbeRegistry, default_registry
-from .runtime import ExecPolicy, ScriptFacts, ScriptResult, ShellProbe, read_script, run_script
+from .runtime import (
+    ExecPolicy,
+    ScriptFacts,
+    ScriptResult,
+    ShellProbe,
+    read_script,
+    run_script,
+)
 from .tabular import CsvProbe, XlsxProbe, excel_serial_to_date
 
 __all__ = [

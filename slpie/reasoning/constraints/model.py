@@ -23,7 +23,15 @@ names the pair, and it quotes both windows as the manifests wrote them.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Iterator, Mapping, Protocol, Sequence, runtime_checkable
+from typing import (
+    Any,
+    Iterable,
+    Iterator,
+    Mapping,
+    Protocol,
+    Sequence,
+    runtime_checkable,
+)
 
 from ...domain.version import Version, VersionRange, parse_range
 from ...errors import VersionError

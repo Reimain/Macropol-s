@@ -24,9 +24,12 @@ the same fingerprint, which is what lets one be published as a baseline.
 from __future__ import annotations
 
 import hashlib
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Mapping
+from typing import Any, Iterator, Mapping
+
+from .errors import Skip, SkipReason, TruncatedWalk, audit, explain
 
 #: Read in blocks rather than whole. A 200 MB file must not become 200 MB of RAM
 #: just to be fingerprinted — the spill tier exists because that pattern is how
@@ -37,6 +40,20 @@ BLOCK = 1024 * 1024
 #: keeps a fingerprint of a large tree small enough to store and to send.
 DIGEST_BYTES = 16
 
+#: Whether an unreadable file stops the run. Strict is the default because the
+#: alternative is a graph quietly wrong about a file nobody read; `SLPIE_STRICT=0`
+#: is the development escape, which records and explains instead of raising.
+#:
+#: Named `strict` rather than `production` because the mode is about what happens
+#: to an unreadable file, not about where the process is deployed — a developer
+#: debugging a partial scan wants strict on, and a batch job over somebody else's
+#: home directory may legitimately want it off.
+def default_strict() -> bool:
+    """The mode, from the environment. Strict unless explicitly turned off."""
+    raw = os.environ.get("SLPIE_STRICT", "").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
 #: Directories never worth fingerprinting. Mirrors the discovery walk rather than
 #: importing it: this list is about what to *hash*, that one is about what to
 #: *parse*, and they are free to diverge.
@@ -45,6 +62,11 @@ SKIP = (
     "/dist/", "/build/", "/.tox/", "/target/", "/vendor/", "/.mypy_cache/",
     "/.pytest_cache/", "/site-packages/", "/.slpie/",
 )
+
+
+def excluded(uri: str) -> bool:
+    """Whether policy says not to read this, regardless of whether it exists."""
+    return any(part in uri for part in SKIP)
 
 
 def digest_file(path: Path) -> str:
@@ -70,6 +92,12 @@ class Delta:
     changed: tuple[str, ...] = ()
     removed: tuple[str, ...] = ()
     unchanged: int = 0
+    #: Files the previous fingerprint knew about and this one could not read.
+    #: **Not** removed, and that distinction is the whole point: absent from a
+    #: fingerprint because nobody read it is not the same as absent from disk,
+    #: and a rescan that conflated them would retire the graph nodes drawn from
+    #: files that are still there.
+    unknown: tuple[str, ...] = ()
 
     @property
     def stale(self) -> tuple[str, ...]:
@@ -89,19 +117,31 @@ class Delta:
     def touched(self) -> int:
         return len(self.added) + len(self.changed) + len(self.removed)
 
+    @property
+    def trustworthy(self) -> bool:
+        """Whether this delta accounts for every file it was asked about."""
+        return not self.unknown
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "added": list(self.added), "changed": list(self.changed),
             "removed": list(self.removed), "unchanged": self.unchanged,
-            "touched": self.touched,
+            "unknown": list(self.unknown), "touched": self.touched,
+            "trustworthy": self.trustworthy,
         }
 
     def __str__(self) -> str:
+        unread = (
+            f", {len(self.unknown)} unread and therefore left alone"
+            if self.unknown else ""
+        )
         if self.empty:
-            return f"nothing changed ({self.unchanged} file(s) unchanged)"
+            return (
+                f"nothing changed ({self.unchanged} file(s) unchanged{unread})"
+            )
         return (
             f"{len(self.added)} added, {len(self.changed)} changed, "
-            f"{len(self.removed)} removed, {self.unchanged} unchanged"
+            f"{len(self.removed)} removed, {self.unchanged} unchanged{unread}"
         )
 
 
@@ -111,6 +151,18 @@ class Fingerprint:
 
     digests: Mapping[str, str] = field(default_factory=dict)
     root: str = ""
+    #: Files the walk wanted and could not get, each with its reason. Carried on
+    #: the fingerprint rather than logged, because `compare()` needs it: a file
+    #: this fingerprint could not read and the previous one knew about is
+    #: *unknown*, not removed, and only this list tells the two apart.
+    skipped: tuple[Skip, ...] = ()
+    #: Whether the walk stopped at its file limit. A count rather than a list of
+    #: what lay beyond, because that list is unbounded — see `errors.TruncatedWalk`.
+    truncated: bool = False
+    #: How many paths policy said not to read. A number, not a list: a monorepo's
+    #: `node_modules` is hundreds of thousands of files, and recording one object
+    #: each would cost more memory than the fingerprint itself.
+    excluded: int = 0
 
     @classmethod
     def of(
@@ -119,48 +171,138 @@ class Fingerprint:
         *,
         limit: int = 200_000,
         max_bytes: int = 64 * 1024 * 1024,
+        strict: bool | None = None,
     ) -> "Fingerprint":
-        """Fingerprint a tree. Bounded, because an unbounded walk is a hang."""
+        """Fingerprint a tree. Bounded, because an unbounded walk is a hang.
+
+        Every file the walk wanted and could not read is recorded as a `Skip`. In
+        strict mode — the default — that raises `IncompleteFingerprint` rather
+        than returning a fingerprint that silently describes less than the tree,
+        and a walk that hits its file limit raises `TruncatedWalk`. In lenient
+        mode both are recorded, and `compare()` routes the affected files into
+        `Delta.unknown` so a rescan leaves them alone.
+        """
         base = Path(root).expanduser().resolve()
+        if strict is None:
+            strict = default_strict()
+
         found: dict[str, str] = {}
+        skips: list[Skip] = []
+        ignored = 0
+        truncated = False
 
         candidates = [base] if base.is_file() else sorted(base.rglob("*"))
         for path in candidates:
-            if len(found) >= limit:
-                break
-            if not path.is_file():
-                continue
-            uri = path.resolve().as_uri()
-            if any(part in uri for part in SKIP):
-                continue
             try:
-                if path.stat().st_size > max_bytes:
+                if not path.is_file():
+                    continue
+                uri = path.resolve().as_uri()
+            except OSError as error:
+                # `is_file()` and `resolve()` both stat, and either can fail on a
+                # dangling symlink or an entry that vanished mid-walk. `as_uri()`
+                # is pure string work and cannot: `base` was resolved, so every
+                # candidate `rglob` yields under it is already absolute.
+                skips.append(Skip(path.as_uri(), SkipReason.UNREADABLE, str(error)))
+                continue
+
+            if excluded(uri):
+                ignored += 1
+                continue
+            if len(found) >= limit:
+                # Stop, rather than walking on to record every file beyond the
+                # limit. The recorded form was the first implementation and it is
+                # the one that runs a two-million-file monorepo out of memory to
+                # describe a walk that had already given up.
+                truncated = True
+                break
+            try:
+                size = path.stat().st_size
+                if size > max_bytes:
+                    skips.append(Skip(
+                        uri, SkipReason.TOO_LARGE,
+                        f"{size} bytes, over the {max_bytes} byte budget",
+                    ))
                     continue
                 found[uri] = digest_file(path)
-            except OSError:
-                # A file that disappeared between listing and reading is simply
-                # not in this fingerprint, which the next delta reports as a
-                # removal. Raising would make a rescan fail because somebody
-                # saved a file while it ran.
-                continue
+            except OSError as error:
+                # A file that disappeared between listing and reading is not in
+                # this fingerprint. That used to be reported as a removal, which
+                # is exactly the lie this module exists to stop: nobody read it,
+                # so nobody knows whether it is gone.
+                skips.append(Skip(uri, SkipReason.UNREADABLE, str(error)))
 
-        return cls(digests=found, root=str(base))
+        if truncated and strict:
+            raise TruncatedWalk(str(base), limit)
+
+        return cls(
+            digests=found, root=str(base), truncated=truncated, excluded=ignored,
+            skipped=audit(str(base), skips, strict=strict),
+        )
+
+    @property
+    def unread(self) -> frozenset[str]:
+        """Uris this fingerprint wanted and could not read.
+
+        Excluded paths are not in here: the graph holds nothing derived from a
+        `node_modules` the operator configured away, so its absence from a
+        fingerprint says nothing that needs qualifying.
+        """
+        return frozenset(item.uri for item in self.skipped)
+
+    @property
+    def complete(self) -> bool:
+        """Whether this fingerprint read everything it meant to."""
+        return not self.skipped and not self.truncated
+
+    def explain_skips(self) -> str:
+        """Why files were not read — what lenient mode shows a developer."""
+        if self.truncated:
+            return (
+                f"  walk_limit: stopped after {len(self.digests)} file(s); "
+                f"whatever lies beyond was not reached and cannot be named"
+            )
+        return explain(self.skipped)
 
     def compare(self, previous: "Fingerprint | Mapping[str, str]") -> Delta:
-        """What moved since `previous`. The whole point of the type."""
+        """What moved since `previous`. The whole point of the type.
+
+        A uri the previous fingerprint knew about and this walk did not read is
+        reported as **unknown**, never as removed. That one branch is the fix:
+        `removed` retires the graph nodes drawn from a file, and retiring them
+        because nobody looked is how an incremental engine produces a graph that
+        is confidently wrong about a file that is still on disk.
+
+        Three ways a uri lands in `unknown`, and the third is the subtle one:
+
+        * this walk tried to read it and could not;
+        * this walk stopped at its limit, so it can vouch for nothing it did not
+          reach — after a truncated walk *every* disappearance is unknown;
+        * the **exclusion policy changed** since the baseline. Adding `/vendor/`
+          to `SKIP` makes a hundred files vanish from the fingerprint without a
+          single one being deleted, and calling that a removal would retire
+          everything they justify. Tested against the current policy rather than
+          recorded per file, so it costs nothing on the ordinary path.
+        """
         old = (
             previous.digests if isinstance(previous, Fingerprint) else dict(previous)
         )
         new = self.digests
+        unread = self.unread
+        vanished = set(old) - set(new)
+
+        unaccounted = vanished if self.truncated else {
+            uri for uri in vanished if uri in unread or excluded(uri)
+        }
 
         added = tuple(sorted(set(new) - set(old)))
-        removed = tuple(sorted(set(old) - set(new)))
+        removed = tuple(sorted(vanished - unaccounted))
         changed = tuple(sorted(
             uri for uri in set(new) & set(old) if new[uri] != old[uri]
         ))
         return Delta(
             added=added, changed=changed, removed=removed,
             unchanged=len(set(new) & set(old)) - len(changed),
+            unknown=tuple(sorted(unaccounted)),
         )
 
     @property
@@ -181,6 +323,9 @@ class Fingerprint:
         return {
             "root": self.root, "files": len(self.digests),
             "digest": self.digest, "digests": dict(self.digests),
+            "complete": self.complete, "truncated": self.truncated,
+            "excluded": self.excluded,
+            "skipped": [item.to_dict() for item in self.skipped],
         }
 
     @classmethod
@@ -188,6 +333,16 @@ class Fingerprint:
         return cls(
             digests=dict(payload.get("digests", {})),
             root=str(payload.get("root", "")),
+            truncated=bool(payload.get("truncated", False)),
+            excluded=int(payload.get("excluded", 0)),
+            skipped=tuple(
+                Skip(
+                    str(item.get("uri", "")),
+                    SkipReason(str(item.get("reason", "unreadable"))),
+                    str(item.get("detail", "")),
+                )
+                for item in payload.get("skipped", ())
+            ),
         )
 
     def save(self, path: str | Path) -> Path:
@@ -228,4 +383,12 @@ class Fingerprint:
         return iter(sorted(self.digests))
 
     def __str__(self) -> str:
-        return f"{len(self.digests)} file(s), digest {self.digest[:12]}"
+        if self.truncated:
+            qualifier = ", truncated"
+        elif self.skipped:
+            qualifier = f", {len(self.skipped)} unread"
+        else:
+            qualifier = ""
+        return (
+            f"{len(self.digests)} file(s), digest {self.digest[:12]}{qualifier}"
+        )

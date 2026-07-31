@@ -36,7 +36,13 @@ from ..policy import (
     WAIT,
     Policymakers,
 )
-from ..probes import AccessPolicy, Discovery, ExecPolicy, ProbeRegistry, default_registry
+from ..probes import (
+    AccessPolicy,
+    Discovery,
+    ExecPolicy,
+    ProbeRegistry,
+    default_registry,
+)
 from ..storage import LocalRepository
 from ..trace import Journal, RollbackManager
 from ..transforms import DEFAULT_POLICY, SandboxPolicy, TransformRegistry

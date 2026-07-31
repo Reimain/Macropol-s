@@ -23,7 +23,7 @@ from .cache import (
     ResponseCache,
 )
 from .crawler import Crawler, CrawlResult
-from .fetch import RETRYABLE, FetchReport, Fetcher, RateLimiter
+from .fetch import RETRYABLE, Fetcher, FetchReport, RateLimiter
 from .policy import (
     DEFAULT_INTERVAL,
     DEFAULT_USER_AGENT,

@@ -245,8 +245,8 @@ def test_an_upstream_flow_can_be_handed_to_a_verb_over_http(
     api: Api, repository: Path,
 ):
     """Server-side composition without serialising a whole pipeline per stage."""
-    from slpie.compose.wire import encode
     from slpie.compose import Composition, Context
+    from slpie.compose.wire import encode
 
     produced = Composition.read(f"discover {repository}").run(Context())
     upstream = json.loads(encode(produced.flow))

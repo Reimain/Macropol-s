@@ -163,7 +163,11 @@ def _c4(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
 
 def _enterprise(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
     """TOGAF views and the topology — rendered, or generated as importable code."""
-    from ...artifacts.codegen import ArchitectureCodegen, ArchitectureConflict, MergePolicy
+    from ...artifacts.codegen import (
+        ArchitectureCodegen,
+        ArchitectureConflict,
+        MergePolicy,
+    )
     from ...enterprise import togaf_views, topology_view
     from ...errors import ArtifactError
 

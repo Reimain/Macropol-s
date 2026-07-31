@@ -36,6 +36,7 @@ consumed at L6 and is independently useful — a conflict explanation naming bot
 requirements and both windows is the point of it.
 """
 
+from .guidance import guidance_for, render
 from .l1_discovery import DiscoveryLayer
 from .l2_normalization import NormalizationLayer
 from .l3_graph import GraphConstructionLayer
@@ -44,7 +45,6 @@ from .l5_validation import ArchitectureValidationLayer
 from .l6_constraints import ConstraintSolvingLayer
 from .l7_impact import ImpactLayer, Reach
 from .l8_optimize import OptimizationLayer
-from .guidance import guidance_for, render
 from .layer import BaseLayer, Layer, LayerContext, LayerError, LayerResult
 from .pipeline import Pipeline, PipelineResult
 

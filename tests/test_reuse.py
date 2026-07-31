@@ -30,12 +30,12 @@ from gratimos.reuse import (
     Gate,
     Ranker,
     ReuseAssessor,
+    bridge,
     build_candidate,
     licence_obligation,
     licence_ok,
     runtime_ok,
 )
-from gratimos.reuse import bridge
 
 ALLOW_ALL = "User-agent: *\nAllow: /\n"
 

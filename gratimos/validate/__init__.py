@@ -55,8 +55,8 @@ from .calibration import (
 )
 from .record import (
     EXCERPT,
-    RecordError,
     Recorder,
+    RecordError,
     Redaction,
     Run,
     RunLedger,

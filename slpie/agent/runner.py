@@ -36,8 +36,14 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
-from ..compose import Composition, CompositionError, Context, ParseError, VerbError
-from ..compose import registry as verb_registry
+from ..compose import (
+    Composition,
+    CompositionError,
+    Context,
+    ParseError,
+    VerbError,
+    registry as verb_registry,
+)
 from ..errors import SlpieError
 from .tools import Tool, ToolError, ToolSet
 

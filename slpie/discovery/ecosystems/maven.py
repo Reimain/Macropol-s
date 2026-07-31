@@ -35,7 +35,15 @@ from ...domain.identity import Purl
 from ...domain.version import parse_range
 from ...errors import VersionError
 from ...plugins.protocol import DiscoveryResult, Observation
-from ..base import Source, declares, depends, evidence_at, find_line, result, workspace_purl
+from ..base import (
+    Source,
+    declares,
+    depends,
+    evidence_at,
+    find_line,
+    result,
+    workspace_purl,
+)
 
 EXTRACTOR = "slpie.maven"
 

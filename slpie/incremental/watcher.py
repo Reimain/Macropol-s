@@ -32,8 +32,9 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
 
+from .errors import Skip, explain
 from .fingerprint import Delta, Fingerprint
 from .invalidation import Invalidation, invalidate
 
@@ -56,6 +57,17 @@ class Plan:
     invalidation: Invalidation
     total_files: int = 0
     duration: float = 0.0
+    #: Why files were not read, in full. Only ever non-empty in lenient mode —
+    #: strict raises instead of planning over a tree it could not read.
+    skipped: tuple[Skip, ...] = ()
+    #: Whether the walk stopped at its file limit, in which case it can vouch
+    #: for nothing beyond what it read.
+    truncated: bool = False
+
+    @property
+    def trustworthy(self) -> bool:
+        """Whether this plan accounts for every file it was asked about."""
+        return self.delta.trustworthy
 
     @property
     def proportion(self) -> float:
@@ -75,18 +87,46 @@ class Plan:
         return not self.delta.empty and self.proportion <= FULL_RESCAN_ABOVE
 
     @property
+    def caveat(self) -> str:
+        """What this plan could not see. Empty when it read the whole tree."""
+        if self.trustworthy:
+            return ""
+        cause = (
+            "the walk stopped at its file limit"
+            if self.truncated else "they could not be read on this pass"
+        )
+        return (
+            f"{len(self.delta.unknown)} file(s) the baseline knew about are "
+            f"unaccounted for ({cause}), so this plan leaves them alone rather "
+            f"than retiring what they justify — run with SLPIE_STRICT=1 to "
+            f"refuse instead of continuing"
+        )
+
+    @property
+    def unread_detail(self) -> str:
+        """Why files were not read, grouped — the development mode's whole point."""
+        if self.truncated:
+            return (
+                f"  walk_limit: stopped after {self.total_files} file(s); "
+                f"whatever lies beyond was not reached and cannot be named"
+            )
+        return explain(self.skipped)
+
+    @property
     def reason(self) -> str:
         if self.delta.empty:
-            return "nothing changed since the baseline; there is no work to do"
-        if self.proportion > FULL_RESCAN_ABOVE:
-            return (
+            base = "nothing changed since the baseline; there is no work to do"
+        elif self.proportion > FULL_RESCAN_ABOVE:
+            base = (
                 f"{self.proportion:.0%} of the tree moved; retiring and "
                 f"re-deriving that much costs more than one full rescan"
             )
-        return (
-            f"{self.delta.touched} of {self.total_files} file(s) moved "
-            f"({self.proportion:.1%}); rescanning only those"
-        )
+        else:
+            base = (
+                f"{self.delta.touched} of {self.total_files} file(s) moved "
+                f"({self.proportion:.1%}); rescanning only those"
+            )
+        return f"{base} — {self.caveat}" if self.caveat else base
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -97,6 +137,9 @@ class Plan:
             "worth_it": self.worth_it,
             "reason": self.reason,
             "duration": round(self.duration, 4),
+            "trustworthy": self.trustworthy,
+            "truncated": self.truncated,
+            "skipped": [item.to_dict() for item in self.skipped],
         }
 
     def render(self) -> str:
@@ -113,6 +156,20 @@ class Plan:
             for uri in self.delta.removed[:4]:
                 lines.append(f"    retire   {uri.rsplit('/', 1)[-1]}")
             lines.append("")
+        if self.delta.unknown:
+            # Outside the invalidation gate on purpose. A pass that read nothing
+            # has no work to show and is exactly the pass whose unread list
+            # matters most — gating it there hid the whole point.
+            for uri in self.delta.unknown[:4]:
+                lines.append(f"    unread   {uri.rsplit('/', 1)[-1]}  (left alone)")
+            lines.append("")
+        if self.skipped or self.truncated:
+            # The development half of the two modes: strict would have raised
+            # with this list; lenient prints it, because a developer who chose to
+            # continue still needs to know what they are continuing without.
+            lines.append("  files not read:")
+            lines.append(self.unread_detail)
+            lines.append("")
         return "\n".join(lines)
 
     def __str__(self) -> str:
@@ -127,12 +184,28 @@ class Watcher:
         root: str | Path,
         *,
         baseline: str | Path | None = None,
+        strict: bool | None = None,
+        limit: int | None = None,
+        max_bytes: int | None = None,
     ) -> None:
         self.root = Path(root).expanduser().resolve()
         self.baseline_path = Path(
             baseline if baseline is not None else self.root / BASELINE
         )
+        #: `None` means "ask the environment at walk time" rather than "lenient",
+        #: so a watcher constructed before `SLPIE_STRICT` is set still honours it.
+        self.strict = strict
+        #: The two budgets whose exhaustion produces an unsafe skip. Exposed here
+        #: because a `walk_limit` or `too_large` skip is only actionable if the
+        #: caller who was told about it can raise the budget that caused it.
+        self.limit = limit
+        self.max_bytes = max_bytes
         self._current: Fingerprint | None = None
+
+    def _bounds(self) -> dict[str, int]:
+        """The overridden budgets only — so `Fingerprint.of` keeps its defaults."""
+        given = {"limit": self.limit, "max_bytes": self.max_bytes}
+        return {key: value for key, value in given.items() if value is not None}
 
     # -- reading ---------------------------------------------------------
 
@@ -149,7 +222,9 @@ class Watcher:
         after a commit always reported one changed file and never converged.
         """
         if self._current is None or refresh:
-            whole = Fingerprint.of(self.root)
+            whole = Fingerprint.of(
+                self.root, strict=self.strict, **self._bounds()
+            )
             baseline = self.baseline_path.resolve().as_uri()
             self._current = Fingerprint(
                 digests={
@@ -157,6 +232,11 @@ class Watcher:
                     if uri != baseline
                 },
                 root=whole.root,
+                # Carried through, not dropped. These are what stop `compare()`
+                # calling an unread file removed, and rebuilding the fingerprint
+                # without them would reintroduce the defect one level up.
+                skipped=whole.skipped, truncated=whole.truncated,
+                excluded=whole.excluded,
             )
         return self._current
 
@@ -187,7 +267,8 @@ class Watcher:
 
         return Plan(
             delta=delta, invalidation=found, total_files=len(current),
-            duration=time.monotonic() - started,
+            duration=time.monotonic() - started, skipped=current.skipped,
+            truncated=current.truncated,
         )
 
     # -- committing ------------------------------------------------------

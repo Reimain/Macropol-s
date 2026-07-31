@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from fixtures import ORDERS
 
 from gratimos.a2a import (
     A2AClient,
@@ -33,7 +34,6 @@ from gratimos.a2a.adapters.uipath import (
 from gratimos.contextflow import ContextFlow
 from gratimos.errors import AgentError, ProtocolError
 from gratimos.meta import Wrapped
-from fixtures import ORDERS
 
 
 def auditor(context):

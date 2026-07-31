@@ -15,10 +15,10 @@ import pytest
 
 from gratimos.crawl import (
     Artifact,
-    CrawlPolicy,
     Crawler,
-    FetchError,
+    CrawlPolicy,
     Fetcher,
+    FetchError,
     GitHubSource,
     NpmSource,
     Origin,

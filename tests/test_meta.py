@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 
 import pytest
+from fixtures import CUSTOMERS, ORDERS
 
 from gratimos.errors import CastError
 from gratimos.meta import (
@@ -17,7 +18,6 @@ from gratimos.meta import (
     promote,
     unify,
 )
-from fixtures import CUSTOMERS, ORDERS
 
 
 def test_type_lattice_widens_without_losing_information():

@@ -38,6 +38,8 @@ from slpie.agent import (
     builtin_tools,
 )
 from slpie.compose import Composition, registry
+from slpie.compose.pipeline import CompositionError
+from slpie.compose.verb import Context
 from slpie.domain.edge import Edge, EdgeKind
 from slpie.domain.evidence import Evidence, EvidenceKind, SourceLocation
 from slpie.domain.identity import Purl
@@ -47,11 +49,20 @@ from slpie.graph.sqlite_graph import SqliteGraph
 from slpie.incremental import (
     Delta,
     Fingerprint,
+    IncompleteFingerprint,
     Invalidation,
     Plan,
+    Skip,
+    SkipReason,
+    TruncatedWalk,
+    UnreadableFile,
     Watcher,
+    audit,
+    default_strict,
     digest_file,
     evidence_for_uris,
+    excluded,
+    explain,
     invalidate,
 )
 
@@ -432,10 +443,10 @@ def test_an_unreadable_baseline_reads_as_empty_rather_than_crashing(tmp_path):
     assert len(Fingerprint.load(broken)) == 0
 
 
-def test_a_file_that_vanishes_mid_walk_is_simply_not_in_the_fingerprint(
+def test_a_file_that_vanishes_mid_walk_is_recorded_rather_than_hashed(
     tmp_path, monkeypatch,
 ):
-    """Somebody saving a file while a scan runs must not fail the scan."""
+    """Somebody saving a file while a scan runs must not fail a lenient scan."""
     (tmp_path / "a.json").write_text("1", encoding="utf-8")
     import slpie.incremental.fingerprint as module
 
@@ -443,20 +454,31 @@ def test_a_file_that_vanishes_mid_walk_is_simply_not_in_the_fingerprint(
         raise OSError("gone")
 
     monkeypatch.setattr(module, "digest_file", vanish)
-    assert len(Fingerprint.of(tmp_path)) == 0
+    fingerprint = Fingerprint.of(tmp_path, strict=False)
+
+    assert len(fingerprint) == 0
+    assert [item.reason for item in fingerprint.skipped] == [SkipReason.UNREADABLE]
+    assert "gone" in fingerprint.skipped[0].detail
 
 
 def test_a_file_larger_than_the_limit_is_skipped(tmp_path):
     (tmp_path / "big.json").write_text("x" * 5000, encoding="utf-8")
 
-    assert len(Fingerprint.of(tmp_path, max_bytes=100)) == 0
+    fingerprint = Fingerprint.of(tmp_path, max_bytes=100, strict=False)
+
+    assert len(fingerprint) == 0
+    assert [item.reason for item in fingerprint.skipped] == [SkipReason.TOO_LARGE]
 
 
 def test_the_walk_is_bounded(tmp_path):
     for index in range(20):
         (tmp_path / f"f{index}.json").write_text("1", encoding="utf-8")
 
-    assert len(Fingerprint.of(tmp_path, limit=5)) == 5
+    fingerprint = Fingerprint.of(tmp_path, limit=5, strict=False)
+
+    assert len(fingerprint) == 5
+    assert fingerprint.truncated
+    assert not fingerprint.complete
 
 
 def test_a_fingerprint_behaves_like_a_mapping_of_uris(tmp_path):
@@ -809,3 +831,510 @@ def test_the_incremental_plan_and_the_scan_agree_about_what_changed(repository):
     assert len(plan.delta.changed) == 1
     assert plan.delta.changed[0].endswith("settings.py")
     assert plan.worth_it
+
+
+# --- the two modes: never a wrong graph about a file nobody read ------------
+#
+# The defect these cover was measured, not imagined. On a ten-file tree a walk
+# limit of four reported six live files as removed, and a size limit of zero
+# reported all ten — and a rescan acting on either would have retired the graph
+# nodes drawn from files that were still on disk and perfectly fine.
+
+
+def _ten_files(root):
+    for index in range(10):
+        (root / f"f{index}.txt").write_text(f"content {index}\n", encoding="utf-8")
+    return root
+
+
+def test_a_file_the_walk_did_not_read_is_never_reported_as_removed(tmp_path):
+    """The defect, directly: unread is not gone."""
+    full = Fingerprint.of(_ten_files(tmp_path))
+    (tmp_path / "f0.txt").write_text("x" * 5000, encoding="utf-8")
+    partial = Fingerprint.of(tmp_path, max_bytes=100, strict=False)
+
+    delta = partial.compare(full)
+
+    assert delta.removed == ()
+    assert delta.unknown == ((tmp_path / "f0.txt").resolve().as_uri(),)
+    assert not delta.trustworthy
+
+
+def test_a_size_limit_that_reads_nothing_retires_nothing(tmp_path):
+    full = Fingerprint.of(_ten_files(tmp_path))
+    partial = Fingerprint.of(tmp_path, max_bytes=0, strict=False)
+
+    delta = partial.compare(full)
+
+    assert len(partial) == 0
+    assert delta.removed == ()
+    assert len(delta.unknown) == 10
+
+
+def test_a_file_genuinely_deleted_is_still_reported_as_removed(tmp_path):
+    """The fix must not buy safety by never retiring anything."""
+    full = Fingerprint.of(_ten_files(tmp_path))
+    (tmp_path / "f3.txt").unlink()
+
+    delta = Fingerprint.of(tmp_path).compare(full)
+
+    assert len(delta.removed) == 1
+    assert delta.removed[0].endswith("f3.txt")
+    assert delta.unknown == ()
+    assert delta.trustworthy
+
+
+def test_strict_mode_refuses_to_fingerprint_a_tree_it_could_not_read(tmp_path):
+    _ten_files(tmp_path)
+
+    with pytest.raises(IncompleteFingerprint) as caught:
+        Fingerprint.of(tmp_path, max_bytes=0, strict=True)
+
+    error = caught.value
+    assert error.reasons == ("too_large",)
+    assert len(error.skipped) == 10
+    assert error.root == str(tmp_path.resolve())
+    assert "would report those files as *removed*" in str(error)
+
+
+def test_strict_mode_refuses_a_walk_that_stopped_at_its_limit(tmp_path):
+    """Separate exception, because a stopped walk cannot name what it missed."""
+    _ten_files(tmp_path)
+
+    with pytest.raises(TruncatedWalk) as caught:
+        Fingerprint.of(tmp_path, limit=4, strict=True)
+
+    assert caught.value.limit == 4
+    assert caught.value.root == str(tmp_path.resolve())
+    assert "would retire most of the graph" in str(caught.value)
+
+
+def test_a_truncated_walk_does_not_record_one_object_per_unreached_file(tmp_path):
+    """The list form is what runs a two-million-file monorepo out of memory."""
+    for index in range(200):
+        (tmp_path / f"f{index}.txt").write_text("x", encoding="utf-8")
+
+    fingerprint = Fingerprint.of(tmp_path, limit=3, strict=False)
+
+    assert fingerprint.skipped == ()      # nothing accumulated
+    assert fingerprint.truncated          # but the fact is not lost
+    assert "cannot be named" in fingerprint.explain_skips()
+    assert str(fingerprint).endswith("truncated")
+
+
+def test_a_truncated_walk_retires_nothing_at_all(tmp_path):
+    """It cannot tell a deletion from a file it never reached, so it says so."""
+    full = Fingerprint.of(_ten_files(tmp_path))
+    (tmp_path / "f9.txt").unlink()
+
+    delta = Fingerprint.of(tmp_path, limit=3, strict=False).compare(full)
+
+    assert delta.removed == ()            # even f9, which really is gone
+    assert len(delta.unknown) == 7
+    assert not delta.trustworthy
+
+
+def test_the_exception_carries_its_files_rather_than_only_a_message(tmp_path):
+    """rope's shape: act on the fields, never parse prose out of `str(e)`."""
+    _ten_files(tmp_path)
+
+    with pytest.raises(IncompleteFingerprint) as caught:
+        Fingerprint.of(tmp_path, max_bytes=0, strict=True)
+
+    uris = {item.uri for item in caught.value.skipped}
+    assert uris == {
+        (tmp_path / f"f{index}.txt").resolve().as_uri() for index in range(10)
+    }
+    assert all(item.reason is SkipReason.TOO_LARGE for item in caught.value.skipped)
+
+
+def test_a_long_skip_list_is_summarised_rather_than_dumped(tmp_path):
+    for index in range(30):
+        (tmp_path / f"f{index}.txt").write_text("x", encoding="utf-8")
+
+    with pytest.raises(IncompleteFingerprint) as caught:
+        Fingerprint.of(tmp_path, max_bytes=0, strict=True)
+
+    message = str(caught.value)
+    assert "… and 22 more" in message
+    assert message.count("  - ") == 8
+
+
+def test_an_excluded_directory_is_counted_and_does_not_raise(tmp_path):
+    """A `node_modules` the operator configured away is not news."""
+    (tmp_path / "keep.txt").write_text("1", encoding="utf-8")
+    vendored = tmp_path / "node_modules" / "left-pad"
+    vendored.mkdir(parents=True)
+    (vendored / "index.js").write_text("1", encoding="utf-8")
+
+    fingerprint = Fingerprint.of(tmp_path, strict=True)
+
+    assert len(fingerprint) == 1
+    assert fingerprint.excluded == 1      # counted, never a list
+    assert fingerprint.skipped == ()
+    assert fingerprint.complete
+    assert fingerprint.unread == frozenset()
+
+
+def test_an_excluded_file_never_becomes_unknown(tmp_path):
+    """Safe skips must not leak into the delta as files nobody can account for."""
+    (tmp_path / "keep.txt").write_text("1", encoding="utf-8")
+    vendored = tmp_path / "node_modules"
+    vendored.mkdir()
+    (vendored / "index.js").write_text("1", encoding="utf-8")
+
+    first = Fingerprint.of(tmp_path)
+    (tmp_path / "keep.txt").write_text("2", encoding="utf-8")
+
+    delta = Fingerprint.of(tmp_path).compare(first)
+
+    assert delta.unknown == ()
+    assert delta.trustworthy
+
+
+def test_an_unread_file_the_baseline_never_knew_about_is_not_unknown(tmp_path):
+    """Nothing was derived from it, so there is nothing to leave alone."""
+    _ten_files(tmp_path)
+    baseline = Fingerprint.of(tmp_path)
+    for index in range(10, 20):
+        (tmp_path / f"f{index}.txt").write_text("new\n", encoding="utf-8")
+
+    delta = Fingerprint.of(tmp_path, max_bytes=0, strict=False).compare(baseline)
+
+    assert len(delta.unknown) == 10  # the ten the baseline knew, not twenty
+
+
+def test_the_mode_comes_from_the_environment_when_nobody_names_one(
+    tmp_path, monkeypatch,
+):
+    _ten_files(tmp_path)
+    monkeypatch.setenv("SLPIE_STRICT", "0")
+
+    assert default_strict() is False
+    assert len(Fingerprint.of(tmp_path, max_bytes=0)) == 0   # lenient: no raise
+
+    monkeypatch.setenv("SLPIE_STRICT", "1")
+    assert default_strict() is True
+    with pytest.raises(IncompleteFingerprint):
+        Fingerprint.of(tmp_path, max_bytes=0)
+
+
+def test_strict_is_the_default_when_the_environment_says_nothing(monkeypatch):
+    """The safe mode must be the one you get by not thinking about it."""
+    monkeypatch.delenv("SLPIE_STRICT", raising=False)
+    assert default_strict() is True
+
+    for off in ("0", "false", "no", "off", "OFF", " False "):
+        monkeypatch.setenv("SLPIE_STRICT", off)
+        assert default_strict() is False
+
+
+def test_a_broken_symlink_is_recorded_rather_than_crashing_the_walk(
+    tmp_path, monkeypatch,
+):
+    """`is_file()` stats, and a stat can fail before there is a uri to name."""
+    (tmp_path / "a.txt").write_text("1", encoding="utf-8")
+    from pathlib import Path as RealPath
+
+    original = RealPath.is_file
+
+    def refuse(self):
+        if self.name == "a.txt":
+            raise OSError("stale handle")
+        return original(self)
+
+    monkeypatch.setattr(RealPath, "is_file", refuse)
+    fingerprint = Fingerprint.of(tmp_path, strict=False)
+
+    assert len(fingerprint) == 0
+    assert fingerprint.skipped[0].reason is SkipReason.UNREADABLE
+    assert "stale handle" in fingerprint.skipped[0].detail
+
+
+# --- explaining, which is the whole of the development mode -----------------
+
+
+def test_a_skip_explains_itself_in_one_line():
+    skip = Skip("file:///x/big.bin", SkipReason.TOO_LARGE, "900 MB")
+
+    assert str(skip) == "big.bin: too_large — 900 MB"
+    assert skip.to_dict() == {
+        "uri": "file:///x/big.bin", "reason": "too_large", "detail": "900 MB",
+    }
+
+
+def test_a_skip_with_no_detail_and_no_slash_still_names_itself():
+    assert Skip("bare", SkipReason.UNREADABLE).explain() == "bare: unreadable"
+
+
+def test_the_explanation_groups_by_reason():
+    skipped = [Skip(f"file:///x/f{i}.txt", SkipReason.TOO_LARGE) for i in range(7)]
+    skipped.append(Skip("file:///x/gone.txt", SkipReason.UNREADABLE, "denied"))
+
+    rendered = explain(skipped)
+
+    assert "too_large: 7 file(s)" in rendered
+    assert "… and 2 more" in rendered
+    assert "unreadable: 1 file(s)" in rendered
+    assert rendered.index("too_large") < rendered.index("unreadable")
+
+
+def test_explaining_nothing_says_so_rather_than_rendering_empty():
+    assert explain(()) == "  every file was read"
+
+
+def test_a_fingerprint_explains_its_own_skips(tmp_path):
+    _ten_files(tmp_path)
+
+    fingerprint = Fingerprint.of(tmp_path, max_bytes=0, strict=False)
+
+    assert "too_large: 10 file(s)" in fingerprint.explain_skips()
+    assert "10 unread" in str(fingerprint)
+
+
+def test_naming_one_unreadable_file_does_not_render_a_list():
+    """The single-file form exists because a list of one is noise."""
+    error = UnreadableFile("file:///x/a.txt", "permission denied")
+
+    assert error.uri == "file:///x/a.txt"
+    assert str(error) == "cannot read file:///x/a.txt: permission denied"
+    assert str(UnreadableFile("file:///x/a.txt")) == "cannot read file:///x/a.txt"
+
+
+def test_the_audit_is_the_one_place_the_rule_lives():
+    """Two callers cannot apply the mode differently if there is only one gate."""
+    skip = Skip("file:///x/b.txt", SkipReason.UNREADABLE)
+
+    assert audit("/x", [], strict=True) == ()
+    assert audit("/x", [skip], strict=False) == (skip,)
+    with pytest.raises(IncompleteFingerprint):
+        audit("/x", [skip], strict=True)
+
+
+def test_the_exclusion_policy_is_asked_rather_than_recorded():
+    assert excluded("file:///x/node_modules/a.js")
+    assert excluded("file:///x/.git/HEAD")
+    assert not excluded("file:///x/src/a.js")
+
+
+# --- it survives the wire and the baseline file -----------------------------
+
+
+def test_skips_survive_a_baseline_round_trip(tmp_path):
+    _ten_files(tmp_path)
+    fingerprint = Fingerprint.of(tmp_path, max_bytes=0, strict=False)
+
+    written = fingerprint.save(tmp_path / "out" / "fp.json")
+    restored = Fingerprint.load(written)
+
+    assert restored.skipped == fingerprint.skipped
+    assert restored.unread == fingerprint.unread
+    assert restored.to_dict()["complete"] is False
+
+
+def test_a_baseline_written_before_this_existed_still_loads(tmp_path):
+    """An older baseline has no `skipped` key, and must not fail to load."""
+    (tmp_path / "old.json").write_text(
+        '{"root": "/x", "digests": {"file:///x/a": "ab"}}', encoding="utf-8",
+    )
+
+    restored = Fingerprint.load(tmp_path / "old.json")
+
+    assert restored.skipped == ()
+    assert restored.complete
+
+
+def test_a_delta_states_what_it_could_not_account_for(tmp_path):
+    _ten_files(tmp_path)
+    full = Fingerprint.of(tmp_path)
+
+    delta = Fingerprint.of(tmp_path, max_bytes=0, strict=False).compare(full)
+
+    assert delta.to_dict()["unknown"] == list(delta.unknown)
+    assert delta.to_dict()["trustworthy"] is False
+    assert "10 unread and therefore left alone" in str(delta)
+
+
+def test_an_empty_delta_still_says_what_it_could_not_see(tmp_path):
+    (tmp_path / "a.txt").write_text("1", encoding="utf-8")
+    baseline = Fingerprint.of(tmp_path)
+
+    delta = Fingerprint.of(tmp_path, max_bytes=0, strict=False).compare(baseline)
+
+    assert delta.empty            # nothing added, changed or removed
+    assert not delta.trustworthy  # and that is not the same as nothing to say
+    assert "1 unread and therefore left alone" in str(delta)
+
+
+# --- through the watcher and the verb ---------------------------------------
+
+
+def test_the_watcher_carries_the_skips_through_its_own_rebuild(tmp_path):
+    """It rebuilds the fingerprint to drop the baseline; the skips must survive."""
+    _ten_files(tmp_path)
+    watcher = Watcher(
+        tmp_path, baseline=tmp_path / ".slpie" / "b.json",
+        strict=False, max_bytes=0,
+    )
+
+    current = watcher.current(refresh=True)
+
+    assert len(current.skipped) == 10
+    assert not current.complete
+
+
+def test_the_watcher_carries_truncation_through_its_own_rebuild(tmp_path):
+    _ten_files(tmp_path)
+    watcher = Watcher(tmp_path, strict=False, limit=4)
+
+    assert watcher.current(refresh=True).truncated
+
+
+def test_a_partial_plan_says_so_and_retires_nothing(tmp_path):
+    _ten_files(tmp_path)
+    baseline = tmp_path / ".slpie" / "b.json"
+    Watcher(tmp_path, baseline=baseline).commit()
+
+    partial = Watcher(tmp_path, baseline=baseline, strict=False, max_bytes=0)
+    plan = partial.plan()
+
+    assert plan.delta.removed == ()
+    assert not plan.trustworthy
+    assert "could not be read on this pass" in plan.caveat
+    assert plan.to_dict()["trustworthy"] is False
+    assert len(plan.to_dict()["skipped"]) == 10
+
+
+def test_a_partial_plan_renders_the_files_it_left_alone(tmp_path):
+    _ten_files(tmp_path)
+    baseline = tmp_path / ".slpie" / "b.json"
+    Watcher(tmp_path, baseline=baseline).commit()
+    (tmp_path / "f0.txt").write_text("moved\n", encoding="utf-8")
+
+    rendered = Watcher(
+        tmp_path, baseline=baseline, strict=False, max_bytes=0,
+    ).plan().render()
+
+    assert "(left alone)" in rendered
+    assert "files not read:" in rendered
+    assert "too_large" in rendered
+
+
+def test_a_truncated_plan_says_it_cannot_name_what_it_missed(tmp_path):
+    _ten_files(tmp_path)
+    baseline = tmp_path / ".slpie" / "b.json"
+    Watcher(tmp_path, baseline=baseline).commit()
+
+    plan = Watcher(tmp_path, baseline=baseline, strict=False, limit=4).plan()
+
+    assert plan.truncated
+    assert "the walk stopped at its file limit" in plan.caveat
+    assert "cannot be named" in plan.render()
+    assert plan.to_dict()["truncated"] is True
+
+
+def test_a_complete_plan_carries_no_caveat_and_renders_none(tmp_path):
+    _ten_files(tmp_path)
+    baseline = tmp_path / ".slpie" / "b.json"
+    watcher = Watcher(tmp_path, baseline=baseline)
+    watcher.commit()
+    (tmp_path / "f0.txt").write_text("moved\n", encoding="utf-8")
+
+    plan = watcher.plan()
+
+    assert plan.trustworthy
+    assert plan.caveat == ""
+    assert "files not read:" not in plan.render()
+
+
+def test_a_strict_watcher_refuses_rather_than_planning_over_half_a_tree(tmp_path):
+    _ten_files(tmp_path)
+
+    with pytest.raises(IncompleteFingerprint):
+        Watcher(tmp_path, strict=True, max_bytes=0).plan()
+
+    with pytest.raises(TruncatedWalk):
+        Watcher(tmp_path, strict=True, limit=4).plan()
+
+
+def test_a_watcher_given_no_budgets_leaves_the_defaults_alone(tmp_path):
+    """`None` must mean "not overridden", not "zero"."""
+    _ten_files(tmp_path)
+
+    assert Watcher(tmp_path)._bounds() == {}
+    assert len(Watcher(tmp_path).current()) == 10
+
+
+def test_the_changed_verb_reports_unread_files_as_a_gap(tmp_path, verbs):
+    _ten_files(tmp_path)
+    Watcher(tmp_path, baseline=tmp_path / ".slpie" / "fingerprint.json").commit()
+
+    result = Composition.read("changed --lenient --max-bytes 0", verbs=verbs).run(
+        Context(root=str(tmp_path)),
+    )
+
+    assert result.ok
+    states = {row["state"] for row in result.flow.value}
+    assert "unknown" in states
+    assert "removed" not in states
+    assert result.flow.gaps
+    assert "unaccounted for" in result.flow.gaps[0].detail
+    assert result.flow.facts["trustworthy"] is False
+
+
+def test_the_changed_verb_defaults_to_refusing(tmp_path, verbs, monkeypatch):
+    """Production mode: the crafted exception reaches the caller, named."""
+    monkeypatch.delenv("SLPIE_STRICT", raising=False)
+    _ten_files(tmp_path)
+
+    result = Composition.read("changed --max-bytes 0", verbs=verbs).run(
+        Context(root=str(tmp_path)),
+    )
+
+    assert not result.ok
+    assert result.failed == "changed"
+    assert result.error.startswith("IncompleteFingerprint:")
+    assert "would report those files as *removed*" in result.error
+
+
+def test_the_changed_verb_takes_strict_explicitly_over_the_environment(
+    tmp_path, verbs, monkeypatch,
+):
+    monkeypatch.setenv("SLPIE_STRICT", "0")
+    _ten_files(tmp_path)
+
+    result = Composition.read("changed --strict --max-bytes 0", verbs=verbs).run(
+        Context(root=str(tmp_path)),
+    )
+
+    assert result.error.startswith("IncompleteFingerprint:")
+
+
+def test_a_truncated_walk_through_the_verb_names_the_limit(tmp_path, verbs):
+    _ten_files(tmp_path)
+
+    result = Composition.read("changed --limit 4", verbs=verbs).run(
+        Context(root=str(tmp_path)),
+    )
+
+    assert result.error.startswith("TruncatedWalk:")
+    assert "limit of 4" in result.error
+
+
+def test_a_budget_that_is_not_a_number_is_refused_before_the_walk(verbs):
+    """The registry's own typing catches it, so the verb needs no second parse."""
+    with pytest.raises(CompositionError, match="whole number"):
+        Composition.read("changed --limit nine", verbs=verbs).run()
+
+
+def test_a_complete_scan_through_the_verb_carries_no_gap(tmp_path, verbs):
+    _ten_files(tmp_path)
+    Watcher(tmp_path, baseline=tmp_path / ".slpie" / "fingerprint.json").commit()
+    (tmp_path / "f0.txt").write_text("moved\n", encoding="utf-8")
+
+    result = Composition.read("changed", verbs=verbs).run(Context(root=str(tmp_path)))
+
+    assert result.ok
+    assert result.flow.gaps == ()
+    assert result.flow.facts["trustworthy"] is True
+    assert [row["state"] for row in result.flow.value] == ["changed"]

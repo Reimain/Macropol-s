@@ -12,9 +12,9 @@ from slpie.ledger import InMemoryLedger, ProjectionSet, StationProjection
 from slpie.simulator import DAY, ControlledClock, SimulatedWorld, fire
 from slpie.station import (
     KNOWN_CAPABILITIES,
+    STALE_AFTER_NS,
     Capability,
     Negotiation,
-    STALE_AFTER_NS,
     Station,
     negotiate,
 )

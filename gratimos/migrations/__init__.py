@@ -8,7 +8,7 @@ from .alembic_adapter import (
     require_alembic,
     sa_type,
 )
-from .ledger import LOSSY, MigrationLedger, OpKind, Operation, Revision, operations_for
+from .ledger import LOSSY, MigrationLedger, Operation, OpKind, Revision, operations_for
 
 __all__ = [
     "LOSSY",

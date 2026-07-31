@@ -273,8 +273,8 @@ class Api:
 
     def _register_composition(self) -> None:
         from ..compose import Composition, Context, VerbError, registry as verb_registry
-        from ..compose.pipeline import CompositionError
         from ..compose.parse import ParseError
+        from ..compose.pipeline import CompositionError
 
         verbs = verb_registry()
         self.verbs = verbs

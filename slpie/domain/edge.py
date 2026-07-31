@@ -14,7 +14,13 @@ from enum import Enum
 from typing import Any, Mapping, Sequence
 
 from ..errors import EvidenceRequired
-from .evidence import Confidence, ConfidenceDerivation, Evidence, ValidationStatus, strongest
+from .evidence import (
+    Confidence,
+    ConfidenceDerivation,
+    Evidence,
+    ValidationStatus,
+    strongest,
+)
 from .identity import edge_id
 from .node import OPEN
 

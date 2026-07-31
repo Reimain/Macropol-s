@@ -15,6 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Mapping
 
+from ...domain.finding import Gap, GapKind
 from ...domain.reasoning import ReasoningStep
 from ..flow import Flow, Kind
 from ..verb import Context, Param, Verb, VerbError
@@ -33,9 +34,27 @@ def _changed(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow
     if not root.exists():
         raise VerbError(f"{root} does not exist")
 
+    # Three states, not two: `--strict`/`--lenient` name the mode explicitly, and
+    # neither given defers to `SLPIE_STRICT`. A plain `bool` default here would
+    # have made the flag's absence mean "lenient" and silently overridden the
+    # environment, which is the opposite of what a production deployment sets it
+    # for.
+    if arguments.get("lenient"):
+        strict: bool | None = False
+    elif arguments.get("strict"):
+        strict = True
+    else:
+        strict = None
+
+    # `Param("int")` has already refused anything that is not a whole number, so
+    # these are numbers or absent — no second parse, and no second error message
+    # saying the same thing in different words.
     watcher = Watcher(
         root,
         baseline=str(arguments["baseline"]) if arguments.get("baseline") else None,
+        strict=strict,
+        limit=arguments.get("limit"),
+        max_bytes=arguments.get("max-bytes"),
     )
     graph = getattr(getattr(context, "engine", None), "graph", None)
     plan = watcher.plan(graph)
@@ -46,6 +65,22 @@ def _changed(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow
         # the next run would skip exactly the files the failed one did not read.
         watcher.commit()
 
+    gaps: tuple[Gap, ...] = ()
+    if not plan.trustworthy:
+        # Invariant 5 through composition: a caller who piped `changed` into a
+        # rescan must see, at the far end, that the plan was drawn over a tree
+        # this pass could not read in full.
+        gaps = (Gap(
+            kind=GapKind.ACCESS_DENIED,
+            subject=str(root),
+            detail=plan.caveat,
+            remediation=(
+                "read the reasons under `files not read`, then either fix the "
+                "cause or raise --limit / --max-bytes; the nodes those files "
+                "justify are neither refreshed nor retired until one is read"
+            ),
+        ),)
+
     return flow.then(
         Kind.REPORT, tuple(
             {"uri": uri, "state": state}
@@ -53,6 +88,10 @@ def _changed(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow
                 ("added", plan.delta.added),
                 ("changed", plan.delta.changed),
                 ("removed", plan.delta.removed),
+                # Reported, not omitted. A caller acting on this list must be
+                # able to see the files the pass could not speak for, or it will
+                # read the three states above as the whole truth about the tree.
+                ("unknown", plan.delta.unknown),
             )
             for uri in uris
         ),
@@ -60,10 +99,12 @@ def _changed(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow
         steps=[ReasoningStep(
             claim=plan.reason, layer="incremental", operation="shape",
         )],
+        gaps=gaps,
         facts={
             "changed": plan.render(),
             "incremental": plan.to_dict(),
             "worth_rescanning": plan.worth_it,
+            "trustworthy": plan.trustworthy,
         },
     )
 
@@ -112,16 +153,34 @@ def verbs() -> tuple[Verb, ...]:
                 "whether a rescan is worth it before paying for one. Compares "
                 "content, never modification time: a `git checkout` rewrites "
                 "mtimes on identical files, and a restored build cache writes "
-                "older ones than were recorded."
+                "older ones than were recorded.\n\n"
+                "Never reports a file it did not read as removed. Strict — the "
+                "default — refuses to plan at all over a tree it could not read "
+                "in full; `--lenient` plans around those files, lists why each "
+                "was skipped, and carries a gap saying the plan is partial."
             ),
             params=(
-                Param("path", "path", "the tree to compare", default="."),
+                # No `default="."`. A default is *bound* by `Verb.bind`, so it
+                # lands in `arguments` and wins the `or` chain below — which made
+                # this verb scan the working directory even when the caller had
+                # bound a root on the `Context`.
+                Param("path", "path", "the tree to compare; defaults to the "
+                      "root this session is bound to"),
                 Param("baseline", "path", "where the baseline is kept"),
                 Param("commit", "bool", "record the current state as the new "
                       "baseline; do this only after a rescan succeeded",
                       default=False),
+                Param("strict", "bool", "refuse to plan over a tree this pass "
+                      "could not read in full (the default; SLPIE_STRICT=0 "
+                      "turns it off)", default=False),
+                Param("lenient", "bool", "report the unread files and plan "
+                      "around them instead of refusing — for development",
+                      default=False),
+                Param("limit", "int", "how many files the walk may read before "
+                      "it stops"),
+                Param("max-bytes", "int", "the largest file the walk will read"),
             ),
-            examples=("changed", "changed --path ."),
+            examples=("changed", "changed --path .", "changed --lenient"),
             run=_changed,
         ),
         Verb(

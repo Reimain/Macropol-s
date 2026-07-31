@@ -16,8 +16,8 @@ from .registry import (
     EDGE_KINDS,
     MAX_SOURCE_BYTES,
     SKIP,
-    ScanReport,
     Scanner,
+    ScanReport,
     materialise,
     register_builtins,
 )

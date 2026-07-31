@@ -14,10 +14,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
+from ..domain.edge import Edge
 from ..domain.evidence import Evidence
 from ..domain.finding import Finding
 from ..domain.node import Node
-from ..domain.edge import Edge
 
 
 @dataclass(frozen=True, slots=True)

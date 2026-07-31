@@ -30,7 +30,15 @@ from ...domain.evidence import EvidenceKind
 from ...domain.version import parse_range
 from ...errors import VersionError
 from ...plugins.protocol import DiscoveryResult, Observation
-from ..base import Source, declares, depends, evidence_at, result, workspace_purl, scope_of
+from ..base import (
+    Source,
+    declares,
+    depends,
+    evidence_at,
+    result,
+    scope_of,
+    workspace_purl,
+)
 from .maven import maven_purl
 
 EXTRACTOR = "slpie.gradle"

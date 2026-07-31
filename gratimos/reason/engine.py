@@ -24,9 +24,9 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from .facts import (
+    INFERENCE_CEILING,
     Fact,
     FactBase,
-    INFERENCE_CEILING,
     Pattern,
     Provenance,
     ReasoningError,

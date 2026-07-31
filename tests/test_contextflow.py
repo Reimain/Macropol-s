@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from gratimos.contextflow import ContextFlow, EventKind, KeyringEvent, Ordering, compare, merge
+from gratimos.contextflow import (
+    ContextFlow,
+    EventKind,
+    KeyringEvent,
+    Ordering,
+    compare,
+    merge,
+)
 from gratimos.errors import RollbackError, TimetravelConflict
 from gratimos.trace import Journal, RollbackManager
 

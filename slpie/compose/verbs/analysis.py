@@ -20,9 +20,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from ...discovery.registry import Registry, register_builtins
 from ...domain.finding import Gap, GapKind
 from ...domain.reasoning import ReasoningStep
-from ...discovery.registry import Registry, register_builtins
 from ...linking.linkers import Linked, LinkerSet
 from ...linking.resolver import Resolver
 from ...reasoning.constraints import BacktrackingSolver, StaticIndex, requirements_from

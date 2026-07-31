@@ -40,7 +40,7 @@ with it.
 
 from __future__ import annotations
 
-from .budget import Budget, BudgetReport, DEFAULT_CEILING
+from .budget import DEFAULT_CEILING, Budget, BudgetReport
 from .codec import SpillError, Unspillable, decode, encode, spillable
 from .ident import LENGTH, block_id, is_block_id, new_session_key, require_block_id
 from .sequence import BlockRef, SpilledSequence, write_block

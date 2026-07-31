@@ -1,7 +1,15 @@
 """Meta layer: what data is, how to bend it, and how to carry it around."""
 
-from .cast import CastMode, CastReport, Caster, cast_records, cast_value
-from .infer import DEFAULT_OPTIONS, InferenceOptions, infer_field, infer_shape, infer_value, media_kind, tag_of
+from .cast import Caster, CastMode, CastReport, cast_records, cast_value
+from .infer import (
+    DEFAULT_OPTIONS,
+    InferenceOptions,
+    infer_field,
+    infer_shape,
+    infer_value,
+    media_kind,
+    tag_of,
+)
 from .shapes import (
     ChangeKind,
     DataShape,

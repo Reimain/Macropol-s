@@ -6,6 +6,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+from fixtures import ORDERS
 
 from gratimos.contextflow import ContextFlow
 from gratimos.errors import TransformError
@@ -16,7 +17,6 @@ from gratimos.transforms import (
     inspect_source,
     scaffold,
 )
-from fixtures import ORDERS
 
 GOOD = textwrap.dedent('''
     NAME = "normalize"

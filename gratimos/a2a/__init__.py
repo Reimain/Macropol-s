@@ -2,7 +2,14 @@
 
 from .client import A2AClient, Exchange
 from .registry import AgentRegistry, Peer
-from .server import AgentServer, ExecutionContext, Executor, TaskStore, build_card, serve_http
+from .server import (
+    AgentServer,
+    ExecutionContext,
+    Executor,
+    TaskStore,
+    build_card,
+    serve_http,
+)
 from .transport import (
     DEFAULT_TIMEOUT,
     HttpAuth,

@@ -23,8 +23,8 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from ...domain.reasoning import ReasoningStep
 from ...dispatch import Determinism, registry as tool_registry
+from ...domain.reasoning import ReasoningStep
 from ..flow import Flow, Kind
 from ..verb import Context, Param, Verb, VerbError
 

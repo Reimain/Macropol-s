@@ -27,8 +27,17 @@ from typing import Any, Sequence
 
 from ..verb import Verb
 from . import (
-    analysis, artifacts, audit, capture, dispatch, environment, governance,
-    guidance, incremental, intelligence, shaping,
+    analysis,
+    artifacts,
+    audit,
+    capture,
+    dispatch,
+    environment,
+    governance,
+    guidance,
+    incremental,
+    intelligence,
+    shaping,
 )
 
 

@@ -20,7 +20,6 @@ from slpie.domain.identity import InvalidPurl, Purl
 from slpie.normalize import coordinates, licenses, purl, versions
 from slpie.normalize.coordinates import CoordinateError
 
-
 # --- the convergence property ---------------------------------------------
 
 
