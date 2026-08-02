@@ -66,27 +66,18 @@ from slpie.incremental import (
     invalidate,
 )
 
-
-@pytest.fixture(scope="module")
-def verbs():
-    return registry()
+from _trees import unhealthy_tree
 
 
 @pytest.fixture()
 def repository(tmp_path: Path) -> Path:
-    (tmp_path / "package.json").write_text(
-        '{"name": "shop", "version": "1.0.0", "license": "MIT",'
-        ' "dependencies": {"lodahs": "^4.0.0", "loose": "*"}}', encoding="utf-8")
-    (tmp_path / "package-lock.json").write_text(json.dumps({
-        "name": "shop", "lockfileVersion": 3, "packages": {
-            "node_modules/lodahs": {"version": "4.17.21", "license": "AGPL-3.0"},
-            "node_modules/loose": {"version": "0.1.0"},
-        }}), encoding="utf-8")
-    application = tmp_path / "app"
-    application.mkdir()
-    (application / "settings.py").write_text(
-        'AWS_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"\n', encoding="utf-8")
-    return tmp_path
+    """The unhealthy tree, with the secret one directory down.
+
+    `app/settings.py` rather than `settings.py` because the incremental tests
+    need a nested path: a delta that only ever saw root-level files would not
+    prove the walk descends.
+    """
+    return unhealthy_tree(tmp_path, secret_at="app/settings.py")
 
 
 # --- tools are a projection of the registry ---------------------------------

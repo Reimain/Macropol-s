@@ -357,6 +357,7 @@ def test_loading_from_a_directory_that_does_not_exist_is_empty_not_an_error(regi
 # --- the out-of-process protocol ----------------------------------------
 
 
+@pytest.mark.slow
 def test_an_external_plugin_runs_in_a_real_subprocess_and_answers(go_plugin, registry):
     result = registry.discover("file:///x/main.go")
 

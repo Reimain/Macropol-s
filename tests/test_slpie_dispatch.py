@@ -34,7 +34,20 @@ from slpie.dispatch import (
 from slpie.dispatch.local import _environment
 from slpie.dispatch.tool import NORMALISED_ENV
 
-DISPATCH = Path(__file__).resolve().parent.parent / "slpie" / "dispatch"
+from _walk import SLPIE, modules
+
+DISPATCH = SLPIE / "dispatch"
+
+
+def dispatch_modules():
+    """Every module under `dispatch/`, subpackages included.
+
+    `rglob`, not `glob`: the first version of this walk was non-recursive, so a
+    module moved into a subpackage would have escaped both audits below while
+    they carried on reporting a clean tree. `modules()` refuses an empty match
+    for the same reason.
+    """
+    return modules(DISPATCH)
 
 
 @pytest.fixture()
@@ -49,7 +62,7 @@ def test_no_dispatch_path_ever_uses_a_shell():
     """A code review will eventually miss one; an ast walk will not."""
     offenders: list[str] = []
 
-    for path in sorted(DISPATCH.glob("*.py")):
+    for path in dispatch_modules():
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
@@ -70,7 +83,7 @@ def test_dispatch_never_calls_os_system_or_popen_with_a_string():
     banned = {"system", "popen", "getoutput", "getstatusoutput"}
     offenders: list[str] = []
 
-    for path in sorted(DISPATCH.glob("*.py")):
+    for path in dispatch_modules():
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):

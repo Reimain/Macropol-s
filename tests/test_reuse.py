@@ -45,6 +45,21 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+def test_the_licence_bridge_is_available_in_this_repository():
+    """Deliberately outside the skip above, which it exists to police.
+
+    `bridge.AVAILABLE` is a real seam: Gratimos installs without SLPIE, and the
+    49 tests below cannot run in that configuration. But *this* repository ships
+    both packages, so a False here means an import broke — and the module-level
+    `skipif` would report that as 49 quiet skips on a green run. This is the one
+    test that turns it red.
+    """
+    assert bridge.AVAILABLE, (
+        f"slpie.domain is not importable from the licence bridge, so the reuse "
+        f"suite would silently skip: {bridge.UNAVAILABLE_REASON}"
+    )
+
+
 # --- fixtures ------------------------------------------------------------
 
 

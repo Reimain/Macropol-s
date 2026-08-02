@@ -27,26 +27,6 @@ def api() -> Api:
     return Api(engine=None)
 
 
-@pytest.fixture()
-def verbs():
-    return registry()
-
-
-@pytest.fixture()
-def repository(tmp_path: Path) -> Path:
-    (tmp_path / "package.json").write_text(
-        '{"name": "demo", "version": "1.0.0",'
-        ' "dependencies": {"lodash": "^3.0.0"}}',
-        encoding="utf-8",
-    )
-    (tmp_path / "package-lock.json").write_text(
-        '{"name": "demo", "lockfileVersion": 3, "packages": {'
-        '"node_modules/lodash": {"version": "4.17.21"}}}',
-        encoding="utf-8",
-    )
-    return tmp_path
-
-
 def call(api: Api, method: str, path: str, body: dict | None = None,
          query: dict | None = None) -> Response:
     return api.handle(Request(

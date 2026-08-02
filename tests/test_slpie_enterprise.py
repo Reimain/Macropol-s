@@ -80,10 +80,7 @@ from slpie.governance.view import view_from_resolution, view_of
 from slpie.graph.sqlite_graph import SqliteGraph
 from slpie.plugins.protocol import Observation
 
-
-@pytest.fixture(scope="module")
-def verbs():
-    return registry()
+from _trees import EXAMPLE_AWS_KEY, write_npm
 
 
 def evidence(uri: str = "file:///r/package-lock.json", line: int = 1,
@@ -1099,16 +1096,18 @@ def repository(tmp_path: Path) -> Path:
     exercises none of the ranking, and a test that asserted the header line
     while the body was empty would pass without the verb ever having worked.
     """
-    (tmp_path / "package.json").write_text(
-        '{"name": "shop", "version": "1.0.0", "license": "MIT",'
-        ' "dependencies": {"lodash": "^4.0.0", "loose": "*"}}', encoding="utf-8")
-    (tmp_path / "package-lock.json").write_text(json.dumps({
-        "name": "shop", "lockfileVersion": 3, "packages": {
-            "node_modules/lodash": {"version": "4.17.21", "license": "MIT"},
-            "node_modules/loose": {"version": "0.1.0"},
-        }}), encoding="utf-8")
-    (tmp_path / "settings.py").write_text(
-        'AWS_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"\n', encoding="utf-8")
+    write_npm(
+        tmp_path, name="shop", license="MIT",
+        declared={"lodash": "^4.0.0", "loose": "*"},
+        resolved={
+            "lodash": {"version": "4.17.21", "license": "MIT"},
+            "loose": {"version": "0.1.0"},
+        },
+    )
+    # `lodash`, spelled correctly, and MIT throughout — unlike `unhealthy_tree`.
+    # The risk register here should rank the unconstrained range and the secret,
+    # not a typosquat or a licence conflict this tree does not have.
+    (tmp_path / "settings.py").write_text(EXAMPLE_AWS_KEY, encoding="utf-8")
     return tmp_path
 
 

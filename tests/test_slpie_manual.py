@@ -36,26 +36,6 @@ from slpie.manual import (
 from slpie.planner import plan_for, read
 
 
-@pytest.fixture()
-def verbs():
-    return registry()
-
-
-@pytest.fixture()
-def repository(tmp_path: Path) -> Path:
-    (tmp_path / "package.json").write_text(
-        '{"name": "demo", "version": "1.0.0",'
-        ' "dependencies": {"lodash": "^3.0.0"}}',
-        encoding="utf-8",
-    )
-    (tmp_path / "package-lock.json").write_text(
-        '{"name": "demo", "lockfileVersion": 3, "packages": {'
-        '"node_modules/lodash": {"version": "4.17.21"}}}',
-        encoding="utf-8",
-    )
-    return tmp_path
-
-
 def cli(stdin: str = "", *, isatty: bool = True) -> tuple[Cli, io.StringIO, io.StringIO]:
     out, err = io.StringIO(), io.StringIO()
     return Cli(

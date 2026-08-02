@@ -7,7 +7,6 @@ import stat
 from pathlib import Path
 
 import pytest
-from fixtures import ORDERS
 
 from gratimos.errors import HubError, StorageError, UnsafePathError
 from gratimos.hubs import (
@@ -26,6 +25,8 @@ from gratimos.hubs import (
 from gratimos.ids import StorageName
 from gratimos.meta import Wrapped
 from gratimos.storage import REGISTRY, LocalRepository, MemoryStore, resolve
+
+from fixtures import ORDERS
 
 # --- storage -------------------------------------------------------------
 

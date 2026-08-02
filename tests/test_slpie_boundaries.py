@@ -8,40 +8,25 @@ review erodes the first time somebody needs `gratimos.meta` in a hurry.
 from __future__ import annotations
 
 import ast
-from pathlib import Path
 
 import pytest
 
-SLPIE = Path(__file__).resolve().parent.parent / "slpie"
+from _walk import SLPIE, bridges, crossings, imported_roots, modules
 
 #: The single module permitted to import Gratimos — the codegen bridge that
-#: turns graph shapes into architecture-as-code (plan §15).
-CODEGEN_BRIDGE = "artifacts/codegen.py"
+#: turns graph shapes into architecture-as-code (plan §15). Read from
+#: `slpie/audit/engine.py` rather than restated, so the boundary is written down
+#: once: the judge customers run and the test we run cannot disagree about it.
+CODEGEN_BRIDGE = bridges()["slpie"]
 
 
 def slpie_modules():
-    return sorted(SLPIE.rglob("*.py"))
-
-
-def imported_roots(path: Path) -> set[str]:
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    roots: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            roots.update(alias.name.split(".")[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom):
-            # A relative import has no module root outside the package.
-            if node.level == 0 and node.module:
-                roots.add(node.module.split(".")[0])
-    return roots
+    return modules(SLPIE)
 
 
 def test_exactly_one_slpie_module_may_import_gratimos():
-    importers = [
-        module.relative_to(SLPIE).as_posix()
-        for module in slpie_modules()
-        if "gratimos" in imported_roots(module)
-    ]
+    importers = crossings(SLPIE, "gratimos")
+
     assert importers in ([], [CODEGEN_BRIDGE]), (
         f"only {CODEGEN_BRIDGE} may import Gratimos; found {importers}"
     )
@@ -68,8 +53,24 @@ def test_no_module_above_the_binding_layer_branches_on_the_target():
     evidence about the real code path, which is the whole reason it exists.
     """
     allowed_prefixes = ("binding/", "simulator/", "cli.py", "ui/")
+    everything = slpie_modules()
+    exempt = [
+        module for module in everything
+        if module.relative_to(SLPIE).as_posix().startswith(allowed_prefixes)
+    ]
+    # Without this the test survives a restructure by exempting nothing and
+    # checking everything, or — worse, if `cli.py` becomes `cli/` — by silently
+    # dropping a prefix nobody notices is no longer matching.
+    assert len(exempt) < len(everything), (
+        f"every module matched {allowed_prefixes}, so this test checked nothing"
+    )
+    assert exempt, (
+        f"none of {allowed_prefixes} matched a module — the binding layer moved, "
+        f"and this test is now asserting against the wrong set"
+    )
+
     offenders = []
-    for module in slpie_modules():
+    for module in everything:
         relative = module.relative_to(SLPIE).as_posix()
         if relative.startswith(allowed_prefixes):
             continue

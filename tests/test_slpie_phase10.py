@@ -38,34 +38,13 @@ from slpie.reasoning import (
 )
 from slpie.reasoning.guidance import guidance_for, render
 
-
-@pytest.fixture(scope="module")
-def verbs():
-    return registry()
+from _trees import conflicted_tree
 
 
 @pytest.fixture()
 def repository(tmp_path: Path) -> Path:
     """A real tree with something to say: a duplicate, and a range that is not one."""
-    (tmp_path / "package.json").write_text(
-        '{"name": "demo", "version": "1.0.0",'
-        ' "dependencies": {"lodash": "*", "left-pad": "^1.0.0"}}',
-        encoding="utf-8",
-    )
-    (tmp_path / "package-lock.json").write_text(
-        '{"name": "demo", "lockfileVersion": 3, "packages": {'
-        '"node_modules/lodash": {"version": "4.17.21"},'
-        '"node_modules/left-pad": {"version": "1.3.0"}}}',
-        encoding="utf-8",
-    )
-    nested = tmp_path / "sub"
-    nested.mkdir()
-    (nested / "package-lock.json").write_text(
-        '{"name": "sub", "lockfileVersion": 3, "packages": {'
-        '"node_modules/lodash": {"version": "4.17.15"}}}',
-        encoding="utf-8",
-    )
-    return tmp_path
+    return conflicted_tree(tmp_path)
 
 
 def evidence(uri: str, line: int, kind: EvidenceKind = EvidenceKind.MANIFEST_DECLARED,

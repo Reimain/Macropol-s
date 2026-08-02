@@ -6,7 +6,6 @@ import ast
 from pathlib import Path
 
 import pytest
-from fixtures import ORDERS
 
 from gratimos.contextflow import ContextFlow
 from gratimos.errors import MigrationError, PolicyError
@@ -25,6 +24,8 @@ from gratimos.policy import (
     Policymakers,
     Situation,
 )
+
+from fixtures import ORDERS
 
 
 def _shape(rows=ORDERS, name="orders"):

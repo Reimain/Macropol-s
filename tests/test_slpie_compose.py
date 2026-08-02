@@ -36,27 +36,20 @@ from slpie.compose import (
 from slpie.domain.finding import Gap, GapKind
 from slpie.domain.reasoning import ReasoningStep
 
-
-@pytest.fixture()
-def verbs() -> VerbRegistry:
-    return registry()
+from _trees import minimal_tree
 
 
 @pytest.fixture()
 def repository(tmp_path: Path) -> Path:
-    """A tiny real tree — a manifest and its lockfile, which disagree."""
-    (tmp_path / "package.json").write_text(
-        '{"name": "demo", "version": "1.0.0",'
-        ' "dependencies": {"lodash": "^3.0.0"}}',
-        encoding="utf-8",
-    )
-    (tmp_path / "package-lock.json").write_text(
-        '{"name": "demo", "lockfileVersion": 3, "packages": {'
-        '"node_modules/lodash": {"version": "4.17.21"}}}',
-        encoding="utf-8",
-    )
-    (tmp_path / "requirements.txt").write_text("flask==3.0.0\n", encoding="utf-8")
-    return tmp_path
+    """The shared tree, plus a second ecosystem.
+
+    `requirements.txt` is here so the composition tests cross an ecosystem
+    boundary — a pipeline that only ever saw npm would not prove that `link`
+    merges identities across discoverers.
+    """
+    root = minimal_tree(tmp_path)
+    (root / "requirements.txt").write_text("flask==3.0.0\n", encoding="utf-8")
+    return root
 
 
 # --- the projection is total ---------------------------------------------

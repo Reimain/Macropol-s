@@ -46,10 +46,7 @@ from slpie.governance.security.supplychain import edit_distance, supplychain_rul
 from slpie.governance.view import view_of
 from slpie.plugins.protocol import Observation
 
-
-@pytest.fixture(scope="module")
-def verbs():
-    return registry()
+from _trees import EXAMPLE_AWS_KEY, write_npm
 
 
 def evidence(uri: str, line: int = 1,
@@ -168,20 +165,15 @@ def test_a_rule_returning_something_that_is_not_a_finding_is_recorded(graph):
 
 @pytest.fixture()
 def repository(tmp_path: Path) -> Path:
-    (tmp_path / "package.json").write_text(
-        '{"name": "shop", "version": "1.0.0", "license": "MIT",'
-        ' "dependencies": {"lodahs": "^4.0.0", "quiet": "*"}}',
-        encoding="utf-8",
-    )
-    (tmp_path / "package-lock.json").write_text(json.dumps({
-        "name": "shop", "lockfileVersion": 3, "packages": {
-            "node_modules/lodahs": {"version": "4.17.21", "license": "AGPL-3.0"},
-            "node_modules/quiet": {"version": "1.0.0"},
+    write_npm(
+        tmp_path, name="shop", license="MIT",
+        declared={"lodahs": "^4.0.0", "quiet": "*"},
+        resolved={
+            "lodahs": {"version": "4.17.21", "license": "AGPL-3.0"},
+            "quiet": {"version": "1.0.0"},
         },
-    }), encoding="utf-8")
-    (tmp_path / "settings.py").write_text(
-        'AWS_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"\n', encoding="utf-8",
     )
+    (tmp_path / "settings.py").write_text(EXAMPLE_AWS_KEY, encoding="utf-8")
     (tmp_path / "popular.json").write_text(
         '{"npm": ["lodash", "react", "express"]}', encoding="utf-8",
     )

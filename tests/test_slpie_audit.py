@@ -36,7 +36,7 @@ from slpie.audit import (
     slpie_checks,
 )
 
-REPOSITORY = Path(__file__).resolve().parent.parent
+from _walk import REPOSITORY, SLPIE, bridges, crossings
 
 
 @pytest.fixture(scope="module")
@@ -334,24 +334,21 @@ def test_the_judge_agrees_with_the_boundary_test_on_this_repository(ours: Audit)
     """`test_slpie_boundaries.py` is not weakened or exempted. The judge is
     cross-checked against it, so a judge that went blind fails the suite rather
     than quietly passing."""
-    import ast
+    #: The test's own answer, walked with `ast` and computed independently of
+    #: the judge's projection — which is the whole point of the cross-check.
+    #:
+    #: It shares `_walk.imported_roots` with `test_slpie_boundaries.py` rather
+    #: than reimplementing it. This used to be a third copy that resolved
+    #: relative imports differently from the other two, so `from .gratimos
+    #: import x` counted as a Gratimos import when it is nothing of the kind.
+    #: Independence from the judge is what matters here; independence from the
+    #: other test only bought a divergent bug.
+    offenders = crossings(SLPIE, "gratimos")
 
-    offenders: list[str] = []
-    for path in sorted((REPOSITORY / "slpie").rglob("*.py")):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                names = [alias.name for alias in node.names]
-            elif isinstance(node, ast.ImportFrom):
-                names = [node.module or ""]
-            else:
-                continue
-            if any(name.split(".")[0] == "gratimos" for name in names):
-                offenders.append(str(path.relative_to(REPOSITORY)))
-    offenders = sorted(set(offenders))
-
-    #: The test's own answer, computed independently of the projection.
-    assert offenders == ["slpie/artifacts/codegen.py"]
+    #: Read from `slpie/audit/engine.py`, not restated. The bridge path used to
+    #: appear here as a literal, in `test_slpie_boundaries.py` as another, and in
+    #: the check config as a third — three spellings of one fact.
+    assert offenders == [bridges()["slpie"]]
 
     #: And the judge's.
     assert ours.verdict_for("slpie→gratimos") is Verdict.UPHELD

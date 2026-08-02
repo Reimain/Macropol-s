@@ -53,7 +53,8 @@ testpaths = ["tests"]
 # materialise a temp filesystem and run a subprocess plugin, which is seconds.
 timeout = 300
 markers = [
-    "slow: materialises a large tree or runs a real subprocess",
+    "slow: materializes a large tree or runs a real subprocess",
+    "corpus: needs the fetched corpus tier; skipped when the cache is cold",
     "network: needs outbound access — never run in the default suite",
 ]
 filterwarnings = ["error::DeprecationWarning:slpie.*"]
@@ -81,6 +82,11 @@ profile = "black"
 # isort's default, fights a house style that puts a module's imports where they
 # can be read at a glance.
 combine_as_imports = true
+known_first_party = ["gratimos", "slpie"]
+# The test helpers live beside the tests and are imported by bare name through
+# the path insert in `tests/conftest.py`. Without this isort reads them as
+# third-party and files them above `slpie`, which reverses the actual layering.
+known_local_folder = ["_trees", "_walk", "fixtures"]
 
 # No `[tool.black]`, and that is deliberate rather than an omission. Running it
 # would reformat 337 of this repository's 383 Python files: the code is written

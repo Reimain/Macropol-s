@@ -264,6 +264,7 @@ def test_a_failed_batch_leaves_nothing_behind(tmp_path):
     ledger.verify()
 
 
+@pytest.mark.slow
 def test_two_processes_appending_at_once_do_not_collide(tmp_path):
     path = tmp_path / "ledger.db"
     SqliteLedger(path).append(an_event("seed"))

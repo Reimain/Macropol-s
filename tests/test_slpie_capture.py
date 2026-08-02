@@ -46,6 +46,8 @@ from slpie.capture import (
 )
 from slpie.capture.locator import at_pointer, escape_token, unescape_token
 
+from _walk import SLPIE
+
 KUBERNETES = b"apiVersion: v1\nkind: Service\nmetadata:\n  name: payments\n"
 PACKAGE = b'{"name":"demo","dependencies":{"lodash":"^3.0.0"}}'
 
@@ -142,7 +144,10 @@ def test_an_extension_alone_is_a_weak_signal_rated_as_one():
 def test_python_is_identified_by_its_content_not_its_extension():
     """Without a structural signature every .py file scored 0.25 and the firewall
     quarantined the entire source tree for being unidentifiable."""
-    source = Path("slpie/capture/format.py").read_bytes()
+    # Anchored through `_walk.SLPIE`, not read relative to the process CWD. This
+    # was the one path in the suite that resolved only when pytest happened to be
+    # invoked from the repository root.
+    source = (SLPIE / "capture" / "format.py").read_bytes()
     found = identify(source, "file:///r/format.py")
 
     assert found.name == "python"

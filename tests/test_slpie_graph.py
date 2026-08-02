@@ -479,6 +479,7 @@ def test_snapshots_can_be_looked_up_by_label(populated):
 # --- scale ---------------------------------------------------------------
 
 
+@pytest.mark.slow
 def test_traversal_stays_in_sql_on_a_graph_of_ten_thousand_nodes(world):
     """A chain 10k long, traversed in one query rather than 10k round trips."""
     _, _, graph, _ = world

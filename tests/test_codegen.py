@@ -6,7 +6,6 @@ import ast
 from pathlib import Path
 
 import pytest
-from fixtures import ORDERS
 
 from gratimos.codegen import (
     ConflictPolicy,
@@ -21,6 +20,8 @@ from gratimos.codegen import (
 from gratimos.contextflow import ContextFlow
 from gratimos.errors import CodegenError, MergeConflict
 from gratimos.meta import Wrapped, infer_shape
+
+from fixtures import ORDERS
 
 BASE = '''# gratimos:generated
 """v1"""

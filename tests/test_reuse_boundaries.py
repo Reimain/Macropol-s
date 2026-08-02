@@ -12,38 +12,28 @@ file, `gratimos/reuse/bridge.py`, and nothing else.
 from __future__ import annotations
 
 import ast
-from pathlib import Path
 
 import pytest
 
-GRATIMOS = Path(__file__).resolve().parent.parent / "gratimos"
+from _walk import GRATIMOS, bridges, crossings, imported_roots, modules
 
-#: The single Gratimos module permitted to import SLPIE.
-LICENCE_BRIDGE = "reuse/bridge.py"
+#: The single Gratimos module permitted to import SLPIE. Read from
+#: `slpie/audit/engine.py`, the same declaration the judge runs from.
+LICENCE_BRIDGE = bridges()["gratimos"]
+
+#: The two subpackages this file asserts about. Named once, so the globs below
+#: and the docstring parametrisation at the foot cannot drift apart.
+CRAWL = "crawl/**/*.py"
+REUSE = "reuse/**/*.py"
 
 
 def gratimos_modules():
-    return sorted(GRATIMOS.rglob("*.py"))
-
-
-def imported_roots(path: Path) -> set[str]:
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    roots: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            roots.update(alias.name.split(".")[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom):
-            if node.level == 0 and node.module:
-                roots.add(node.module.split(".")[0])
-    return roots
+    return modules(GRATIMOS)
 
 
 def test_exactly_one_gratimos_module_may_import_slpie():
-    importers = [
-        module.relative_to(GRATIMOS).as_posix()
-        for module in gratimos_modules()
-        if "slpie" in imported_roots(module)
-    ]
+    importers = crossings(GRATIMOS, "slpie")
+
     assert importers in ([], [LICENCE_BRIDGE]), (
         f"only {LICENCE_BRIDGE} may import SLPIE; found {importers}"
     )
@@ -61,7 +51,7 @@ def test_the_crawler_has_no_third_party_dependencies():
 
     allowed = set(sys.stdlib_module_names) | {"gratimos", "slpie", "__future__"}
     offenders: dict[str, set[str]] = {}
-    for module in GRATIMOS.rglob("crawl/**/*.py"):
+    for module in modules(GRATIMOS, CRAWL):
         third_party = imported_roots(module) - allowed
         if third_party:
             offenders[module.relative_to(GRATIMOS).as_posix()] = third_party
@@ -77,7 +67,7 @@ def test_the_crawler_never_imports_the_reuse_layer():
     """
     offenders = [
         module.relative_to(GRATIMOS).as_posix()
-        for module in GRATIMOS.rglob("crawl/**/*.py")
+        for module in modules(GRATIMOS, CRAWL)
         if any(
             isinstance(node, ast.ImportFrom) and node.module and "reuse" in node.module
             for node in ast.walk(ast.parse(module.read_text(encoding="utf-8")))
@@ -121,7 +111,7 @@ def test_an_unknown_attribute_still_raises_attribute_error():
 
 @pytest.mark.parametrize(
     "module",
-    [m for m in GRATIMOS.rglob("crawl/**/*.py")] + [m for m in GRATIMOS.rglob("reuse/**/*.py")],
+    modules(GRATIMOS, CRAWL) + modules(GRATIMOS, REUSE),
     ids=lambda path: path.stem,
 )
 def test_every_new_module_parses_and_carries_a_docstring(module):

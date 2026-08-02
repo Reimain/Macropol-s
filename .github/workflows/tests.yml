@@ -1,0 +1,120 @@
+name: tests
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The kernel must pass with nothing installed but Python. That is invariant 4,
+  # and until this job existed it was asserted by a test
+  # (`test_the_kernel_has_no_third_party_dependencies`) that itself ran inside an
+  # environment where the extras happened to be present — so a stray dependency
+  # would have been caught by the ast walk, but a stray *runtime* need would not.
+  # This job is the one that would notice.
+  kernel:
+    name: kernel — stdlib only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install with no extras at all
+        run: pip install -e .
+
+      - name: Nothing but the standard library is installed
+        run: |
+          python - <<'PY'
+          import importlib.metadata as md
+          allowed = {"gratimos", "pip", "setuptools", "wheel", "pkg-resources"}
+          extra = sorted(
+              d.metadata["Name"] for d in md.distributions()
+              if (d.metadata["Name"] or "").lower() not in allowed
+          )
+          assert not extra, f"the kernel install pulled in {extra}"
+          print("clean:", sorted(d.metadata["Name"] for d in md.distributions()))
+          PY
+
+      - name: The suite runs offline, with no test dependencies beyond pytest
+        run: |
+          pip install pytest
+          python -m pytest -q -p no:randomly
+
+  suite:
+    name: suite — py${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 is the floor (stdlib tomllib, per pyproject). The newest is here
+        # so a deprecation lands as a failed job rather than as a surprise at
+        # the next release.
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - run: pip install -e '.[dev]'
+
+      # `corpus` is deselected: the fetched tier needs network, and a CI job that
+      # reached the npm registry would be a flaky job that also breaks the
+      # offline guarantee the kernel job above exists to prove.
+      - name: Run the suite
+        run: python -m pytest -q -m "not corpus"
+
+      - name: Coverage
+        if: matrix.python == '3.11'
+        run: |
+          python -m coverage run -m pytest -q -m "not corpus"
+          python -m coverage report
+
+  invariants:
+    name: invariants — boundaries, rings, purity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e '.[dev]'
+
+      # Separated from the suite so a broken architectural boundary is legible
+      # in the checks list rather than buried in 2400 dots. These are also the
+      # tests that must fail loudly on a restructure — see docs/AUDIT.md §1.1.
+      - name: The architectural invariants hold
+        run: |
+          python -m pytest -q \
+            tests/test_slpie_boundaries.py \
+            tests/test_reuse_boundaries.py \
+            tests/test_slpie_audit.py \
+            tests/test_slpie_dispatch.py
+
+      - name: The judge agrees, and its digest is reproducible
+        run: |
+          python -m slpie.cli audit > /tmp/first.txt
+          python -m slpie.cli audit > /tmp/second.txt
+          diff /tmp/first.txt /tmp/second.txt \
+            || (echo "the audit is not reproducible over an unchanged tree" && exit 1)
+
+  lint:
+    name: imports sorted
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install isort
+      # Settings come from pyproject.toml, so this and a local `isort .` cannot
+      # disagree about what correct looks like. No black — see the note in
+      # pyproject.toml explaining why.
+      - run: python -m isort --check-only --diff slpie gratimos tests
