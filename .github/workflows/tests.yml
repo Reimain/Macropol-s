@@ -42,10 +42,14 @@ jobs:
           print("clean:", sorted(d.metadata["Name"] for d in md.distributions()))
           PY
 
+      # `ignore=tests/test_enterprise_*` because ring 1 needs the extras this
+      # job exists to prove the kernel does *not*. They run in the suite job.
       - name: The suite runs offline, with no test dependencies beyond pytest
         run: |
           pip install pytest
-          python -m pytest -q -p no:randomly
+          python -m pytest -q -p no:randomly \
+            --ignore=tests/test_enterprise_boundaries.py \
+            --ignore=tests/test_enterprise_workspaces.py
 
   suite:
     name: suite — py${{ matrix.python }}
@@ -63,7 +67,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - run: pip install -e '.[dev]'
+      - run: pip install -e '.[dev,workspaces,cloud]'
 
       # `corpus` is deselected: the fetched tier needs network, and a CI job that
       # reached the npm registry would be a flaky job that also breaks the
@@ -117,7 +121,7 @@ jobs:
       # Settings come from pyproject.toml, so this and a local `isort .` cannot
       # disagree about what correct looks like. No black — see the note in
       # pyproject.toml explaining why.
-      - run: python -m isort --check-only --diff slpie gratimos tests tools
+      - run: python -m isort --check-only --diff slpie slpie_enterprise gratimos tests tools
 
   notebooks:
     name: notebooks — every cell runs

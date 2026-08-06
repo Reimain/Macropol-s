@@ -34,7 +34,12 @@ class StoreError(SlpieError):
 
 
 #: One path segment. No slashes, no dots-only segments, no control characters.
-SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+#:
+#: A leading underscore is allowed because `Dataset.key` uses `_global` and `_`
+#: for the scope that owns nothing — reserved names that cannot collide with a
+#: real tenant, since a tenant name may not start with one. `.` and `..` are
+#: still refused: neither starts with a character this permits.
+SEGMENT = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9._-]*$")
 
 
 @dataclass(frozen=True, slots=True)

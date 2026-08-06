@@ -65,15 +65,16 @@ coverage:  ## the suite, with a coverage report
 .PHONY: invariants
 invariants:  ## the architectural boundaries, on their own
 	$(PYTHON) -m pytest -q tests/test_slpie_boundaries.py tests/test_reuse_boundaries.py \
-	    tests/test_slpie_audit.py tests/test_slpie_dispatch.py
+	    tests/test_slpie_audit.py tests/test_slpie_dispatch.py \
+	    tests/test_enterprise_boundaries.py
 
 .PHONY: lint
 lint:  ## check import order (no black — see the note in pyproject.toml)
-	$(PYTHON) -m isort --check-only --diff slpie gratimos tests tools
+	$(PYTHON) -m isort --check-only --diff slpie slpie_enterprise gratimos tests tools
 
 .PHONY: format
 format:  ## fix import order
-	$(PYTHON) -m isort slpie gratimos tests tools
+	$(PYTHON) -m isort slpie slpie_enterprise gratimos tests tools
 
 # --- using it -------------------------------------------------------------
 
