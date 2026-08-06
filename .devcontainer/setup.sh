@@ -14,7 +14,12 @@ cd "$ROOT"
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 
 say "Installing the kernel (no third-party dependencies at all)"
-python -m pip install --upgrade pip --quiet
+# Best effort. A distribution-managed pip refuses to uninstall itself
+# ("RECORD file not found. Hint: The package was installed by debian"), and a
+# setup script that dies on a cosmetic upgrade is a setup script people stop
+# trusting.
+python -m pip install --upgrade pip --quiet 2>/dev/null || \
+    echo "  (leaving the system pip alone)"
 python -m pip install -e . --quiet
 
 say "Installing the interactive layer"
