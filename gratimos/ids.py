@@ -17,6 +17,8 @@ import re
 import threading
 from dataclasses import dataclass
 
+from .errors import StorageError
+
 _ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"  # Crockford base32, no I/L/O/U
 _lock = threading.Lock()
 _last_ms = 0
@@ -146,7 +148,7 @@ class StorageName:
             entity, artifact_id, ts = stem.split("__")
             return cls(kind=kind, entity=entity, artifact_id=artifact_id, ts_ns=int(ts), ext=ext)
         except (ValueError, TypeError) as exc:  # pragma: no cover - defensive
-            raise ValueError(f"not a gratimos storage key: {key!r}") from exc
+            raise StorageError(f"not a gratimos storage key: {key!r}") from exc
 
     def __str__(self) -> str:  # pragma: no cover - trivial
         return self.key

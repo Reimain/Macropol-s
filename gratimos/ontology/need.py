@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Iterable, Mapping, Sequence
 
+from ..errors import OntologyError
 from .concepts import Ontology, base_ontology
 
 
@@ -86,7 +87,7 @@ class Need:
 
     def __post_init__(self) -> None:
         if not self.concepts:
-            raise ValueError("a need must require at least one concept")
+            raise OntologyError("a need must require at least one concept")
 
     @property
     def signature(self) -> str:
@@ -202,7 +203,7 @@ def need_from_text(
     """
     concepts = extract_concepts(text, ontology)
     if not concepts:
-        raise ValueError(
+        raise OntologyError(
             f"no known concepts in {text!r}; extend the ontology or state them directly"
         )
     return Need(

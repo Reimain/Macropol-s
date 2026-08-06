@@ -33,6 +33,8 @@ import threading
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..errors import SpillError
+
 #: Default ceiling: 128 MB of in-memory records for the whole process. Chosen to
 #: be small enough that spilling is exercised in ordinary use rather than only
 #: under stress — a spill path that only runs in production is a spill path
@@ -93,7 +95,7 @@ class Budget:
 
     def __init__(self, ceiling: int = DEFAULT_CEILING) -> None:
         if ceiling <= 0:
-            raise ValueError(
+            raise SpillError(
                 f"a memory ceiling must be positive; {ceiling} would refuse "
                 f"every admission and spill each record individually"
             )
@@ -135,7 +137,7 @@ class Budget:
         trade a cheap disk write for an unbounded stall.
         """
         if nbytes < 0:
-            raise ValueError("cannot admit a negative size")
+            raise SpillError("cannot admit a negative size")
         with self._lock:
             if self._used + nbytes + self.reserve > self.ceiling:
                 self._refused += 1

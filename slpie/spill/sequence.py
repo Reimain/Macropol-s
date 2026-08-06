@@ -37,7 +37,8 @@ import threading
 from dataclasses import dataclass
 from typing import Any, Iterator, Sequence
 
-from .codec import SpillError, decode, encode
+from ..errors import SpillError
+from .codec import decode, encode
 from .ident import block_id
 
 #: How many decoded records to keep resident from the last read. One window is
@@ -170,6 +171,9 @@ class SpilledSequence(Sequence):
 
         position = index + self._length if index < 0 else index
         if not 0 <= position < self._length:
+            # `IndexError`, not `SpillError`: this satisfies the `Sequence`
+            # protocol, and a caller iterating it must not have to know it is
+            # spilled. Substitutability outranks the taxonomy at this seam.
             raise IndexError(
                 f"index {index} is out of range for {self._length} spilled record(s)"
             )

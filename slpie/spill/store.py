@@ -43,6 +43,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator, Protocol, runtime_checkable
 
+from ..errors import SpillError
 from .codec import SpillError
 from .ident import require_block_id
 
@@ -58,7 +59,7 @@ DEFAULT_ROOT_NAME = "slpie-spill"
 def require_session(name: str) -> str:
     """A session name that is safe to use as a directory component."""
     if not SESSION_PATTERN.fullmatch(name):
-        raise ValueError(
+        raise SpillError(
             f"{name[:32]!r} is not a usable session name: letters, digits, "
             f"dashes and underscores only, up to 64 characters. Directories are "
             f"built from this, so it is refused rather than sanitised — "

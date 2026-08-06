@@ -13,7 +13,7 @@ from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Mapping, Sequence
 
-from ..errors import EvidenceRequired
+from ..errors import EvidenceRequired, SchemaViolation
 from .evidence import (
     Confidence,
     ConfidenceDerivation,
@@ -108,7 +108,7 @@ class Edge:
         if not self.evidence:
             raise EvidenceRequired(f"{self.src} -{self.kind.value}-> {self.dst}")
         if not self.src or not self.dst:
-            raise ValueError("an edge needs both endpoints")
+            raise SchemaViolation("an edge needs both endpoints")
 
     # -- identity --------------------------------------------------------
 

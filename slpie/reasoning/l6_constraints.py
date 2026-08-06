@@ -16,6 +16,7 @@ from typing import Any, Callable
 
 from ..domain.finding import Gap, GapKind
 from ..domain.reasoning import Enrichment, LayerNumber, ReasoningStep
+from ..errors import ReasoningError
 from .constraints.model import StaticIndex, requirements_from
 from .constraints.solver import BacktrackingSolver
 from .layer import BaseLayer, LayerContext
@@ -38,7 +39,7 @@ class ConstraintSolvingLayer(BaseLayer):
     ) -> None:
         resolution = context.resolution
         if resolution is None:
-            raise ValueError(
+            raise ReasoningError(
                 "constraint solving needs a resolved graph; solving over nothing "
                 "returns satisfiable, which is the most misleading possible answer"
             )

@@ -10,6 +10,7 @@ import pytest
 
 from gratimos import Depth, Governor, govern
 from gratimos.cli import main
+from gratimos.errors import OrchestrationError
 from gratimos.orchestrator import SURVEY, Budget
 
 TIDY = textwrap.dedent('''
@@ -33,7 +34,7 @@ def test_depth_parses_from_every_form():
     assert Depth.parse(2) is Depth.GENERATE
     assert Depth.parse("2") is Depth.GENERATE
     assert Depth.parse(99) is Depth.GOVERN
-    with pytest.raises(ValueError, match="unknown depth"):
+    with pytest.raises(OrchestrationError, match="unknown depth"):
         Depth.parse("nonsense")
 
 

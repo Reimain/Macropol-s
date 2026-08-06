@@ -214,6 +214,10 @@ def _lenient(value: Any, tag: TypeTag) -> Any:  # noqa: PLR0911, PLR0912 - a dis
             if text is not None and text.startswith("{"):
                 return dict(json.loads(text))
             raise ValueError(f"cannot read {type(value).__name__} as a struct")
+    # Every `raise ValueError` above is caught here and re-raised as `CastError`
+    # with the value and the target tag attached. They are internal control flow
+    # into this funnel, not taxonomy violations — raising `CastError` at each site
+    # would skip this line and lose the context it adds.
     except (ValueError, TypeError, ArithmeticError, decimal.InvalidOperation, json.JSONDecodeError) as exc:
         raise CastError(f"cannot cast {value!r} to {tag.value}: {exc}") from exc
     return value

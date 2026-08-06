@@ -26,6 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
 
+from ..errors import ReuseError
 from ..ontology.need import Constraint, ConstraintKind, Need
 from . import bridge
 from .candidate import Candidate
@@ -104,11 +105,13 @@ class Gate:
         allow_deprecated: bool = False,
     ) -> None:
         if distribution not in DISTRIBUTIONS:
-            raise ValueError(
+            raise ReuseError(
                 f"unknown distribution {distribution!r}; expected one of {DISTRIBUTIONS}"
             )
         if linkage not in LINKAGES:
-            raise ValueError(f"unknown linkage {linkage!r}; expected one of {LINKAGES}")
+            raise ReuseError(
+                f"unknown linkage {linkage!r}; expected one of {LINKAGES}"
+            )
         self.project_licence = project_licence
         self.distribution = distribution
         self.linkage = linkage

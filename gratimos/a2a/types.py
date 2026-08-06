@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Iterable, Mapping, Sequence
 
+from ..errors import ProtocolError
 from ..ids import iso, new_id, now_ns
 
 #: Where an agent card is published, per the spec.
@@ -119,7 +120,9 @@ class FilePart:
         import base64
 
         if not self.bytes_b64:
-            raise ValueError(f"file part {self.name!r} holds a URI, not inline bytes")
+            raise ProtocolError(
+                f"file part {self.name!r} holds a URI, not inline bytes"
+            )
         return base64.b64decode(self.bytes_b64)
 
 

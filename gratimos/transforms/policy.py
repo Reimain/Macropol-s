@@ -24,6 +24,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
+from ..errors import SandboxViolation
+
 #: Modules a transformation may import. Chosen for data work, and deliberately
 #: excluding anything that touches the network, the process table, or the
 #: import system itself.
@@ -94,7 +96,9 @@ class SandboxPolicy:
         """Widen the import set — the deliberate way to allow a dependency."""
         blocked = set(modules) & self.blocked_imports
         if blocked:
-            raise ValueError(f"these imports can never be allowed: {sorted(blocked)}")
+            raise SandboxViolation(
+                f"these imports can never be allowed: {sorted(blocked)}"
+            )
         return SandboxPolicy(
             allowed_imports=self.allowed_imports | frozenset(modules),
             blocked_imports=self.blocked_imports,

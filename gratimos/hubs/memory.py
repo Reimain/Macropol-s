@@ -16,7 +16,7 @@ import threading
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 
-from ..errors import MemoryBudgetExceeded
+from ..errors import HubError, MemoryBudgetExceeded
 from ..ids import now_ns
 
 MIB = 1 << 20
@@ -82,7 +82,7 @@ class MemoryBudget:
         high_water: float = 0.85,
     ) -> None:
         if limit_bytes <= 0:
-            raise ValueError("limit_bytes must be positive")
+            raise HubError("limit_bytes must be positive")
         self.limit = int(limit_bytes)
         self.per_payload_limit = min(int(per_payload_limit), self.limit)
         self.high_water = high_water

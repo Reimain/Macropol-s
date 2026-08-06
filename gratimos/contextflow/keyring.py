@@ -14,6 +14,7 @@ import threading
 from dataclasses import dataclass, field
 from typing import Any, Iterator, Mapping
 
+from ..errors import ContextFlowError
 from ..ids import StorageName, slug
 from .event import EventKind, KeyringEvent
 
@@ -24,7 +25,7 @@ def normalize_path(path: str) -> str:
     """Coerce any label into a canonical dotted keyring path."""
     parts = [slug(p) for p in str(path).split(".") if str(p).strip()]
     if not parts:
-        raise ValueError("keyring path cannot be empty")
+        raise ContextFlowError("keyring path cannot be empty")
     return ".".join(parts)
 
 
@@ -117,6 +118,10 @@ class MetaKeyring:
     def require(self, path: str) -> KeyEntry:
         entry = self.get(path)
         if entry is None:
+            # `KeyError`, not `ContextFlowError`: this is a keyed lookup on a
+            # path-keyed structure, and `require` is the strict half of
+            # `get`. A caller writing `except KeyError` around a lookup is
+            # right to expect it.
             raise KeyError(f"keyring path not present: {path!r}")
         return entry
 

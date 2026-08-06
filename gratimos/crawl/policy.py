@@ -23,11 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..errors import GratimosError
-
-
-class CrawlError(GratimosError):
-    """A fetch was refused, malformed, or forbidden by policy."""
+from ..errors import CrawlError
 
 
 class PolicyViolation(CrawlError):

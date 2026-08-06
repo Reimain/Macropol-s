@@ -196,7 +196,7 @@ def test_writing_to_a_live_target_needs_a_separate_grant(manifest, world):
 
 def test_granting_writes_requires_a_reason():
     guard = Guard()
-    with pytest.raises(ValueError, match="reason"):
+    with pytest.raises(TargetRefused, match="requires a reason"):
         guard.grant_writes(reason="")
 
 

@@ -20,11 +20,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
-from ..errors import GratimosError
-
-
-class OntologyError(GratimosError):
-    """The concept lattice is malformed or a concept is unknown."""
+from ..errors import OntologyError
 
 
 class Domain(str, Enum):

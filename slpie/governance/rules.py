@@ -33,7 +33,7 @@ from ..domain.evidence import Evidence
 from ..domain.finding import Finding, FindingKind, Remediation, rank
 from ..domain.identity import digest
 from ..domain.lifecycle import Severity
-from ..errors import PolicyError
+from ..errors import GovernanceError
 from ..plugins.manifest import ExtensionPoint
 
 
@@ -177,15 +177,15 @@ class Rule:
 
     def __post_init__(self) -> None:
         if not self.id:
-            raise PolicyError("a rule must have an id")
+            raise GovernanceError("a rule must have an id")
         if not callable(self.evaluate):
-            raise PolicyError(f"rule {self.id!r} has no evaluate function")
+            raise GovernanceError(f"rule {self.id!r} has no evaluate function")
         if not callable(self.matches):
-            raise PolicyError(f"rule {self.id!r} has a non-callable matches predicate")
+            raise GovernanceError(f"rule {self.id!r} has a non-callable matches predicate")
         if not self.remediation:
             # A rule that cannot say what to do about its own findings produces
             # complaints. Refused at construction rather than at report time.
-            raise PolicyError(f"rule {self.id!r} states no remediation")
+            raise GovernanceError(f"rule {self.id!r} states no remediation")
 
     @property
     def source_digest(self) -> str:
@@ -388,7 +388,7 @@ class RuleSet:
         quietly inherit the first's waivers.
         """
         if rule.id in self._rules:
-            raise PolicyError(f"rule {rule.id!r} is already registered in {self.name!r}")
+            raise GovernanceError(f"rule {rule.id!r} is already registered in {self.name!r}")
         self._rules[rule.id] = rule
         return rule
 

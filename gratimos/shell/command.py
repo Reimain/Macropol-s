@@ -35,12 +35,8 @@ from dataclasses import dataclass, field
 from enum import Enum, IntEnum
 from typing import Any, Iterable, Mapping, Sequence
 
-from ..errors import GratimosError
+from ..errors import ShellError
 from .environment import Environment
-
-
-class ShellError(GratimosError):
-    """A command could not be read, or was refused before execution."""
 
 
 class Risk(IntEnum):

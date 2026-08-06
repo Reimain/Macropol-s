@@ -68,7 +68,10 @@ class Guard:
         explain later is one nobody should have made.
         """
         if not reason:
-            raise ValueError("granting write access to a live target requires a reason")
+            raise TargetRefused(
+                "grant writes",
+                "granting write access to a live target requires a reason",
+            )
         self.writes_granted = True
         self.allowed.append(("grant writes", reason))
 

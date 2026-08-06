@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import pytest
 
+from gratimos.errors import ShellError
 from gratimos.shell import (
     AUTOMATABLE,
     PRODUCTION,
@@ -445,7 +446,7 @@ def test_suggestions_are_ranked_by_trust(ladder):
 
 def test_demoting_by_hand_requires_a_reason(ladder):
     ladder.propose(SIGNATURE, "ls -la", environment=machine("ls"))
-    with pytest.raises(ValueError, match="must state a reason"):
+    with pytest.raises(ShellError, match="must state a reason"):
         ladder.demote(SIGNATURE, "ls -la", reason="  ")
 
 

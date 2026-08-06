@@ -31,6 +31,7 @@ from typing import Any, Callable, Mapping, Sequence
 
 from ..domain.finding import Gap, GapKind
 from ..domain.reasoning import Enrichment, LayerNumber, ReasoningStep
+from ..errors import ReasoningError
 from .layer import BaseLayer, LayerContext
 
 #: Observation kinds that state a dependency was *declared* by a manifest.
@@ -54,7 +55,7 @@ class ArchitectureValidationLayer(BaseLayer):
     ) -> None:
         resolution = context.resolution
         if resolution is None:
-            raise ValueError(
+            raise ReasoningError(
                 "architecture validation needs a resolved graph; without one it "
                 "would compare declarations against nothing and report every "
                 "dependency as missing"

@@ -45,7 +45,7 @@ from ..domain.finding import Finding, FindingKind, Remediation
 from ..domain.identity import Purl
 from ..domain.lifecycle import Severity
 from ..environment.schema import parse_yaml
-from ..errors import ManifestError, PolicyError
+from ..errors import GovernanceError, ManifestError
 from .rules import Rule, RuleContext, RuleSet
 
 #: Every operator a policy file may use. Anything else is a load error, so a
@@ -94,9 +94,9 @@ class Condition:
 
     def __post_init__(self) -> None:
         if not self.property:
-            raise PolicyError("a condition must name a property")
+            raise GovernanceError("a condition must name a property")
         if self.operator not in OPERATORS:
-            raise PolicyError(
+            raise GovernanceError(
                 f"unknown policy operator {self.operator!r}; "
                 f"expected one of {', '.join(OPERATORS)}"
             )
@@ -185,14 +185,14 @@ class Policy:
 
     def __post_init__(self) -> None:
         if not self.id:
-            raise PolicyError("a policy must have an id")
+            raise GovernanceError("a policy must have an id")
         if not self.all_of and not self.any_of:
             # A policy with no conditions matches every node in the graph. That
             # is never what anybody meant, and the failure mode is forty
             # thousand findings.
-            raise PolicyError(f"policy {self.id!r} states no conditions")
+            raise GovernanceError(f"policy {self.id!r} states no conditions")
         if not self.remediation:
-            raise PolicyError(f"policy {self.id!r} states no remediation")
+            raise GovernanceError(f"policy {self.id!r} states no remediation")
 
     def violated_by(self, node: Any) -> bool:
         """Whether this node breaks the policy."""
@@ -292,14 +292,14 @@ class Policy:
 def parse_condition(entry: Mapping[str, Any]) -> Condition:
     """One condition mapping: a property plus exactly one operator."""
     if not isinstance(entry, Mapping):
-        raise PolicyError(f"a condition must be a mapping, got {type(entry).__name__}")
+        raise GovernanceError(f"a condition must be a mapping, got {type(entry).__name__}")
     name = entry.get("property") or entry.get("attribute")
     if not name:
-        raise PolicyError(f"condition {dict(entry)!r} names no property")
+        raise GovernanceError(f"condition {dict(entry)!r} names no property")
 
     used = [key for key in entry if key in OPERATORS]
     if len(used) != 1:
-        raise PolicyError(
+        raise GovernanceError(
             f"condition on {name!r} must use exactly one operator, found {used or 'none'}"
         )
     return Condition(property=str(name), operator=used[0], value=entry[used[0]])
@@ -308,19 +308,19 @@ def parse_condition(entry: Mapping[str, Any]) -> Condition:
 def parse_policy(entry: Mapping[str, Any], *, source: str = "") -> Policy:
     """One policy mapping from a policy document."""
     if not isinstance(entry, Mapping):
-        raise PolicyError(f"a policy must be a mapping, got {type(entry).__name__}")
+        raise GovernanceError(f"a policy must be a mapping, got {type(entry).__name__}")
 
     try:
         severity = Severity(str(entry.get("severity", "medium")).lower())
     except ValueError:
-        raise PolicyError(
+        raise GovernanceError(
             f"policy {entry.get('id', '?')!r} has unknown severity "
             f"{entry.get('severity')!r}"
         ) from None
     try:
         kind = FindingKind(str(entry.get("kind", "policy_violation")).lower())
     except ValueError:
-        raise PolicyError(
+        raise GovernanceError(
             f"policy {entry.get('id', '?')!r} has unknown finding kind "
             f"{entry.get('kind')!r}"
         ) from None
@@ -354,7 +354,7 @@ def parse_policy_document(document: Any, *, source: str = "") -> list[Policy]:
     elif document is None:
         entries = []
     else:
-        raise PolicyError(f"{source or 'policy document'} is not a policy file")
+        raise GovernanceError(f"{source or 'policy document'} is not a policy file")
 
     return [parse_policy(entry, source=source) for entry in entries]
 
@@ -365,7 +365,7 @@ def load_policy_file(path: str | Path) -> list[Policy]:
     try:
         text = location.read_text(encoding="utf-8")
     except OSError as error:
-        raise PolicyError(f"cannot read policy file {location}: {error}") from None
+        raise GovernanceError(f"cannot read policy file {location}: {error}") from None
 
     try:
         if location.suffix.lower() == ".json":
@@ -373,7 +373,7 @@ def load_policy_file(path: str | Path) -> list[Policy]:
         else:
             document = parse_yaml(text)
     except (ValueError, ManifestError) as error:
-        raise PolicyError(f"{location} is not a valid policy file: {error}") from None
+        raise GovernanceError(f"{location} is not a valid policy file: {error}") from None
 
     return parse_policy_document(document, source=location.as_uri())
 
@@ -457,7 +457,7 @@ def load_policies(
     for path in policy_paths(globs, root):
         try:
             loaded = load_policy_file(path)
-        except PolicyError as error:
+        except GovernanceError as error:
             errors.append(str(error))
             continue
         sources.append(str(path))

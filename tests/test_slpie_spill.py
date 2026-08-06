@@ -33,6 +33,7 @@ import pytest
 
 from slpie.compose import Composition, Context, registry
 from slpie.domain.evidence import Evidence, EvidenceKind, SourceLocation
+from slpie.errors import SpillError
 from slpie.plugins.protocol import Observation
 from slpie.spill import (
     LENGTH,
@@ -176,18 +177,18 @@ def test_the_same_content_gives_different_ids_in_different_sessions():
 def test_anything_that_is_not_an_id_is_refused_rather_than_normalised(bad):
     """Paths are built from these; `root/session/../../etc` is not a block."""
     assert not is_block_id(bad)
-    with pytest.raises(ValueError, match="not a block id"):
+    with pytest.raises(SpillError, match="not a block id"):
         require_block_id(bad)
 
 
 def test_an_oversized_session_key_is_refused_at_the_boundary():
-    with pytest.raises(ValueError, match="at most"):
+    with pytest.raises(SpillError, match="at most"):
         block_id(b"x", key=b"k" * 65)
 
 
 @pytest.mark.parametrize("bad", ["", "..", "a/b", "x" * 65, "-leading", "with space"])
 def test_a_session_name_that_could_escape_its_directory_is_refused(bad):
-    with pytest.raises(ValueError, match="not a usable session name"):
+    with pytest.raises(SpillError, match="not a usable session name"):
         require_session(bad)
 
 
@@ -306,12 +307,12 @@ def test_a_holder_cannot_release_more_than_it_holds():
 
 
 def test_a_ceiling_of_zero_is_refused_rather_than_silently_disabling_the_tier():
-    with pytest.raises(ValueError, match="must be positive"):
+    with pytest.raises(SpillError, match="must be positive"):
         Budget(0)
 
 
 def test_a_negative_admission_is_refused():
-    with pytest.raises(ValueError, match="negative"):
+    with pytest.raises(SpillError, match="negative"):
         Budget(100).admit("a", -1)
 
 

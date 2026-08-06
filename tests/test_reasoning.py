@@ -16,6 +16,7 @@ from gratimos.distill import (
     Volatility,
 )
 from gratimos.distill.knowledge import DAY, ESCALATION_FLOOR, RECALL_CEILING
+from gratimos.errors import GratimosError, OntologyError
 from gratimos.ontology import Concept, Domain, Ontology, OntologyError, base_ontology
 from gratimos.ontology.need import (
     Constraint,
@@ -176,7 +177,7 @@ def test_a_longer_phrase_is_matched_before_its_parts(ontology):
 def test_a_need_with_nothing_recognisable_is_refused(ontology):
     """An empty need matches every candidate and caches under a key meaning
     'anything' — the worst possible entry to have."""
-    with pytest.raises(ValueError, match="no known concepts"):
+    with pytest.raises(OntologyError, match="no known concepts"):
         need_from_text("please do the thing with the stuff", ontology=ontology)
 
 
@@ -660,5 +661,5 @@ def test_the_loop_reports_how_much_work_it_absorbed(ontology, phrasings):
 
 
 def test_an_invalid_audit_rate_is_refused():
-    with pytest.raises(ValueError, match="fraction"):
+    with pytest.raises(GratimosError, match="fraction"):
         DistillationLoop(audit_rate=1.5)

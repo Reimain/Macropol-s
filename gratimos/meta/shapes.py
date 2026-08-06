@@ -15,6 +15,7 @@ from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
+from ..errors import ShapeError
 from ..ids import digest, slug
 
 _KEYWORDS = frozenset(
@@ -159,7 +160,9 @@ class FieldShape:
     def merge(self, other: "FieldShape") -> "FieldShape":
         """Union two observations of the same field."""
         if other.name != self.name:
-            raise ValueError(f"cannot merge fields {self.name!r} and {other.name!r}")
+            raise ShapeError(
+                f"cannot merge fields {self.name!r} and {other.name!r}"
+            )
         tag = promote(self.tag, other.tag)
         children: tuple[FieldShape, ...] = ()
         if tag in (TypeTag.STRUCT, TypeTag.MAP):

@@ -19,6 +19,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
+from ..errors import ScenarioNotFound, SimulatorError
 from .clock import DAY
 from .faults import Fault, FaultKind
 from .world import SimulatedWorld
@@ -70,9 +71,7 @@ def fire(name: str, world: SimulatedWorld, **parameters: Any) -> Outcome:
     """Run a scenario against a world by name — what the CLI and UI call."""
     handler = _REGISTRY.get(name)
     if handler is None:
-        raise KeyError(
-            f"no scenario named {name!r}; available: {', '.join(available())}"
-        )
+        raise ScenarioNotFound(name, available())
     return handler(world, **parameters)
 
 
@@ -338,7 +337,7 @@ def _first_codebase(world: SimulatedWorld) -> str:
 
     declarations = world.manifest.of_kind(DeclarationKind.CODEBASE)
     if not declarations:
-        raise ValueError("this world declares no codebase to act on")
+        raise SimulatorError("this world declares no codebase to act on")
     return declarations[0].name
 
 

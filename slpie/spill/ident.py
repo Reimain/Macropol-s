@@ -40,6 +40,8 @@ import os
 import re
 from typing import Final
 
+from ..errors import SpillError
+
 #: Digest size in bytes. 16 bytes is 128 bits — collision-resistant far beyond
 #: any plausible block count, and short enough that a path built from it is
 #: comfortable on every filesystem.
@@ -71,7 +73,7 @@ def new_session_key() -> bytes:
 def block_id(content: bytes, *, key: bytes) -> str:
     """Bytes plus a session key → the fixed-length id that addresses them."""
     if len(key) > MAX_KEY_BYTES:
-        raise ValueError(
+        raise SpillError(
             f"a session key may be at most {MAX_KEY_BYTES} bytes; this one is "
             f"{len(key)}. Refused here rather than at the first spill, where it "
             f"would surface as a hashing error nobody could place"
@@ -96,7 +98,7 @@ def require_block_id(text: str) -> str:
     back.
     """
     if not is_block_id(text):
-        raise ValueError(
+        raise SpillError(
             f"{text[:32]!r} is not a block id: expected exactly {LENGTH} "
             f"lowercase hex characters. Paths are built from these, so anything "
             f"else is refused rather than normalised"

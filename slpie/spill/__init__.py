@@ -40,8 +40,9 @@ with it.
 
 from __future__ import annotations
 
+from ..errors import SpillError
 from .budget import DEFAULT_CEILING, Budget, BudgetReport
-from .codec import SpillError, Unspillable, decode, encode, spillable
+from .codec import Unspillable, decode, encode, spillable
 from .ident import LENGTH, block_id, is_block_id, new_session_key, require_block_id
 from .sequence import BlockRef, SpilledSequence, write_block
 from .session import (

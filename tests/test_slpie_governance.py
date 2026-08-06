@@ -30,7 +30,7 @@ from slpie.compose import Composition, Context, Kind, registry
 from slpie.domain.evidence import Evidence, EvidenceKind, SourceLocation
 from slpie.domain.finding import Finding, FindingKind
 from slpie.domain.lifecycle import Severity
-from slpie.errors import PolicyError
+from slpie.errors import GovernanceError
 from slpie.governance.builtins import FAMILIES, builtins
 from slpie.governance.rules import (
     Rule,
@@ -536,7 +536,7 @@ def test_boundaries_decline_entirely_without_a_manifest(graph):
 
 
 def test_a_rule_without_a_remediation_is_refused_at_construction():
-    with pytest.raises(PolicyError, match="remediation"):
+    with pytest.raises(GovernanceError, match="remediation"):
         Rule(
             id="test.silent", title="complains", kind=FindingKind.POLICY_VIOLATION,
             severity=Severity.LOW, evaluate=lambda _c: [],
@@ -546,7 +546,7 @@ def test_a_rule_without_a_remediation_is_refused_at_construction():
 def test_a_duplicate_rule_id_is_refused_rather_than_shadowing():
     ruleset = builtins()
     existing = ruleset.rules[0]
-    with pytest.raises(PolicyError, match="already registered"):
+    with pytest.raises(GovernanceError, match="already registered"):
         ruleset.add(existing)
 
 

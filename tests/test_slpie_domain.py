@@ -42,7 +42,7 @@ from slpie.domain.reasoning import (
     trace_to_evidence,
 )
 from slpie.domain.version import Version, VersionRange, parse_range
-from slpie.errors import EvidenceRequired, LicenseError, VersionError
+from slpie.errors import EvidenceRequired, GovernanceError, LicenseError, VersionError
 
 LOCKFILE = Evidence(
     kind=EvidenceKind.LOCKFILE_PIN,
@@ -309,7 +309,7 @@ def test_a_waiver_records_its_reason_and_never_erases_the_finding():
 
 
 def test_a_waiver_without_a_reason_is_refused():
-    with pytest.raises(ValueError):
+    with pytest.raises(GovernanceError, match="must record why"):
         a_finding().suppress("")
 
 

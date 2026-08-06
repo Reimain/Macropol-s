@@ -45,6 +45,9 @@ class _Encoder(json.JSONEncoder):
         if isinstance(o, (bytes, bytearray)):
             import base64
             return {"__bytes__": base64.b64encode(bytes(o)).decode("ascii")}
+        # `TypeError` is `json.dumps(default=...)`'s contract for "I cannot
+        # encode this" — a `HubError` here would escape the encoder instead of
+        # being handled by it.
         raise TypeError(f"{type(o).__name__} is not spillable as JSON")
 
 

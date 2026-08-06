@@ -194,8 +194,59 @@ class ConstraintUnsatisfiable(ReasoningError):
         )
 
 
-class PolicyError(SlpieError):
-    """A governance rule could not be registered or evaluated."""
+class GovernanceError(SlpieError):
+    """A governance rule or policy could not be registered or evaluated.
+
+    Named for the package rather than for "policy" because `gratimos.errors`
+    already has a `PolicyError` meaning something else — no policymaker could
+    decide — and two classes with one name across two taxonomies makes
+    `from ..errors import PolicyError` ambiguous to whoever reads it next.
+    """
+
+
+# --- memory, simulation, and the bus -------------------------------------
+#
+# These three exist because the subsystems below them were raising builtins for
+# want of anything better. A `ValueError` from the spill tier and a `ValueError`
+# from a purl parser are indistinguishable to a caller trying to decide whether
+# to retry, which is the whole reason this module opens by saying subsystems
+# route on type rather than on message text.
+
+
+class SpillError(SlpieError):
+    """A block could not be encoded, stored or read back, or a session was
+    misconfigured or given a malformed id or name.
+
+    Declared here rather than in `slpie/spill/codec.py`, where it used to live.
+    A taxonomy whose classes are scattered across the subsystems that raise them
+    is a taxonomy a caller has to go looking for, and `slpie/spill/budget.py`
+    duly raised `ValueError` for want of finding this one.
+
+    Note what is *not* here: `SpilledSequence.__getitem__` raises `IndexError`,
+    because it satisfies the `Sequence` protocol and a caller iterating it must
+    not have to know it is spilled. Substitutability outranks taxonomy at that
+    one seam, deliberately.
+    """
+
+
+class SimulatorError(SlpieError):
+    """The simulated world could not do what was asked of it."""
+
+
+class ScenarioNotFound(SimulatorError):
+    """No scenario by that name. Carries what is available, so a typo is cheap."""
+
+    def __init__(self, name: str, available: tuple[str, ...] = ()) -> None:
+        self.name = name
+        self.available = tuple(available)
+        super().__init__(
+            f"no scenario named {name!r}"
+            + (f"; available: {', '.join(self.available)}" if self.available else "")
+        )
+
+
+class BusError(SlpieError):
+    """An event subscription could not be registered."""
 
 
 # --- artifacts and interface --------------------------------------------

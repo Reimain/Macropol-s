@@ -29,6 +29,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
+from ..errors import ReuseError
 from .candidate import Candidate
 
 #: Weights, summing to 1.0 when every component is measurable.
@@ -138,7 +139,7 @@ class Ranker:
         if weights:
             unknown = set(weights) - set(WEIGHTS)
             if unknown:
-                raise ValueError(f"unknown ranking components: {sorted(unknown)}")
+                raise ReuseError(f"unknown ranking components: {sorted(unknown)}")
             self.weights.update(weights)
         self._now = now
 

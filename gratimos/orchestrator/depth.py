@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Any
 
+from ..errors import OrchestrationError
+
 MIB = 1 << 20
 
 
@@ -43,7 +45,7 @@ class Depth(IntEnum):
         try:
             return cls[text]
         except KeyError as exc:
-            raise ValueError(
+            raise OrchestrationError(
                 f"unknown depth {value!r}; expected one of: "
                 + ", ".join(d.label for d in cls)
             ) from exc

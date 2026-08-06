@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import pytest
 
+from slpie.errors import ReasoningError
 from slpie.reasoning.constraints import (
     BacktrackingSolver,
     Change,
@@ -56,7 +57,7 @@ def test_an_unsatisfiable_solve_names_both_requirements_and_both_windows():
 
 def test_an_unsatisfiable_solution_cannot_be_built_without_a_conflict():
     """The type refuses the shrug. 'It does not work' is not a usable answer."""
-    with pytest.raises(ValueError, match="must name a conflict"):
+    with pytest.raises(ReasoningError, match="must name a conflict"):
         Solution(satisfiable=False)
 
 

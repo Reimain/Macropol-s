@@ -16,6 +16,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
+from ..errors import SimulatorError
+
 
 @runtime_checkable
 class Clock(Protocol):
@@ -68,7 +70,7 @@ class ControlledClock:
 
     def advance(self, nanoseconds: int) -> int:
         if nanoseconds < 0:
-            raise ValueError("time does not run backwards; supersede instead")
+            raise SimulatorError("time does not run backwards; supersede instead")
         self.instant += nanoseconds
         self.reads = 0
         return self.instant

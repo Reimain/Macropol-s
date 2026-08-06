@@ -27,6 +27,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from ..domain.finding import Gap, GapKind
 from ..domain.reasoning import Enrichment, LayerNumber, ReasoningStep
+from ..errors import ReasoningError
 from .layer import BaseLayer, LayerContext
 
 #: How far to walk. Beyond this a "blast radius" is the whole graph, which tells
@@ -87,7 +88,7 @@ class ImpactLayer(BaseLayer):
     ) -> None:
         resolution = context.resolution
         if resolution is None:
-            raise ValueError(
+            raise ReasoningError(
                 "impact needs a resolved graph; reverse reachability over nothing "
                 "would report every package as reaching nobody"
             )

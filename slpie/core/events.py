@@ -20,6 +20,7 @@ from enum import Enum
 from typing import Any, Mapping
 
 from ..domain.identity import digest
+from ..errors import SchemaViolation
 
 
 class EventKind(str, Enum):
@@ -118,7 +119,7 @@ class DomainEvent:
 
     def __post_init__(self) -> None:
         if not self.subject:
-            raise ValueError(f"{self.kind.value} event has no subject")
+            raise SchemaViolation(f"{self.kind.value} event has no subject")
         if self.occurred_at == 0:
             object.__setattr__(self, "occurred_at", time.time_ns())
 

@@ -111,6 +111,11 @@ def _load_module(path: str, entrypoint: str):
     spec.loader.exec_module(module)
     fn = getattr(module, entrypoint, None)
     if fn is None or not callable(fn):
+        # `AttributeError`, not `TransformError`. This module runs as
+        # `python -I -S _runner.py` in a subprocess and imports nothing from
+        # `gratimos` on purpose — see the module docstring. A taxonomy import
+        # here turns every sandboxed run into a dead subprocess whose failure
+        # reads as "a resource limit killed it".
         raise AttributeError(f"{path} defines no callable {entrypoint}()")
     return fn
 

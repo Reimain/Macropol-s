@@ -13,7 +13,7 @@ import pytest
 
 from slpie.binding import Guard
 from slpie.environment import DeclarationKind, Target, loads
-from slpie.errors import BindingError
+from slpie.errors import BindingError, ScenarioNotFound, SimulatorError
 from slpie.simulator import (
     DAY,
     EPOCH,
@@ -204,7 +204,7 @@ def test_every_registered_scenario_is_addressable_by_name():
     assert "cve" in names and "capability-refused" in names
     assert len(names) >= 10
 
-    with pytest.raises(KeyError, match="no scenario named"):
+    with pytest.raises(ScenarioNotFound, match="no scenario named"):
         fire("does-not-exist", None)
 
 
@@ -395,7 +395,7 @@ def test_successive_reads_never_collide_so_ordering_stays_stable():
 
 def test_time_cannot_be_run_backwards():
     clock = ControlledClock()
-    with pytest.raises(ValueError, match="does not run backwards"):
+    with pytest.raises(SimulatorError, match="does not run backwards"):
         clock.advance(-1)
 
 

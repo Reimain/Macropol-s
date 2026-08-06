@@ -23,6 +23,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from ..domain.reasoning import Enrichment, LayerNumber, ReasoningStep
+from ..errors import ReasoningError
 from ..linking.linkers import Joined, LinkerSet
 from .layer import BaseLayer, LayerContext
 
@@ -43,7 +44,7 @@ class SemanticLinkingLayer(BaseLayer):
         step: Callable[[ReasoningStep], None],
     ) -> None:
         if context.resolution is None:
-            raise ValueError(
+            raise ReasoningError(
                 "semantic linking needs a resolved graph; L3 either did not run "
                 "or abstained, and linking guesses would fill the hole with "
                 "joins nothing supports"

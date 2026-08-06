@@ -39,6 +39,7 @@ from dataclasses import dataclass, field, replace
 from enum import IntEnum
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
+from ..errors import ShellError
 from .command import Risk
 from .environment import Environment
 from .guard import Guard, Stance, Verdict
@@ -294,7 +295,7 @@ class Ladder:
                to: Trust = Trust.SUGGESTED, now: float | None = None) -> Transition:
         """Take trust away by hand. Always available, and always recorded."""
         if not reason.strip():
-            raise ValueError("a demotion must state a reason")
+            raise ShellError("a demotion must state a reason")
         return self._move(f"{signature}|{command}", to, reason,
                           time.time() if now is None else now)
 

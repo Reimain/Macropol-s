@@ -25,16 +25,12 @@ from urllib import request as _request
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 
-from ..errors import GratimosError
+from ..errors import AccessDenied
 from .base import BaseProbe, Capture, Target
 from .documents import JsonProbe
 
 DEFAULT_MAX_BYTES = 32 << 20  # 32 MiB
 DEFAULT_TIMEOUT = 20.0
-
-
-class AccessDenied(GratimosError):
-    """A request was refused by the access policy before it was sent."""
 
 
 @dataclass(frozen=True, slots=True)

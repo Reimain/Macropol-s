@@ -16,6 +16,7 @@ import threading
 from dataclasses import dataclass, field
 from typing import Callable, Iterable, Protocol, Sequence
 
+from ..errors import BusError
 from .events import DomainEvent, EventKind
 
 Handler = Callable[[DomainEvent], None]
@@ -90,7 +91,7 @@ class EventBus:
     ) -> Subscription:
         with self._lock:
             if any(s.name == name for s in self._subscriptions):
-                raise ValueError(f"subscriber {name!r} is already registered")
+                raise BusError(f"subscriber {name!r} is already registered")
             subscription = Subscription(name=name, handler=handler, kinds=frozenset(kinds))
             self._subscriptions.append(subscription)
             return subscription

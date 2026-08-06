@@ -28,6 +28,7 @@ from __future__ import annotations
 from typing import Any, Callable, Mapping, Sequence
 
 from ..domain.reasoning import Enrichment, LayerNumber, ReasoningStep
+from ..errors import ReasoningError
 from .constraints.compat import Change, UpgradeStep, classify, safe_upgrades
 from .constraints.model import Requirement
 from .layer import BaseLayer, LayerContext
@@ -52,7 +53,7 @@ class OptimizationLayer(BaseLayer):
     ) -> None:
         resolution = context.resolution
         if resolution is None:
-            raise ValueError(
+            raise ReasoningError(
                 "optimisation needs a resolved graph; suggesting upgrades without "
                 "knowing what is installed would be guessing at both ends"
             )

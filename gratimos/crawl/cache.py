@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator, Mapping
 
+from ..errors import CrawlError
 from .transport import Response
 
 #: How long a stored response is served without asking the origin. Short enough
@@ -129,9 +130,9 @@ class ResponseCache:
         max_entries: int = 4096,
     ) -> None:
         if ttl < 0:
-            raise ValueError("ttl cannot be negative")
+            raise CrawlError("ttl cannot be negative")
         if negative_ttl < 0:
-            raise ValueError("negative_ttl cannot be negative")
+            raise CrawlError("negative_ttl cannot be negative")
         self.ttl = ttl
         self.negative_ttl = negative_ttl
         self.max_entries = max_entries

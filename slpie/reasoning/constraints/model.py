@@ -34,7 +34,7 @@ from typing import (
 )
 
 from ...domain.version import Version, VersionRange, parse_range
-from ...errors import VersionError
+from ...errors import ReasoningError, VersionError
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,7 +209,7 @@ class Solution:
 
     def __post_init__(self) -> None:
         if not self.satisfiable and not self.conflicts and not self.exhausted:
-            raise ValueError(
+            raise ReasoningError(
                 "an unsatisfiable solution must name a conflict; "
                 "'it does not work' without saying why is not a usable answer"
             )

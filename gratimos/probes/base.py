@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Protocol, Sequence, runtime_checkable
 from urllib.parse import urlparse
 
+from ..errors import ProbeError
 from ..ids import StorageName, now_ns, slug
 from ..meta import Wrapped
 
@@ -183,7 +184,9 @@ class BaseProbe:
 
     def _read_bytes(self, target: Target, *, max_bytes: int = 0) -> bytes:
         if target.path is None:
-            raise ValueError(f"{self.name} probe needs a local path, got {target.uri!r}")
+            raise ProbeError(
+                f"{self.name} probe needs a local path, got {target.uri!r}"
+            )
         with target.path.open("rb") as handle:
             return handle.read(max_bytes) if max_bytes else handle.read()
 

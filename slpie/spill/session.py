@@ -39,8 +39,9 @@ from dataclasses import dataclass, field
 from types import TracebackType
 from typing import Any, Iterable, Iterator, Sequence
 
+from ..errors import SpillError
 from .budget import DEFAULT_CEILING, Budget
-from .codec import SpillError, Unspillable, spillable
+from .codec import Unspillable, spillable
 from .ident import new_session_key
 from .sequence import WINDOW, SpilledSequence
 from .store import FileStore, SpillStore

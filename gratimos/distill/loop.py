@@ -41,6 +41,7 @@ from typing import (
     runtime_checkable,
 )
 
+from ..errors import GratimosError
 from ..ontology.need import Need
 from ..reason.engine import Engine, ForwardReport
 from ..reason.facts import Fact, Provenance
@@ -194,7 +195,7 @@ class DistillationLoop:
         rng: random.Random | None = None,
     ) -> None:
         if not 0.0 <= audit_rate <= 1.0:
-            raise ValueError("audit_rate must be a fraction between 0 and 1")
+            raise GratimosError("audit_rate must be a fraction between 0 and 1")
 
         self.knowledge = knowledge if knowledge is not None else KnowledgeBase(floor=floor)
         self.validator = validator

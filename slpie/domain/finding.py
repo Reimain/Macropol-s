@@ -16,7 +16,7 @@ from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Iterable, Mapping, Sequence
 
-from ..errors import EvidenceRequired
+from ..errors import EvidenceRequired, GovernanceError, SchemaViolation
 from .evidence import Evidence, SourceLocation
 from .identity import digest
 from .lifecycle import RiskClass, Severity
@@ -239,7 +239,7 @@ class Finding:
         if not self.evidence:
             raise EvidenceRequired(f"finding {self.kind.value} on {self.subject}")
         if not self.subject:
-            raise ValueError("a finding needs a subject")
+            raise SchemaViolation("a finding needs a subject")
 
     @property
     def id(self) -> str:
@@ -276,7 +276,7 @@ class Finding:
         unauditable, which is the opposite of the point.
         """
         if not reason:
-            raise ValueError("a suppression must record why")
+            raise GovernanceError("a suppression must record why")
         return replace(self, suppressed=True, suppression_reason=reason)
 
     def escalate(self, severity: Severity) -> "Finding":

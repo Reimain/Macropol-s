@@ -107,7 +107,52 @@ class MergeConflict(CodegenError):
 
 
 class PolicyError(GratimosError):
-    """No policymaker could decide, or a decision was rejected."""
+    """No policymaker could decide, or a decision was rejected.
+
+    Distinct from `slpie.errors.GovernanceError`, which is about a governance
+    rule failing to register or evaluate. The two used to share the name
+    `PolicyError` across the two taxonomies, which made
+    `from ..errors import PolicyError` say nothing about which one it meant.
+    """
+
+
+# --- shell, crawling, probing, reuse, ontology ---------------------------
+#
+# These five roots used to be declared in the subsystem that raised them —
+# `ShellError` in `shell/command.py`, `CrawlError` in `crawl/policy.py`,
+# `OntologyError` in `ontology/concepts.py`, and so on. A taxonomy scattered
+# across the modules it serves is one a caller has to go looking for, and the
+# reliable symptom is what this module's own docstring warns about: the
+# subsystems next door raise `ValueError` instead, because nothing obvious was
+# importable. Subclasses stay with their subsystem; the roots live here.
+
+
+class ShellError(GratimosError):
+    """A command could not be read, or was refused before execution."""
+
+
+class CrawlError(GratimosError):
+    """A fetch was refused, malformed, or forbidden by policy."""
+
+
+class ProbeError(GratimosError):
+    """A probe could not read its target."""
+
+
+class AccessDenied(ProbeError):
+    """A request was refused by the access policy before it was sent."""
+
+
+class ReuseError(GratimosError):
+    """A reuse assessment could not be configured or completed."""
+
+
+class OntologyError(GratimosError):
+    """The concept lattice is malformed or a concept is unknown."""
+
+
+class OrchestrationError(GratimosError):
+    """A cycle could not be planned, or was configured with something invalid."""
 
 
 class MigrationError(GratimosError):

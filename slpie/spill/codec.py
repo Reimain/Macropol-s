@@ -33,11 +33,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable, Iterable, Iterator, Sequence
 
-from ..errors import SlpieError
-
-
-class SpillError(SlpieError):
-    """A block could not be encoded, stored or read back."""
+from ..errors import SpillError
 
 
 class Unspillable(SpillError):

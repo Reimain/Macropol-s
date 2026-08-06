@@ -21,6 +21,7 @@ from gratimos.crawl import (
     official_policy,
 )
 from gratimos.distill import DistillationLoop, Judgement, KnowledgeBase, Route
+from gratimos.errors import ReuseError
 from gratimos.ontology.need import Constraint, ConstraintKind, Need, need_from_text
 from gratimos.reason import Engine, Fact, FactBase, Provenance, reuse_rules
 from gratimos.reuse import (
@@ -215,7 +216,7 @@ def test_a_candidate_carries_what_the_engine_concluded_blocks_it(need):
 
 
 def test_an_unknown_distribution_is_refused_at_construction():
-    with pytest.raises(ValueError, match="unknown distribution"):
+    with pytest.raises(ReuseError, match="unknown distribution"):
         Gate(distribution="saas")
 
 
@@ -316,7 +317,7 @@ def test_filtering_returns_both_halves_fully_explained(need):
 
 
 def test_an_unknown_ranking_component_is_refused():
-    with pytest.raises(ValueError, match="unknown ranking components"):
+    with pytest.raises(ReuseError, match="unknown ranking components"):
         Ranker({"vibes": 1.0})
 
 

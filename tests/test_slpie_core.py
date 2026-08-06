@@ -47,7 +47,7 @@ from slpie.domain import (
     Severity,
     SourceLocation,
 )
-from slpie.errors import LedgerError, TargetRefused
+from slpie.errors import BusError, LedgerError, SchemaViolation, TargetRefused
 from slpie.ledger import (
     CountingProjection,
     FindingProjection,
@@ -113,7 +113,7 @@ def test_a_derived_event_records_what_caused_it():
 
 
 def test_an_event_without_a_subject_is_refused():
-    with pytest.raises(ValueError):
+    with pytest.raises(SchemaViolation, match="has no subject"):
         DomainEvent(kind=EventKind.NODE_ASSERTED, subject="")
 
 
@@ -168,7 +168,7 @@ def test_one_broken_subscriber_does_not_stop_the_others():
 def test_registering_the_same_subscriber_twice_is_refused():
     bus = EventBus()
     bus.subscribe("graph", lambda event: None)
-    with pytest.raises(ValueError):
+    with pytest.raises(BusError, match="already registered"):
         bus.subscribe("graph", lambda event: None)
 
 
