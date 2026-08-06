@@ -66,11 +66,27 @@ def test_prune_keeps_only_the_newest(tmp_path: Path):
 
 
 def test_unavailable_connectors_explain_themselves():
+    """A missing optional dependency is named, not shrugged at.
+
+    The s3 half is conditional on purpose. This test used to assert only the
+    absent path, so it passed for the wrong reason on any machine without boto3
+    and *failed* the moment somebody installed it — a test whose result depends
+    on what happens to be in the environment rather than on what the code does.
+    """
     assert "file" in REGISTRY.available_schemes()
-    with pytest.raises(StorageError, match="boto3"):
-        resolve("s3://bucket/prefix")
+
     with pytest.raises(StorageError, match="no connector"):
         resolve("frobnicate://x")
+
+    try:
+        import boto3  # noqa: F401
+    except ImportError:
+        with pytest.raises(StorageError, match="boto3"):
+            resolve("s3://bucket/prefix")
+    else:
+        # Installed: the connector must actually resolve rather than still
+        # claiming the dependency is missing.
+        assert "s3" in REGISTRY.available_schemes()
 
 
 # --- memory --------------------------------------------------------------
