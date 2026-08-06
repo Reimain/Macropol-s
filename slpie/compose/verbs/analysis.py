@@ -17,6 +17,7 @@ verb that quietly acquired a database dependency would move file.
 
 from __future__ import annotations
 
+from collections.abc import Mapping as AbcMapping
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -321,9 +322,18 @@ def _findings(flow: Flow, arguments: Mapping[str, Any], _context: Context) -> Fl
     # `Finding` refuses to exist without evidence, which is invariant 1 reaching
     # all the way out to the findings list. A join names node ids, so the evidence
     # is looked up from the resolution rather than invented.
-    by_node = {
-        entry.node_id: entry for entry in getattr(resolution, "resolved", ())
-    }
+    #
+    # Both a `Resolution` and a `Solution` have a `.resolved`, and they are not
+    # the same shape: the first is a tuple of entries carrying `node_id`, the
+    # second a `dict[coordinate, version]`. Iterating a `Solution`'s gave bare
+    # strings and `discover | link | constraints | findings` — a composition this
+    # verb's own docstring says it supports — died on `'str' object has no
+    # attribute 'node_id'`. Joins are a `Resolution` concept; a `Solution` skips
+    # this block and is handled by the conflict loop below.
+    entries = getattr(resolution, "resolved", ())
+    if isinstance(entries, AbcMapping):
+        entries = ()
+    by_node = {entry.node_id: entry for entry in entries}
     for join in getattr(resolution, "contradicting_joins", lambda: ())():
         subject = join.target or join.source
         entry = by_node.get(subject) or by_node.get(join.source)

@@ -530,3 +530,17 @@ def test_the_joins_travel_in_the_pipe_rather_than_through_a_side_channel(
     assert result.flow.kind is Kind.RESOLUTION
     assert result.flow.value.joins, "the linker output is on the flow"
     assert result.flow.value.contradicting_joins()
+
+
+def test_findings_accepts_a_solution_as_well_as_a_resolution(repository, run):
+    """`findings` names constraints as one of its three sources; it must survive one.
+
+    `Resolution.resolved` is a tuple of entries carrying `node_id`;
+    `Solution.resolved` is a `dict[coordinate, version]`. One `getattr` served
+    both, so iterating a solve's result yielded bare strings and this documented
+    composition died on `'str' object has no attribute 'node_id'`.
+    """
+    result = run(f"discover {repository} | link | constraints | findings", repository)
+
+    assert result.ok, result.error
+    assert result.flow.kind is Kind.FINDINGS
