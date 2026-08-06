@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Binder runs this after building the image. Installing in editable mode means a
+# reader can change the source in one tab and see the effect in the next.
+set -euo pipefail
+pip install -e .
+python -m tools.notebooks.build --check

@@ -1,0 +1,25 @@
+# Conda environment for the interactive notebooks.
+#
+#   conda env create -f environment.yml
+#   conda activate macropol-s
+#   jupyter lab
+#
+# Also what Binder reads: push a branch and it builds this.
+name: macropol-s
+channels:
+  - conda-forge
+dependencies:
+  # 3.11 is the floor. The kernel reads pyproject.toml and Cargo.toml during
+  # discovery with the stdlib `tomllib`, and a third-party TOML parser would
+  # breach the zero-dependency rule.
+  - python>=3.11
+  - pip
+  - jupyterlab>=4.1
+  - ipykernel>=6.29
+  - nbformat>=5.10
+  - nbclient>=0.10
+  - pandas>=2.2
+  - matplotlib>=3.8
+  - git
+  - pip:
+      - -e .

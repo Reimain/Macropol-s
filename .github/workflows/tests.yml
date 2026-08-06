@@ -117,4 +117,28 @@ jobs:
       # Settings come from pyproject.toml, so this and a local `isort .` cannot
       # disagree about what correct looks like. No black — see the note in
       # pyproject.toml explaining why.
-      - run: python -m isort --check-only --diff slpie gratimos tests
+      - run: python -m isort --check-only --diff slpie gratimos tests tools
+
+  notebooks:
+    name: notebooks — every cell runs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -e .
+      - run: pip install -r requirements-notebooks.txt
+
+      # The notebooks are generated. An edit made in the .ipynb and not in the
+      # spec would be silently overwritten on the next rebuild, so it is caught
+      # here instead.
+      - name: The notebooks match their spec
+        run: python -m tools.notebooks.build --check
+
+      # The reason the notebooks are worth having. A notebook nobody runs is a
+      # blog post that has learned to lie: it looks executable, so a reader
+      # assumes it was checked.
+      - name: Every cell in every notebook runs
+        run: python -m tools.notebooks.run

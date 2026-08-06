@@ -17,3 +17,12 @@ htmlcov/
 # Gratimos workspaces: generated code, staged payloads, and traces are run
 # artifacts. Check in a workspace deliberately if you want its history.
 .gratimos/
+
+# Notebook checkpoints. The notebooks themselves are committed (they are
+# generated and verified); Jupyter's autosave copies are not.
+.ipynb_checkpoints/
+notebooks/**/.ipynb_checkpoints/
+
+# Written by the notebooks and the demo into temp directories, but a stray
+# `slpie init` in the repository root would leave this behind.
+.slpie/
