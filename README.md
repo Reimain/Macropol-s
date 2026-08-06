@@ -11,6 +11,9 @@ Two systems, one repository, no third-party dependencies in either kernel.
 | **SLPIE** | An architecture intelligence engine. Point it at a tree or a manifest and it tells you what is in there, what depends on what, what is wrong — and *why it believes each answer*, down to a file and a line. |
 | **Gratimos** | A data-shaping kernel. It infers shapes from messy sources, casts safely between them, and generates typed code with a three-way AST merge that survives your edits. |
 
+**[docs/VALUE.md](docs/VALUE.md)** — what this is worth, measured on real
+repositories, with the competitive position computed rather than asserted.
+
 ## Start in a notebook
 
 The interactive path is the one most people want. Fourteen executable pages,
@@ -99,6 +102,8 @@ make audit            # the judge, on this repository
 make help             # the rest
 ```
 
+* **[docs/VALUE.md](docs/VALUE.md)** — the value case, every number computed
+* **[docs/COMPETITIVE.md](docs/COMPETITIVE.md)** — where we sit, with citations
 * **[notebooks/](notebooks/README.md)** — the interactive pages, and how they are generated
 * **[docs/AUDIT.md](docs/AUDIT.md)** — what is wrong with this codebase, measured
 * **[docs/README.md](docs/README.md)** — Gratimos usage, CLI, safety guarantees

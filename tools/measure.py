@@ -161,6 +161,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("roots", nargs="+", type=Path)
     parser.add_argument("--json", action="store_true", help="emit JSON instead")
     parser.add_argument("--limit", type=int, default=200_000)
+    parser.add_argument(
+        "--out", type=Path,
+        help="write results here after each repository, so a timeout keeps what "
+             "already finished",
+    )
     args = parser.parse_args(argv)
 
     results = []
@@ -168,9 +173,17 @@ def main(argv: list[str] | None = None) -> int:
         if not root.exists():
             print(f"skipping {root}: not found", file=sys.stderr)
             continue
-        if not args.json:
-            print(f"  measuring {root.name} ...", file=sys.stderr)
-        results.append(measure(root, limit=args.limit))
+        print(f"  measuring {root.name} ...", file=sys.stderr)
+        result = measure(root, limit=args.limit)
+        results.append(result)
+
+        # Written after every repository, not at the end. A run over a 2 GB
+        # monorepo can take longer than whatever timeout somebody wrapped it in,
+        # and accumulating everything meant a kill lost the lot — which is how
+        # the first attempt at this table produced an empty file.
+        if args.out:
+            args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
+            print(f"    wrote {args.out} ({len(results)} so far)", file=sys.stderr)
 
     if args.json:
         print(json.dumps(results, indent=2))
