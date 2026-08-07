@@ -44,24 +44,49 @@ The right move is to consume OSV and integrate with Renovate, not to compete.
 
 ## Measured, on real repositories
 
-Three public repositories, cloned at HEAD, scanned with no configuration:
+Five public repositories, cloned at HEAD, scanned with no configuration. Memory
+is whole-process peak RSS, measured in a subprocess per repository so each figure
+is that repository's own, less the interpreter baseline:
 
-| | files read | observations | identities | findings | seconds | peak memory |
+| | on disk | files read | observations | findings | seconds | scan memory |
 |---|---:|---:|---:|---:|---:|---:|
-| `expressjs/express` | 159 | 350 | 198 | 56 | 9.1 | 5.9 MB |
-| `pallets/flask` | 106 | 689 | 218 | 134 | 10.7 | 8.5 MB |
-| `psf/requests` | 52 | 146 | 65 | 42 | 4.5 | 10.8 MB |
-| **total** | **317** | **1,185** | **481** | **232** | **24.3** | |
+| `psf/requests` | 7 MB | 52 | 146 | 42 | 0.6 | 12.8 MB |
+| `expressjs/express` | 1 MB | 159 | 350 | 56 | 2.3 | 8.4 MB |
+| `pallets/flask` | 3 MB | 106 | 689 | 134 | 1.1 | 10.8 MB |
+| `kubernetes/kubernetes` | 317 MB | 6,619 | 28,709 | 2,754 | 40.1 | 133.3 MB |
+| `grafana/grafana` | 249 MB | 9,567 | 76,990 | 4,418 | 95.0 | 338.1 MB |
 
-Among them, one **critical** finding: credentials embedded in a URL, at
-`requests/HISTORY.md:213`. Nobody configured a rule for that; it is one of five
-governance families that run by default.
+Four **critical** findings across the five, all of them credentials committed
+into a repository — one in `requests/HISTORY.md:213` and three in grafana,
+including `action.yml:23`. Nobody configured a rule for any of them; secret
+exposure is one of five governance families that run by default. Kubernetes adds
+three **high** findings for high-entropy values in shell scripts, each resolving
+to a file and a line.
 
-Two things to notice in that table. **Peak memory does not track repository
-size** — it is bounded by design, so a 2 GB monorepo costs roughly what a 2 MB
-project does. And **flask produced more observations than express from fewer
-files**, because it declares across two ecosystems; the platform reads what is
-there rather than what it was told to expect.
+**What memory actually tracks.** An earlier version of this page claimed peak
+memory did not grow with repository size. That claim was made above a table of
+three small projects, none of which could have contradicted it, and measuring two
+large ones showed it was wrong. The regression across all five is:
+
+```
+scan MB  ≈  9.2 + 4.4 KB × observations          (r² = 0.9998)
+```
+
+Memory is linear in **what was found**, not in what was walked — kubernetes is
+351× express on disk and costs 16× the memory, because the graph is what is held.
+The practical consequence is a capacity model rather than a promise: a scan's
+cost is predictable from its own output, which is a number an operator can
+provision against. `tools/measure.py` computes that fit from the rows it just
+produced, so the sentence stops being printed the moment the data stops
+supporting it.
+
+**And the spill tier was never reached.** `spilled` is false in all five runs,
+including the 338 MB one. It exists and is tested, but nothing on this page is
+evidence that it works at scale, so nothing on this page claims it does.
+
+One more thing worth noticing: **flask produced more observations than express
+from fewer files**, because it declares across two ecosystems. The platform reads
+what is there rather than what it was told to expect.
 
 ---
 
@@ -100,13 +125,13 @@ the same eighteen months.
 
 ## What is built, and what is not
 
-**Built and tested** — 2,564 tests, no network, no services:
+**Built and tested** — 2,572 tests, no network, no services:
 discovery across 29 ecosystems and formats · the bitemporal graph with blast
 radius and cycles in SQL · eight reasoning layers · five governance families ·
 CycloneDX and SPDX SBOM · C4 and TOGAF views as importable code · a deterministic
 architecture audit with a reproducible digest · incremental rescanning · the
 multi-tenant workspace control plane · Kubernetes provisioning · tiered object
-storage · fourteen executable notebooks that CI runs on every push.
+storage · sixteen executable notebooks that CI runs on every push.
 
 **Not built.** Cross-region replication is modelled but not running. The
 vulnerability database is consumed, not curated. There is no hosted offering

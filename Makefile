@@ -2,7 +2,7 @@
 #
 #     make setup            install everything, from nothing
 #     make lab              open the notebooks
-#     make test             the suite (2404 tests, no network)
+#     make test             the suite, no network
 #     make notebooks-run    execute every notebook, fail on any error
 #
 # `make help` lists the rest.

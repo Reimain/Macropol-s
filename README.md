@@ -16,7 +16,7 @@ repositories, with the competitive position computed rather than asserted.
 
 ## Start in a notebook
 
-The interactive path is the one most people want. Fourteen executable pages,
+The interactive path is the one most people want. Sixteen executable pages,
 every cell of which runs — CI executes all of them on every push.
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Reimain/Macropol-s/claude/interactive-notebooks?urlpath=lab/tree/notebooks)
@@ -95,7 +95,7 @@ Claude.
 
 ```bash
 make setup            # everything, from nothing
-make test             # 2404 tests, no network
+make test             # the whole suite, no network
 make notebooks-run    # execute every notebook, fail on any cell that raises
 make invariants       # the architectural boundaries, on their own
 make audit            # the judge, on this repository

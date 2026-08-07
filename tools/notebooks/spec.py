@@ -2598,6 +2598,408 @@ print(render([measure(mine)]))
 )
 
 
+# --- 15 · the workspace platform ------------------------------------------
+
+WORKSPACES = Notebook(
+    15, "workspaces", "The workspace platform — a notebook each, and only their data",
+    "How a user gets an environment, and how the platform makes sure it holds "
+    "nothing that is not theirs.",
+    (
+        _header(
+            "The workspace platform",
+            "**Every isolation claim on this page is executed, not asserted.** "
+            "The cell that shows a user failing to reach another tenant's data "
+            "is a real call to the real control plane.",
+            """
+Clients work in notebooks, so the product is a notebook platform: each user gets
+a dedicated environment, sized against what their organisation bought, holding
+exactly the datasets and environment variables their role entitles them to.
+
+The order of operations is the security argument, and it only reads in one
+direction:
+
+```
+authorise  →  admit  →  narrow  →  hand over
+   RBAC       quota    datasets +    a fully resolved request,
+              ceiling  environment   and only then a runtime
+```
+
+By the time a runtime is called, every question of entitlement has been
+answered. It never receives a principal id, so a compromised or simply buggy
+runtime has nothing to widen access *with*.
+""",
+        ),
+        SETUP,
+        markdown(
+            "## 1 · Two companies, three users, one role\n\n"
+            "`system_roles()` ships the platform's own roles; `notebook-user` is "
+            "the one an administrator would write. All three users hold the "
+            "**identical** role — everything that separates them comes from the "
+            "scope they hold it in, which is what makes the later cells a real "
+            "test rather than a demonstration of three different permissions."
+        ),
+        code('''
+from slpie.identity.principal import Principal
+from slpie.rbac import AccessEngine, Role, Scope, allow, system_roles
+from slpie.workspace import (
+    Allocation, ControlPlane, Dataset, DatasetGrant, Quota, Tier, Visibility,
+)
+
+def user(subject, tenant):
+    return Principal(
+        issuer="https://id.example.test", subject=subject, tenant=tenant,
+        email=f"{subject}@{tenant}.test", email_verified=True,
+    )
+
+roles = system_roles()
+roles.add(Role(
+    name="notebook-user",
+    permissions=(allow("workspace:create", "workspace"), allow("dataset:read", "*")),
+    description="may open a workspace and read what is granted to them",
+))
+
+plane = ControlPlane(access=AccessEngine(roles), region="eu-west-1")
+plane.set_quota("acme",   Quota(max_workspaces=3, max_cpu=8.0, max_memory_mb=16_384))
+plane.set_quota("globex", Quota(max_workspaces=1, max_cpu=2.0, max_memory_mb=4_096))
+
+ada = user("ada", "acme")      # a researcher
+bo  = user("bo",  "acme")      # a colleague — same tenant, different realm
+zed = user("zed", "globex")    # another company entirely
+
+for who in (ada, bo, zed):
+    plane.access.bind(who.urn, "notebook-user", scope=Scope(tenant=who.tenant))
+
+print(f"{'user':6} {'tenant':8} {'workspaces':>10} {'max cpu':>8}   role")
+for who, name in ((ada, "ada"), (bo, "bo"), (zed, "zed")):
+    quota = plane.quota_of(who.tenant)
+    print(f"{name:6} {who.tenant:8} {quota.max_workspaces:>10} "
+          f"{quota.max_cpu:>8}   notebook-user")
+'''),
+        markdown(
+            "## 2 · The datasets, and where they live\n\n"
+            "A dataset is not a path — it is a **grant**: a name, the scope that "
+            "owns it, a visibility, and a tier. The storage key is *derived* from "
+            "the grant and never supplied by a caller. That ordering is the whole "
+            "property: code that starts from a path and then asks whether the "
+            "caller may read it has already leaked that the path exists.\n\n"
+            "Note the two tiers. `WORK` is per-user, mutable, small. `SHARED` is a "
+            "corpus many people read, and it is **read-only through the grant** — "
+            "refusing the write is cheaper and more certain than auditing it."
+        ),
+        code('''
+acme_research = Scope(tenant="acme", realm="research")
+acme_finance  = Scope(tenant="acme", realm="finance")
+
+estate = [
+    (Dataset(name="trial-outcomes", scope=acme_research, tier=Tier.WORK,
+             description="ada's working data", bytes=48_000_000),
+     Visibility.PRIVATE, ada.urn),
+    (Dataset(name="clinic-corpus", scope=acme_research, tier=Tier.SHARED,
+             description="the research realm's shared corpus", bytes=9_400_000_000),
+     Visibility.REALM, ""),
+    (Dataset(name="ledger-extract", scope=acme_finance, tier=Tier.WORK,
+             description="finance only", bytes=2_100_000),
+     Visibility.REALM, ""),
+    (Dataset(name="globex-revenue", scope=Scope(tenant="globex"), tier=Tier.WORK,
+             description="another company entirely", bytes=800_000),
+     Visibility.TENANT, ""),
+    (Dataset(name="open-genomes", scope=Scope(), tier=Tier.SHARED,
+             description="published — every tenant may read it",
+             bytes=120_000_000_000),
+     Visibility.PUBLIC, ""),
+]
+
+for dataset, visibility, owner in estate:
+    plane.grant(DatasetGrant(dataset=dataset, visibility=visibility,
+                             principal_urn=owner, granted_by="platform-admin"))
+
+print(f"{'dataset':16} {'tier':7} {'visible to':10}  storage key")
+for dataset, visibility, _ in estate:
+    print(f"{dataset.name:16} {dataset.tier.value:7} {visibility.value:10}  {dataset.key}")
+'''),
+        markdown(
+            "## 3 · The claim the product rests on\n\n"
+            "Three users, one role, three different answers. `datasets_for` "
+            "requires **both** the grant's own reach and a second, independent "
+            "RBAC decision — so a bug in either one narrows access rather than "
+            "widening it, which is the only safe direction for a bug here to "
+            "fail.\n\n"
+            "The last line is the one to watch: zed naming somebody else's scope "
+            "does not help, because a principal holds no binding there."
+        ),
+        code('''
+def reachable(who, scope):
+    return sorted(g.dataset.name for g in plane.datasets_for(who, scope=scope))
+
+print("ada, in acme/research :", reachable(ada, acme_research))
+print("bo,  in acme/finance  :", reachable(bo, acme_finance))
+print("zed, in globex        :", reachable(zed, Scope(tenant="globex")))
+print()
+print("zed, naming acme/research anyway:", reachable(zed, acme_research))
+print()
+print("Everybody reaches open-genomes — it is published. Nobody reaches a")
+print("dataset from a realm they hold no binding in, including within one company.")
+'''),
+        markdown(
+            "## 4 · Provisioning\n\n"
+            "The workspace id is **derived** from the principal and the scope, "
+            "not generated. A refreshed browser tab therefore lands on the "
+            "workspace that already exists rather than doubling the tenant's "
+            "bill."
+        ),
+        code('''
+provisioned = plane.provision(
+    ada, scope=acme_research,
+    allocation=Allocation(cpu=2.0, memory_mb=4096, disk_gb=20),
+)
+workspace = provisioned.workspace
+
+print("workspace :", workspace.workspace_id)
+print("state     :", workspace.state.value)
+print("namespace :", workspace.namespace)
+print("placed    :", provisioned.placement.region, "-", provisioned.placement.reason)
+print("can see   :", sorted(g.dataset.name for g in provisioned.grants))
+print()
+again = plane.provision(ada, scope=acme_research)
+print("asked twice, same workspace:",
+      again.workspace.workspace_id == workspace.workspace_id)
+'''),
+        markdown(
+            "## 5 · The ceiling, with the limit that stopped it named\n\n"
+            "`Quota.admits` returns `(bool, why)`. A refusal that does not say "
+            "which limit was hit sends somebody to a support queue to find out."
+        ),
+        code('''
+from slpie.workspace.plane import PlaneError
+
+print("acme headroom:", plane.quota_of("acme").headroom(plane.usage_of("acme")))
+
+try:
+    plane.provision(zed, scope=Scope(tenant="globex"),
+                    allocation=Allocation(cpu=99.0, memory_mb=4096))
+except PlaneError as refused:
+    print("\\nrefused:", refused)
+
+# The unauthorised path, which is the more important one: default deny.
+stranger = user("mallory", "acme")          # authenticated, but bound to nothing
+try:
+    plane.provision(stranger, scope=acme_research)
+except PlaneError as refused:
+    print("no role :", refused)
+'''),
+        markdown(
+            "## 6 · Object storage, tiered\n\n"
+            "Writes are content-addressed and land through an atomic rename, so "
+            "a reader never sees a half-written object and rewriting identical "
+            "bytes costs nothing. The shared tier refuses writes twice over — "
+            "once at the grant, and again here, which holds even for a caller "
+            "that built a reference by hand and never went near a grant."
+        ),
+        code('''
+import pathlib, tempfile
+from slpie.workspace import ObjectRef
+from slpie.workspace.store import StoreError, within
+from slpie_enterprise.storage.filesystem import FilesystemStore
+from slpie_enterprise.storage.tiered import TieredStore
+
+tmp = pathlib.Path(tempfile.mkdtemp())
+store = TieredStore(work=FilesystemStore(tmp / "work"),
+                    shared=FilesystemStore(tmp / "shared"))
+
+grant = next(g for g in provisioned.grants if g.dataset.name == "trial-outcomes")
+ref = ObjectRef(prefix=grant.dataset.key, key="run-001.csv")
+payload = b"subject,arm,outcome\\n1,A,0.81\\n2,B,0.44\\n"
+
+print("wrote       :", ref.path, "->", store.put(ref, payload), "bytes")
+print("wrote again :", store.put(ref, payload), "bytes  (already there, by digest)")
+print("read back   :", store.get(ref).decode().splitlines()[0])
+
+try:
+    store.put(ObjectRef(prefix="shared/acme/research/clinic-corpus", key="notes.txt"),
+              b"tampered")
+except StoreError as refused:
+    print("\\nshared tier :", refused)
+
+# Prefix containment matches on segment boundaries, so `acme` never matches
+# `acme-corp`. This is the bug that turns a tenant prefix into a tenant leak.
+print()
+print("acme reaches acme-corp?",
+      within("work/acme/research/trial-outcomes", "work/acme-corp/research/x"))
+'''),
+        markdown(
+            "## 7 · What actually gets created on Kubernetes\n\n"
+            "`plan` renders exactly what `start` would create, and touches "
+            "nothing — the same plan/apply split the live-target guard uses, for "
+            "the same reason: the decision should be reviewable while it is still "
+            "free.\n\n"
+            "The validation below round-trips every object through the real "
+            "Kubernetes API models, then checks the two things a schema cannot: "
+            "that the security posture holds (no service-account token, "
+            "default-deny networking both ways, the metadata endpoint blocked) "
+            "and that no object escapes the tenant's namespace."
+        ),
+        code('''
+from slpie_enterprise.spawn.kubernetes import KubernetesSpawner
+from slpie_enterprise.spawn.validate import validate
+
+cluster = ControlPlane(access=plane.access, region="eu-west-1",
+                       spawner=KubernetesSpawner(ingress_host="notebooks.acme.internal"))
+cluster.set_quota("acme", Quota(max_workspaces=3, max_cpu=8.0, max_memory_mb=16_384))
+for dataset, visibility, owner in estate:
+    cluster.grant(DatasetGrant(dataset=dataset, visibility=visibility,
+                               principal_urn=owner, granted_by="platform-admin"))
+
+planned = cluster.provision(
+    ada, scope=acme_research, start=False,       # plan only: there is no cluster here
+    allocation=Allocation(cpu=2.0, memory_mb=4096, disk_gb=20),
+)
+
+for obj in planned.plan:
+    print(f"  {obj['kind']:22} {obj['metadata']['name']}")
+
+report = validate(planned.plan, namespace=planned.workspace.namespace,
+                  workspace_id=planned.workspace.workspace_id)
+print()
+print(report.explain())
+'''),
+        markdown(
+            "## 8 · A runtime of your own\n\n"
+            "`Spawner` is a protocol, so Kubernetes is one implementation rather "
+            "than the architecture. Here is another in nine lines. The control "
+            "plane cannot tell the difference, which is what makes the "
+            "Kubernetes half replaceable — and what lets this notebook run a "
+            "full lifecycle with no cluster anywhere."
+        ),
+        code('''
+from slpie.workspace import Runtime, Spawner, Started
+
+class LocalSpawner:
+    """A runtime in nine lines."""
+
+    runtime = Runtime.LOCAL
+
+    def __init__(self):
+        self.running = {}
+
+    def plan(self, request):
+        return ({"kind": "LocalProcess", "workspace": request.workspace_id},)
+
+    def start(self, request):
+        self.running[request.workspace_id] = request
+        return Started(workspace_id=request.workspace_id, runtime=self.runtime,
+                       url=f"http://127.0.0.1:8888/{request.workspace_id}",
+                       token="opaque", node="laptop")
+
+    def stop(self, workspace_id):
+        return self.running.pop(workspace_id, None) is not None
+
+    def status(self, workspace_id):
+        return {"running": workspace_id in self.running}
+
+print("satisfies the protocol:", isinstance(LocalSpawner(), Spawner))
+'''),
+        markdown(
+            "## 9 · The whole lifecycle, and what a runtime is told\n\n"
+            "Two things to watch in the output.\n\n"
+            "**The request carries environment variable *names*, never values.** "
+            "`SpawnRequest.to_dict()` is what gets logged, serialised and shown "
+            "in an admin console, and a secret that reaches a log has left the "
+            "building. The values go to the runtime, and nowhere else.\n\n"
+            "**Reclaiming returns the quota.** An idle workspace past its "
+            "allowance is swept, and the tenant's usage drops — which is what "
+            "makes a ceiling a ceiling rather than a high-water mark."
+        ),
+        code('''
+local = LocalSpawner()
+laptop = ControlPlane(access=plane.access, spawner=local, region="laptop")
+laptop.set_quota("acme", Quota(max_workspaces=3, max_cpu=8.0, max_memory_mb=16_384))
+for dataset, visibility, owner in estate:
+    laptop.grant(DatasetGrant(dataset=dataset, visibility=visibility,
+                              principal_urn=owner, granted_by="platform-admin"))
+laptop.set_environment(acme_research,
+                       {"CORPUS_BUCKET": "acme-research", "WAREHOUSE_TOKEN": "s3cret"})
+
+live = laptop.provision(
+    ada, scope=acme_research,
+    allocation=Allocation(cpu=2.0, memory_mb=4096, idle_timeout_minutes=30),
+)
+
+print("state      :", live.workspace.state.value)
+print("url        :", live.started.url)
+print("serialised :", live.started.to_dict())
+print("usage      :", laptop.usage_of("acme").to_dict())
+
+import json
+request = local.running[live.workspace.workspace_id]
+serialised = json.dumps(request.to_dict())
+
+print()
+print("the serialised request names        :", request.to_dict()["environment"])
+print("...and the secret's value is in it  :", "s3cret" in serialised)
+print("...while the runtime does hold it   :",
+      request.environment["WAREHOUSE_TOKEN"] == "s3cret")
+
+MINUTE = 60_000_000_000
+swept = laptop.reclaim_idle(now=live.workspace.last_seen_at + 45 * MINUTE)
+print()
+print("swept after 45 idle minutes:", [w.workspace_id for w in swept])
+print("state now  :", laptop.require(live.workspace.workspace_id).state.value)
+print("usage now  :", laptop.usage_of("acme").to_dict())
+'''),
+        markdown(
+            "## 10 · The administrator's view\n\n"
+            "One call renders the estate: every tenant, what they bought, what "
+            "they are consuming, and what is left. Headroom is computed from "
+            "live workspaces rather than stored, so it cannot drift from what is "
+            "actually running."
+        ),
+        code('''
+estate_now = laptop.status()
+print(f"region {estate_now['region']}, runtime {estate_now['runtime']}, "
+      f"{estate_now['workspaces']} workspace(s), {estate_now['live']} live, "
+      f"{estate_now['datasets']} dataset grant(s)\\n")
+
+for tenant in estate_now["tenants"]:
+    print(f"  {tenant['tenant']}")
+    print(f"    quota    {tenant['quota']}")
+    print(f"    usage    {tenant['usage']}")
+    print(f"    headroom {tenant['headroom']}")
+
+print("\\nworkspaces:")
+for held in laptop.workspaces():
+    print(f"  {held.workspace_id}  {held.state.value:9} "
+          f"{held.scope.tenant}/{held.scope.realm}")
+'''),
+        markdown(
+            "## 11 · What is real, and what is not\n\n"
+            "**Real and exercised here:** the control plane's decision order, "
+            "tenant and realm segregation across both the grant and RBAC, "
+            "derived storage keys with segment-boundary containment, quotas with "
+            "named limits, the tiered store with content-addressed atomic "
+            "writes, the full workspace state machine, and Kubernetes manifests "
+            "validated against the real API models.\n\n"
+            "**Not real yet:** no production cluster has run these manifests. "
+            "Cross-region placement is modelled — `Placement` records the "
+            "decision and its reason — but there is one region, and the "
+            "`reason` string says so rather than implying otherwise.\n\n"
+            "That distinction is the point of publishing the page as an "
+            "executable notebook. Everything above either ran in front of you or "
+            "is named here as something that did not."
+        ),
+        code('''
+# Scratch cell. Try to break the segregation — that is the useful experiment.
+#
+#   * give zed a binding in acme and see what changes (and what does not)
+#   * make `open-genomes` REALM instead of PUBLIC and re-run cell 3
+#   * ask for more CPU than acme bought
+#
+print("reachable by ada:", sorted(
+    g.dataset.name for g in laptop.datasets_for(ada, scope=acme_research)))
+'''),
+    ),
+)
+
+
 # --- the ordered set ------------------------------------------------------
 
 NOTEBOOKS: tuple[Notebook, ...] = (
@@ -2616,4 +3018,5 @@ NOTEBOOKS: tuple[Notebook, ...] = (
     CODEGEN,
     END_TO_END,
     VALUE,
+    WORKSPACES,
 )

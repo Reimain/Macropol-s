@@ -131,3 +131,48 @@ def test_the_notebooks_cover_both_packages():
 
     assert any(slug.startswith("gratimos") for slug in slugs)
     assert len(slugs) >= 10, "the set has shrunk; was a notebook dropped by mistake?"
+
+
+def test_the_index_lists_every_notebook():
+    """The README table is generated, and this is what makes that worth doing.
+
+    It was hand-written until it listed fourteen of sixteen pages: the two most
+    recent were simply never added. Nobody noticed, because a table that is
+    merely incomplete still looks like a table. Asserting the generated block is
+    current is the same discipline `--check` applies to the notebooks themselves.
+    """
+    from tools.notebooks.build import INDEX, INDEX_END, INDEX_START, index
+
+    body = INDEX.read_text(encoding="utf-8")
+    assert INDEX_START in body and INDEX_END in body, (
+        "the generated-index markers are gone from notebooks/README.md, so the "
+        "table has quietly become hand-maintained again"
+    )
+
+    generated = index()
+    assert generated in body, "notebooks/README.md is stale — run `make notebooks`"
+    for notebook in specs():
+        assert notebook.filename in generated, (
+            f"{notebook.filename} is missing from the index"
+        )
+
+
+def test_the_stated_page_count_matches_the_set():
+    """Three documents quote the count in prose; none of them may be wrong."""
+    from tools.notebooks.build import ROOT
+
+    total = len(specs())
+    for relative in ("README.md", "docs/VALUE.md"):
+        body = (ROOT / relative).read_text(encoding="utf-8").lower()
+        spelled = _WORDS[total].lower()
+        assert spelled in body or str(total) in body, (
+            f"{relative} does not state that there are {total} notebooks"
+        )
+
+
+#: Only the counts this repository has plausibly reached. A missing key is a
+#: louder failure than a silently-skipped assertion, which is the point.
+_WORDS = {
+    14: "Fourteen", 15: "Fifteen", 16: "Sixteen", 17: "Seventeen",
+    18: "Eighteen", 19: "Nineteen", 20: "Twenty",
+}
