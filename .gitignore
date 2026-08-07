@@ -26,3 +26,7 @@ notebooks/**/.ipynb_checkpoints/
 # Written by the notebooks and the demo into temp directories, but a stray
 # `slpie init` in the repository root would leave this behind.
 .slpie/
+
+# Recorded per machine, so committing one would make CI compare a laptop
+# against a runner and call the difference a regression.
+acceptance-baseline.json

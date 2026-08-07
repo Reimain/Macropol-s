@@ -44,7 +44,7 @@ The right move is to consume OSV and integrate with Renovate, not to compete.
 
 ## Measured, on real repositories
 
-Five public repositories, cloned at HEAD, scanned with no configuration. Memory
+Six public repositories, cloned at HEAD, scanned with no configuration. Memory
 is whole-process peak RSS, measured in a subprocess per repository so each figure
 is that repository's own, less the interpreter baseline:
 
@@ -55,34 +55,45 @@ is that repository's own, less the interpreter baseline:
 | `pallets/flask` | 3 MB | 106 | 689 | 134 | 1.1 | 10.8 MB |
 | `kubernetes/kubernetes` | 317 MB | 6,619 | 28,709 | 2,754 | 40.1 | 133.3 MB |
 | `grafana/grafana` | 249 MB | 9,567 | 76,990 | 4,418 | 95.0 | 338.1 MB |
+| `elastic/kibana` | 1.4 GB | 106,141 | 346,400 | 7,437 | 1,223 | 2,619.8 MB |
 
-Four **critical** findings across the five, all of them credentials committed
+Four **critical** findings across the six, all of them credentials committed
 into a repository — one in `requests/HISTORY.md:213` and three in grafana,
 including `action.yml:23`. Nobody configured a rule for any of them; secret
 exposure is one of five governance families that run by default. Kubernetes adds
 three **high** findings for high-entropy values in shell scripts, each resolving
 to a file and a line.
 
-**What memory actually tracks.** An earlier version of this page claimed peak
-memory did not grow with repository size. That claim was made above a table of
-three small projects, none of which could have contradicted it, and measuring two
-large ones showed it was wrong. The regression across all five is:
+### The memory finding, which is not flattering
+
+An earlier version of this page claimed peak memory did not grow with repository
+size. That was written above a table of three small projects, none of which could
+have contradicted it. Measuring the large ones showed two things, and the second
+is a limit rather than a feature.
+
+**Memory tracks observations retained, not tree size.** What is held is the
+graph, so what it costs follows what was *found* rather than what was walked.
+
+**But it does not do so linearly, and the marginal cost roughly doubles at the
+top end.** A straight line through these points needs a negative intercept —
+which would say that scanning an empty tree frees memory — so no single slope is
+quoted. What the next observation costs, between consecutive sizes:
 
 ```
-scan MB  ≈  9.2 + 4.4 KB × observations          (r² = 0.9998)
+    kubernetes -> grafana      4.34 KB/observation
+       grafana -> kibana       8.67 KB/observation
 ```
 
-Memory is linear in **what was found**, not in what was walked — kubernetes is
-351× express on disk and costs 16× the memory, because the graph is what is held.
-The practical consequence is a capacity model rather than a promise: a scan's
-cost is predictable from its own output, which is a number an operator can
-provision against. `tools/measure.py` computes that fit from the rows it just
-produced, so the sentence stops being printed the moment the data stops
-supporting it.
+A capacity model taken from the small end therefore under-provisions the large
+end. `tools/measure.py` computes this and **refuses to print a fit whose
+intercept is negative**, so the honest version is what gets reported rather than
+the quotable one.
 
-**And the spill tier was never reached.** `spilled` is false in all five runs,
-including the 338 MB one. It exists and is tested, but nothing on this page is
-evidence that it works at scale, so nothing on this page claims it does.
+**The spill tier engaged on kibana and did not bound the peak** — it still
+reached 2.6 GB on a 1.4 GB tree, at twenty minutes. That is a real ceiling on
+single-node scans of a large monorepo, and it is the strongest argument for the
+sharded scan in the enterprise tier rather than for anything on this page. It is
+printed here rather than left to be discovered during an evaluation.
 
 One more thing worth noticing: **flask produced more observations than express
 from fewer files**, because it declares across two ecosystems. The platform reads
@@ -148,6 +159,11 @@ prefer and one segment requires.
 * **Kubernetes provisioning is validated, not yet run at scale.** Every manifest
   is checked against the real Kubernetes API models in CI, and the security
   posture is asserted — but no production cluster has run it.
+* **A single-node scan of a very large monorepo is expensive.** Kibana costs
+  2.6 GB and twenty minutes, and the spill tier did not hold the peak down. Any
+  customer whose largest repository is that size needs the sharded scan, which
+  is designed and not built. This is measured, above, rather than discovered by
+  them.
 * **Two engines is a harder story to tell than one.** Gratimos and SLPIE are
   genuinely separable, and the notebook platform currently leads with SLPIE.
 

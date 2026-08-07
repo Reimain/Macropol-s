@@ -91,6 +91,14 @@ manual:  ## regenerate docs/MANUAL.md from the verb registry
 audit:  ## judge this repository against its own stated architecture
 	$(PYTHON) -m slpie.cli audit
 
+.PHONY: acceptance
+acceptance:  ## drive every verb end to end, then check four claims
+	$(PYTHON) acceptance.py
+
+.PHONY: acceptance-baseline
+acceptance-baseline:  ## re-record the acceptance timings after a deliberate change
+	$(PYTHON) acceptance.py --baseline
+
 .PHONY: ui
 ui:  ## serve the stdlib interface on :8765
 	$(PYTHON) -c "from slpie.ui import UiServer; UiServer(engine=None, port=8765).serve_forever()"

@@ -235,11 +235,17 @@ def fit(good: list[dict[str, Any]]) -> dict[str, float]:
 
     The question worth answering is *what* memory tracks, and the honest answer
     turns out not to be tree size. A repository is scanned by walking it and
-    keeping what was found, so what is held is the findings — and a fit against
-    observations reports a stable marginal cost where a fit against bytes on disk
-    reports a different slope for every corpus.
+    keeping what was found, so what is held is the graph — and a fit against
+    observations is far closer to stable than a fit against bytes on disk.
+
+    `usable` is the field callers should read before quoting any of this. A
+    linear model of a cost is only meaningful with a **non-negative intercept**:
+    an intercept below zero says scanning an empty tree would free memory, which
+    is not a finding about the platform, it is the model being fitted outside the
+    range where it holds. Reporting the slope anyway is how a plausible number
+    ends up in a document nobody can defend.
     """
-    rows = [r for r in good if r.get("scan_mb", 0) > 0]
+    rows = [r for r in good if r.get("scan_mb", 0) > 0 and r.get("observations")]
     if len(rows) < 2:
         return {}
 
@@ -255,13 +261,57 @@ def fit(good: list[dict[str, Any]]) -> dict[str, float]:
     intercept = mean_y - slope * mean_x
     total = sum((y - mean_y) ** 2 for y in ys)
     residual = sum((y - (intercept + slope * x)) ** 2 for x, y in zip(xs, ys))
+    r_squared = round(1 - residual / total, 4) if total else 1.0
 
     return {
         "fixed_mb": round(intercept, 1),
         "kb_per_observation": round(slope * 1024, 2),
-        "r_squared": round(1 - residual / total, 4) if total else 1.0,
+        "r_squared": r_squared,
         "points": float(n),
+        "usable": float(intercept >= 0 and r_squared >= 0.98),
     }
+
+
+#: Below this many observations the fixed cost of starting a scan dominates the
+#: total, and a marginal figure computed there is measuring allocator noise. The
+#: floor is stated rather than tuned: it is applied before the numbers are seen,
+#: so it cannot become a filter that keeps whichever steps look best. On this
+#: corpus it drops the three smallest repositories, one of which yields a
+#: *negative* marginal cost — more observations for less memory, which is not a
+#: property of the platform, it is the fixed term swamping the variable one.
+MEANINGFUL = 1_000
+
+
+def marginal(good: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The cost of the *next* observation, between consecutive sizes.
+
+    Dividing a repository's memory by its observations is the wrong statistic
+    for a cost with a fixed component: it makes the smallest tree look like the
+    most expensive one, because the interpreter's own overhead is spread over
+    a hundred observations instead of a hundred thousand. The number an operator
+    needs is the slope between neighbours — what the next observation costs at
+    the size they are already at.
+    """
+    rows = sorted(
+        (
+            r for r in good
+            if r.get("scan_mb", 0) > 0
+            and r.get("observations", 0) >= MEANINGFUL
+        ),
+        key=lambda r: r["observations"],
+    )
+    steps: list[dict[str, Any]] = []
+    for earlier, later in zip(rows, rows[1:]):
+        gained = later["observations"] - earlier["observations"]
+        if gained <= 0:
+            continue
+        cost = (later["scan_mb"] - earlier["scan_mb"]) * 1024 / gained
+        steps.append({
+            "from": earlier["name"], "to": later["name"],
+            "kb_per_observation": round(cost, 2),
+            "at": later["observations"],
+        })
+    return steps
 
 
 def _memory_note(good: list[dict[str, Any]]) -> str:
@@ -283,30 +333,61 @@ def _memory_note(good: list[dict[str, Any]]) -> str:
     if not model:
         return header
 
-    sized = [r for r in good if r.get("bytes_on_disk")]
-    ratio = ""
-    if len(sized) >= 2:
-        small = min(sized, key=lambda r: r["bytes_on_disk"])
-        large = max(sized, key=lambda r: r["bytes_on_disk"])
-        disk = large["bytes_on_disk"] / max(small["bytes_on_disk"], 1)
-        memory = large["scan_mb"] / max(small["scan_mb"], 0.1)
-        ratio = (
-            f"\n  {large['name']} is {disk:.0f}x {small['name']} on disk and costs "
-            f"{memory:.0f}x the memory to scan,\n"
-            f"  so it is sub-linear in tree size — but that is a consequence, not the "
-            f"law."
+    body = [header, ""]
+    if model["usable"]:
+        body.append(
+            f"  Across {int(model['points'])} repositories, memory is linear in "
+            f"*observations retained*:\n"
+            f"      scan MB  ~  {model['fixed_mb']:.1f} + "
+            f"{model['kb_per_observation']:.1f} KB x observations      "
+            f"(r2 = {model['r_squared']:.3f})\n"
+            f"  What is held is what was found, not what was walked."
+        )
+    else:
+        # The line does not hold over this range, and saying so is the finding.
+        # Quoting a slope from a fit with a negative intercept would be the kind
+        # of number that reads well and cannot be defended.
+        steps = marginal(good)
+        body.append(
+            f"  Memory tracks observations retained rather than tree size, but "
+            f"not\n"
+            f"  linearly over this range — a straight line through these points "
+            f"needs\n"
+            f"  a negative intercept, so no single slope is quoted. What the next\n"
+            f"  observation costs, between consecutive sizes above "
+            f"{MEANINGFUL:,} observations\n"
+            f"  (below that the fixed cost of starting a scan dominates):"
+        )
+        body.append("")
+        for step in steps:
+            body.append(
+                f"      {step['from']:>12} -> {step['to']:<12} "
+                f"{step['kb_per_observation']:>7.2f} KB/observation"
+            )
+        if len(steps) >= 2 and steps[-1]["kb_per_observation"] > \
+                steps[0]["kb_per_observation"]:
+            body.append(
+                f"\n  The marginal cost rises with size, so a capacity model taken "
+                f"from the\n  small end under-provisions the large end."
+            )
+
+    spilled = [r for r in good if r.get("spilled")]
+    if spilled:
+        worst = max(spilled, key=lambda r: r["scan_mb"])
+        body.append(
+            f"\n  The spill tier engaged on {', '.join(r['name'] for r in spilled)} "
+            f"and did not\n"
+            f"  bound the peak: {worst['name']} still reached "
+            f"{worst['scan_mb']:.0f} MB. That is a limit, not a\n"
+            f"  feature, and it is printed here rather than left to be discovered."
+        )
+    else:
+        body.append(
+            "\n  The spill tier did not engage on any of these runs, so nothing "
+            "here is\n  evidence about what it does."
         )
 
-    return (
-        f"{header}\n\n"
-        f"  Across {int(model['points'])} repositories, memory is linear in "
-        f"*observations retained*:\n"
-        f"      scan MB  ~  {model['fixed_mb']:.1f} + "
-        f"{model['kb_per_observation']:.1f} KB x observations      "
-        f"(r2 = {model['r_squared']:.3f})\n"
-        f"  What is held is what was found, not what was walked."
-        f"{ratio}"
-    )
+    return "\n".join(body)
 
 
 def _size(count: int) -> str:

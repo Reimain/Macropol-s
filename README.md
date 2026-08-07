@@ -96,6 +96,7 @@ Claude.
 ```bash
 make setup            # everything, from nothing
 make test             # the whole suite, no network
+make acceptance       # drive all 48 verbs end to end, then check four claims
 make notebooks-run    # execute every notebook, fail on any cell that raises
 make invariants       # the architectural boundaries, on their own
 make audit            # the judge, on this repository

@@ -109,6 +109,27 @@ jobs:
           diff /tmp/first.txt /tmp/second.txt \
             || (echo "the audit is not reproducible over an unchanged tree" && exit 1)
 
+  acceptance:
+    name: acceptance — every verb, end to end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # `jq` is dispatched to by the `tool` verb. It is present on the GitHub
+      # runner image; if it ever is not, the run reports a capability gap and
+      # `tool` goes uncovered, which fails the coverage claim rather than
+      # passing quietly with a hole in it.
+      - run: pip install -e .
+
+      # This is the job that catches a verb registered without an exercise.
+      # `--baseline` is deliberately *not* passed: a CI run that re-recorded the
+      # timings could never regress against them.
+      - name: Drive every verb, then check the four claims
+        run: python acceptance.py
+
   lint:
     name: imports sorted
     runs-on: ubuntu-latest
