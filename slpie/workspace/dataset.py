@@ -8,10 +8,11 @@ already leaked the path's existence, and usually leaks the parent listing too.
 
 Two tiers, because the two kinds of data have opposite requirements:
 
-============  ==========================================================
-`Tier.WORK`   per-user working data. Small, mutable, private by default.
-`Tier.SHARED` corpora many users read. Large, immutable, explicitly granted.
-============  ==========================================================
+=============  =========================================================
+`Tier.WORK`    per-user working data. Small, mutable, private by default.
+`Tier.SHARED`  corpora many users read. Large, immutable, explicitly
+               granted.
+=============  =========================================================
 
 The key rule for `SHARED`: a shared dataset is **read-only through the grant**.
 Two users reading one corpus must not be able to reach each other through it, and

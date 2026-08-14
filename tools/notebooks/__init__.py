@@ -6,7 +6,7 @@ package. The reason is the one §24 gives for the verb registry: a notebook is a
 from what it projects. A notebook is worse than documentation when it drifts,
 because it looks executable and therefore looks checked.
 
-So the pipeline is:
+So the pipeline is::
 
     spec (Python)  →  build.py  →  notebooks/*.ipynb  →  run.py  →  outputs
                                                              ↓

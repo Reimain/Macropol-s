@@ -1,0 +1,67 @@
+name: docs
+
+# Publishes the Sphinx site to GitHub Pages. Separate from `tests.yml` on
+# purpose: that workflow *checks* the documentation builds on every push and
+# every pull request, which is the part that must gate a merge. This one
+# publishes, and publishing from a pull request would put an unreviewed branch
+# on the public URL.
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+# Least privilege. `contents: read` to check out, `pages`/`id-token` for the
+# deploy — nothing that can write to the repository.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and a running deploy is not cancelled: cancelling
+# mid-publish is how a site ends up half-written.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # `.[docs]` only. `autodoc_mock_imports` stands in for kubernetes, boto3
+      # and the optional extras, so the published documentation is produced from
+      # the same kernel-only install invariant 4 exists to protect.
+      - run: pip install -e '.[docs]'
+
+      # The runner has network, so CPython's inventory loads and the `ref.python`
+      # suppression lifts — a broken cross-reference fails this build rather than
+      # reaching the published site. `-W` makes that a failure and not a note.
+      - name: Build, with every warning fatal
+        env:
+          SPHINX_INTERSPHINX: "1"
+        run: python -m sphinx -b html -W --keep-going docs docs/_build/html
+
+      # Jekyll would otherwise skip `_static/` and `_modules/`, and the site
+      # would render without stylesheets or source links.
+      - run: touch docs/_build/html/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

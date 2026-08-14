@@ -6,11 +6,11 @@ users each open a notebook and leave it running over a weekend.
 
 Three types, and the separation matters:
 
-===========  ================================================================
-`Quota`      a ceiling. What a tenant bought.
-`Allocation` what one workspace is given. Always within the tenant's quota.
-`Usage`      what is actually consumed right now. Measured, never assumed.
-===========  ================================================================
+============  ===============================================================
+`Quota`       a ceiling. What a tenant bought.
+`Allocation`  what one workspace is given. Always within the tenant's quota.
+`Usage`       what is actually consumed right now. Measured, never assumed.
+============  ===============================================================
 
 `Usage` is separate from `Allocation` because they diverge, and the gap between
 them is the entire cost conversation: a tenant paying for forty allocations that

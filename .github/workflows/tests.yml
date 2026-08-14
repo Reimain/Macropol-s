@@ -144,6 +144,42 @@ jobs:
       # pyproject.toml explaining why.
       - run: python -m isort --check-only --diff slpie slpie_enterprise gratimos tests tools
 
+  docs:
+    name: docs — the whole API, from a kernel-only install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # `.[docs]` and nothing else. `autodoc_mock_imports` stands in for every
+      # ring-1 and optional-extra package, so this job also proves the
+      # documentation is not the one thing that quietly needs kubernetes and
+      # boto3 to render.
+      - run: pip install -e '.[docs]'
+
+      # `-W` but not `-n`. Nitpicky mode demands a resolvable target for every
+      # type in every signature, including this codebase's own Protocols and
+      # `typing` generics; the noise it produces is about reference plumbing
+      # rather than about the documentation, and a strict flag nobody can keep
+      # green stops being a check.
+      - name: Every module renders, and a broken reference fails the build
+        run: python -m sphinx -b html -W --keep-going docs docs/_build/html
+
+      # Reported, not gated. Documentation coverage is a number worth watching;
+      # turning it into a threshold invites a docstring written to move it.
+      - name: What is documented, measured
+        run: |
+          python -m sphinx -b coverage docs docs/_build/coverage
+          cat docs/_build/coverage/python.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs-html
+          path: docs/_build/html
+          retention-days: 14
+
   notebooks:
     name: notebooks — every cell runs
     runs-on: ubuntu-latest

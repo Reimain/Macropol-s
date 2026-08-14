@@ -103,6 +103,9 @@ make audit            # the judge, on this repository
 make help             # the rest
 ```
 
+* **[docs/](docs/index.md)** — the full Sphinx reference: every module, from the
+  docstrings. `make docs` builds it; the docstrings *are* the documentation here,
+  so it reads as prose rather than only as a lookup.
 * **[docs/VALUE.md](docs/VALUE.md)** — the value case, every number computed
 * **[docs/COMPETITIVE.md](docs/COMPETITIVE.md)** — where we sit, with citations
 * **[notebooks/](notebooks/README.md)** — the interactive pages, and how they are generated

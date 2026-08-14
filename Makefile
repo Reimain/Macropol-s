@@ -103,6 +103,30 @@ acceptance-baseline:  ## re-record the acceptance timings after a deliberate cha
 ui:  ## serve the stdlib interface on :8765
 	$(PYTHON) -c "from slpie.ui import UiServer; UiServer(engine=None, port=8765).serve_forever()"
 
+# --- documentation --------------------------------------------------------
+
+.PHONY: docs
+docs:  ## build the Sphinx site — every module, from the docstrings
+	$(PYTHON) -m sphinx -b html docs docs/_build/html
+	@echo "open docs/_build/html/index.html"
+
+.PHONY: docs-strict
+docs-strict:  ## the same build, with warnings as errors — what CI runs
+	$(PYTHON) -m sphinx -b html -W --keep-going docs docs/_build/html
+
+.PHONY: docs-coverage
+docs-coverage:  ## measure what is documented and what is not
+	$(PYTHON) -m sphinx -b coverage docs docs/_build/coverage
+	@cat docs/_build/coverage/python.txt
+
+.PHONY: docs-clean
+docs-clean:  ## drop the rendered site and the generated stubs
+	rm -rf docs/_build docs/reference/generated
+
+.PHONY: docs-serve
+docs-serve: docs  ## build, then serve the site on :8000
+	$(PYTHON) -m http.server 8000 --directory docs/_build/html
+
 .PHONY: clean
 clean:  ## remove caches and build artifacts
 	find . -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true

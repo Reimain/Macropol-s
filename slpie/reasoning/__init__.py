@@ -3,7 +3,7 @@
 Ten layers are planned; eight are built. Every one appends and none mutates a
 prior layer's output:
 
-===== ======================== =========================================
+===== ========================================  =====================================
 L1    :mod:`~slpie.reasoning.l1_discovery`      what was read, indexed by evidence id
 L2    :mod:`~slpie.reasoning.l2_normalization`  two dialects become one thing
 L3    :mod:`~slpie.reasoning.l3_graph`          observations become nodes and edges
@@ -12,7 +12,7 @@ L5    :mod:`~slpie.reasoning.l5_validation`     declared versus observed, as del
 L6    :mod:`~slpie.reasoning.l6_constraints`    do the ranges hold together
 L7    :mod:`~slpie.reasoning.l7_impact`         what else is reached, how confidently
 L8    :mod:`~slpie.reasoning.l8_optimize`       the options, with the cost of each
-===== ======================== =========================================
+===== ========================================  =====================================
 
 :mod:`~slpie.reasoning.guidance` assembles what the layers concluded into a
 :class:`~slpie.domain.reasoning.Guidance` — the answer, its reasoning, its gaps,

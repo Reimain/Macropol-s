@@ -2,25 +2,28 @@
 
 Implements `slpie.workspace.Spawner`. What it creates, per workspace:
 
-===================  ========================================================
-`Namespace`          one per **tenant**, not per user — so a NetworkPolicy and
-                     a ResourceQuota can be written once and cover everybody
-`ResourceQuota`      the tenant's ceiling, enforced by the cluster as well as
-                     by the control plane. Two independent limits, so a bug in
-                     ours does not become an unbounded bill
-`LimitRange`         a default and a maximum per pod, so a workspace created by
-                     some other path still cannot ask for the whole node
-`ServiceAccount`     per workspace, with **no** API access — a notebook that
-                     could call the Kubernetes API could list its neighbours
-`Secret`             the scoped environment variables, mounted by reference so
-                     `kubectl describe pod` does not print them
+=======================  =====================================================
+`Namespace`              one per **tenant**, not per user — so a NetworkPolicy
+                         and a ResourceQuota can be written once and cover
+                         everybody
+`ResourceQuota`          the tenant's ceiling, enforced by the cluster as well
+                         as by the control plane. Two independent limits, so a
+                         bug in ours does not become an unbounded bill
+`LimitRange`             a default and a maximum per pod, so a workspace
+                         created by some other path still cannot ask for the
+                         whole node
+`ServiceAccount`         per workspace, with **no** API access — a notebook
+                         that could call the Kubernetes API could list its
+                         neighbours
+`Secret`                 the scoped environment variables, mounted by reference
+                         so `kubectl describe pod` does not print them
 `PersistentVolumeClaim`  the working tier, one per workspace
-`Pod`                JupyterLab, with limits, a read-only root filesystem and
-                     no privilege escalation
-`Service`            in-cluster address
-`NetworkPolicy`      **default deny**, then the two flows a notebook needs
-`Ingress`            the user's URL
-===================  ========================================================
+`Pod`                    JupyterLab, with limits, a read-only root filesystem
+                         and no privilege escalation
+`Service`                in-cluster address
+`NetworkPolicy`          **default deny**, then the two flows a notebook needs
+`Ingress`                the user's URL
+=======================  =====================================================
 
 **`plan()` renders every one of those without a cluster.** That is not a
 convenience — it is how this is testable at all, and it is the same plan/apply
