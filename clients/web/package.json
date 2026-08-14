@@ -1,0 +1,23 @@
+{
+  "name": "@slpie/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The SLPIE enterprise console. Consumes the generated client, so a kernel route change is a compile error rather than a runtime 404.",
+  "type": "module",
+  "scripts": {
+    "contract": "slpie contract --typescript > src/slpie-client.ts",
+    "typecheck": "tsc --noEmit",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vite": "^5.3.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0"
+  }
+}

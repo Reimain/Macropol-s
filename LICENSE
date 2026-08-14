@@ -1,0 +1,237 @@
+Macropol-s Non-Commercial Source-Available Licence
+Version 1.0 — August 2026
+
+Copyright (c) 2026 Macropol-s. All rights reserved.
+
+================================================================================
+READ THIS FIRST
+================================================================================
+
+This software is published so that it can be READ, EVALUATED and STUDIED.
+
+It is NOT open source. It grants NO RIGHT OF COMMERCIAL USE WHATSOEVER.
+
+If you want to use this software, or anything derived from it, in connection
+with a business or any other commercial activity, you need a separate written
+commercial licence from the Licensor. Nothing in this document gives you one,
+and no amount of the source being visible changes that.
+
+Being able to see the code is not permission to use it.
+
+================================================================================
+1. DEFINITIONS
+================================================================================
+
+1.1  "Software" means the contents of this repository, including the SLPIE and
+     Gratimos packages, the documentation, the notebooks, the test suite, the
+     generated artifacts, and every file distributed with them, in source or
+     compiled form.
+
+1.2  "Licensor" means Macropol-s, the copyright holder.
+
+1.3  "You" means the individual or legal entity exercising rights under this
+     Licence. If you are acting for an employer, a client, or any other
+     organisation, "You" includes that organisation.
+
+1.4  "Derivative Work" means any work based on the Software, in whole or in
+     part, including modifications, translations, ports, adaptations, and any
+     work that incorporates, links to, or is compiled from any portion of it.
+
+1.5  "Commercial Purpose" means any use that is directed toward, or that
+     results in, commercial advantage, monetary compensation, or the operation
+     of a business. Without limiting that definition, it INCLUDES:
+
+     (a) use by, for, or on behalf of any for-profit entity, including purely
+         internal use in that entity's own operations;
+
+     (b) incorporating the Software or any Derivative Work into a product or
+         service that is sold, licensed, leased, rented, or otherwise made
+         available for a fee or other consideration;
+
+     (c) providing the Software or its functionality to any third party as a
+         hosted, managed, or software-as-a-service offering, whether or not a
+         fee is charged;
+
+     (d) use in consulting, contracting, professional services, or any
+         engagement performed for compensation;
+
+     (e) use to train, fine-tune, evaluate, benchmark, or improve any
+         machine-learning model, dataset, or system that is itself used for a
+         Commercial Purpose;
+
+     (f) use in fundraising, investor diligence, marketing, or the promotion of
+         any commercial offering other than the Licensor's own;
+
+     (g) distributing the Software or any Derivative Work to any person for any
+         of the purposes above.
+
+1.6  "Non-Commercial Purpose" means, and is limited to:
+
+     (a) personal study and private experimentation;
+
+     (b) academic research and teaching at a non-profit educational or research
+         institution, including publication of research results;
+
+     (c) evaluation of the Software for the sole purpose of deciding whether to
+         obtain a commercial licence from the Licensor.
+
+     Where a use is partly commercial and partly not, it is a Commercial
+     Purpose.
+
+================================================================================
+2. GRANT
+================================================================================
+
+Subject to every term of this Licence, the Licensor grants You a worldwide,
+royalty-free, non-exclusive, non-transferable, non-sublicensable and REVOCABLE
+licence to:
+
+2.1  use and run the Software for a Non-Commercial Purpose;
+
+2.2  reproduce the Software for a Non-Commercial Purpose;
+
+2.3  create Derivative Works for a Non-Commercial Purpose; and
+
+2.4  distribute the Software or a Derivative Work to others, for a
+     Non-Commercial Purpose only, provided You comply with section 4.
+
+This grant is the whole of what You receive. Rights not expressly granted here
+are reserved by the Licensor.
+
+================================================================================
+3. PROHIBITED
+================================================================================
+
+You may NOT, without a separate written commercial licence from the Licensor:
+
+3.1  use the Software or any Derivative Work for a Commercial Purpose;
+
+3.2  sell, sublicense, rent, lease, or otherwise transfer the Software or any
+     rights in it;
+
+3.3  offer the Software or its functionality as a service to third parties;
+
+3.4  remove, obscure, or alter any copyright, licence, attribution, or notice
+     contained in the Software, including this file;
+
+3.5  use the name "Macropol-s", "SLPIE", or "Gratimos", or any Licensor
+     trademark, logo, or trade name, to endorse or promote anything, or in a
+     way likely to cause confusion as to origin or endorsement;
+
+3.6  assert or attempt to acquire any patent right reading on the Software or
+     any Derivative Work; or
+
+3.7  represent that the Software is open source, or apply any additional or
+     different licence terms to it.
+
+================================================================================
+4. CONDITIONS ON DISTRIBUTION
+================================================================================
+
+If You distribute the Software or a Derivative Work under section 2.4:
+
+4.1  You must include a complete, unmodified copy of this Licence;
+
+4.2  You must retain all copyright, attribution and notice text;
+
+4.3  You must clearly mark what You changed, and the date of the change; and
+
+4.4  You must not impose any term that restricts a recipient's rights under
+     this Licence, or that purports to grant a recipient more than this Licence
+     grants You.
+
+Every recipient receives their rights directly from the Licensor under this
+Licence. You grant no rights of Your own.
+
+================================================================================
+5. COMMERCIAL LICENSING
+================================================================================
+
+Commercial licences are available, and the Licensor intends to grant them.
+
+If any of the following is true, you need one:
+
+  * you are a company, or you are acting for one;
+  * you intend to run this in production, at any scale;
+  * you intend to build a product or service on it;
+  * you intend to use it in work you are paid for.
+
+Enquiries: through the repository owner at https://github.com/Reimain
+
+================================================================================
+6. TERM AND TERMINATION
+================================================================================
+
+6.1  This Licence applies from the moment You first exercise any right under it
+     and continues until terminated.
+
+6.2  It terminates AUTOMATICALLY and IMMEDIATELY, without notice, if You breach
+     any term. On termination You must stop all use and destroy every copy of
+     the Software and every Derivative Work in Your possession or control.
+
+6.3  The Licensor may reinstate a terminated licence in writing. It is under no
+     obligation to do so.
+
+6.4  The Licensor may revoke this Licence, or change its terms for future
+     versions, at any time. Such a change does not retroactively affect copies
+     already obtained under this version.
+
+6.5  Sections 1, 3, 7, 8, 9 and 10 survive termination.
+
+================================================================================
+7. NO WARRANTY
+================================================================================
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, ACCURACY, AND NON-INFRINGEMENT.
+
+The Software analyses code, infrastructure and data and produces findings,
+judgements and generated artifacts. THOSE OUTPUTS ARE NOT ADVICE AND ARE NOT
+GUARANTEED TO BE CORRECT OR COMPLETE. You are responsible for verifying
+anything You rely on. The Licensor does not warrant that the Software will
+identify any particular defect, vulnerability, licence obligation, or risk, or
+that it will not report one that does not exist.
+
+================================================================================
+8. LIMITATION OF LIABILITY
+================================================================================
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
+LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN
+CONTRACT, TORT, NEGLIGENCE OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+WITH THE SOFTWARE OR ITS USE, INCLUDING ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, PUNITIVE OR CONSEQUENTIAL DAMAGES, ANY LOSS OF PROFITS,
+REVENUE, DATA, GOODWILL OR BUSINESS INTERRUPTION, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+Nothing in this Licence excludes or limits liability that cannot lawfully be
+excluded or limited.
+
+================================================================================
+9. THIRD-PARTY COMPONENTS
+================================================================================
+
+The kernels of this Software have no third-party runtime dependencies. Optional
+extras, development tooling, and the notebook layer install third-party
+packages that are NOT covered by this Licence and remain subject to their own
+terms. This Licence covers only the Licensor's own work.
+
+================================================================================
+10. GENERAL
+================================================================================
+
+10.1  If any provision is held unenforceable, it is modified to the minimum
+      extent necessary to make it enforceable, and the rest remains in force.
+
+10.2  A failure to enforce any provision is not a waiver of it.
+
+10.3  This Licence is the entire agreement between You and the Licensor
+      regarding the Software, and supersedes any prior understanding. It can be
+      varied only by a written instrument signed by the Licensor.
+
+10.4  You may not assign this Licence. Any attempted assignment is void.
+
+================================================================================
+
+If you are unsure whether your use is permitted, assume it is not, and ask.

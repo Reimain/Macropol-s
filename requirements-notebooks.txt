@@ -1,0 +1,19 @@
+# Everything the notebooks need beyond the standard library.
+#
+# The kernel itself needs none of this — `pip install -e .` gives you a working
+# slpie and gratimos with zero third-party packages, which is invariant 4 and is
+# asserted by CI. What is below is the *interactive* layer: a Jupyter server, a
+# kernel, and the tooling that builds and verifies the pages.
+
+jupyterlab>=4.1          # the notebook interface
+ipykernel>=6.29          # the kernel the notebooks run in
+notebook>=7.1            # classic-style UI, for people who prefer it
+
+nbformat>=5.10           # reading and writing .ipynb
+nbclient>=0.10           # executing them, which is how CI proves they work
+
+# Optional, and the notebooks degrade gracefully without them: none of the cells
+# import these. They are here because the first thing most people do in a
+# notebook is reach for a dataframe.
+pandas>=2.2
+matplotlib>=3.8

@@ -1,0 +1,100 @@
+name: docs
+
+# Publishes the Sphinx site to GitHub Pages. Separate from `tests.yml` on
+# purpose: that workflow *checks* the documentation builds on every push and
+# every pull request, which is the part that must gate a merge. This one
+# publishes, and publishing from a pull request would put an unreviewed branch
+# on the public URL.
+on:
+  push:
+    branches:
+      - "main"
+      # TEMPORARY — remove once this branch is merged.
+      #
+      # `docs.yml` does not exist on `main` yet, so nothing can deploy: a push
+      # trigger only fires for branches that carry the workflow, and
+      # `workflow_dispatch` needs it on the default branch before the button
+      # appears at all. This entry exists so the site can be seen live before
+      # the merge, at the owner's explicit request.
+      #
+      # It is worth removing afterwards. Publishing from an unreviewed branch is
+      # what the `main`-only trigger was for — whatever is on this branch goes
+      # to the public URL, review or no review — and a "temporary" exception
+      # nobody deletes is just the rule changing without anyone deciding to.
+      - "claude/interactive-notebooks"
+  workflow_dispatch:
+
+# Least privilege. `contents: read` to check out, `pages`/`id-token` for the
+# deploy — nothing that can write to the repository.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and a running deploy is not cancelled: cancelling
+# mid-publish is how a site ends up half-written.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # `.[docs]` only. `autodoc_mock_imports` stands in for kubernetes, boto3
+      # and the optional extras, so the published documentation is produced from
+      # the same kernel-only install invariant 4 exists to protect.
+      - run: pip install -e '.[docs]'
+
+      # No `SPHINX_INTERSPHINX`, and no `-W`. Both were mistakes, in different
+      # ways.
+      #
+      # The env var made CI a *different configuration* from the one anybody
+      # runs locally, and the branch it selected had never been executed once —
+      # so the first thing to exercise it was this deploy, which died on 181
+      # cross-reference ambiguities. A build that only CI performs is a build
+      # nobody has tested.
+      #
+      # `-W` is gone from the publish path because publishing and checking are
+      # different jobs. The strict build still runs in `tests.yml`, on every
+      # push and every pull request, where a warning should block a merge. Here
+      # the job is to get the site up; a documentation warning is not a reason
+      # to leave the published site stale.
+      - name: Build the site
+        run: python -m sphinx -b html --keep-going docs docs/_build/html
+
+      # Jekyll would otherwise skip `_static/` and `_modules/`, and the site
+      # would render without stylesheets or source links.
+      - run: touch docs/_build/html/.nojekyll
+
+      # `enablement: true` turns Pages on for the repository if it is off,
+      # using this workflow's own `pages: write` token. That is the only way to
+      # do it from here — the Pages REST path is not reachable from a Claude
+      # Code session, so the alternative was a settings toggle somebody had to
+      # remember to click before the first deploy could ever succeed.
+      #
+      # It requires a public repository or a paid plan; this one is public.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

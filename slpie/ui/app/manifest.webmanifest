@@ -1,0 +1,19 @@
+{
+  "name": "SLPIE — architecture intelligence",
+  "short_name": "SLPIE",
+  "description": "Ask about your ecosystem and get an answer with its reasoning, its gaps, and the next question worth asking.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}
