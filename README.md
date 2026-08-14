@@ -115,3 +115,19 @@ make help             # the rest
 
 The kernel has no third-party dependencies; optional extras widen format and
 storage coverage without ever being required to start.
+
+## Licence
+
+**Source-available, not open source.** You may read, study and evaluate this
+code. **Commercial use of any kind requires a separate written licence.**
+
+That includes internal use inside a company, running it in production, building
+a product or service on it, offering it as a service, and using it in work you
+are paid for. Being able to see the source is not permission to use it.
+
+Non-commercial use — personal study, academic research and teaching, and
+evaluating it to decide whether to buy a licence — is permitted under the terms
+in **[LICENSE](LICENSE)**, which govern in full.
+
+Commercial licences are available and we intend to grant them. Ask through
+[the repository owner](https://github.com/Reimain).

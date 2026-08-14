@@ -76,3 +76,10 @@ make docs           # html into docs/_build/html
 make docs-strict    # the same build, with warnings as errors
 make docs-coverage  # what is documented and what is not, measured
 ```
+
+## Licence
+
+**Source-available, not open source.** Read it, study it, evaluate it — but
+**commercial use of any kind requires a separate written licence**, including
+internal use inside a company and anything run in production. The full terms are
+in the repository's `LICENSE` file and they govern; the summary here does not.

@@ -10,7 +10,9 @@ readme = "docs/README.md"
 # 3.11 for stdlib tomllib: SLPIE reads pyproject.toml and Cargo.toml during
 # discovery, and a third-party TOML parser would breach the zero-dependency rule.
 requires-python = ">=3.11"
-license = { text = "Proprietary" }
+license = { text = "Macropol-s Non-Commercial Source-Available Licence 1.0" }
+# Source-available, not open source. Non-commercial use only; commercial use
+# needs a separate written licence. Full terms in LICENSE.
 authors = [{ name = "Macropol-s" }]
 dependencies = []
 
@@ -34,6 +36,11 @@ all = ["openpyxl>=3.1", "SQLAlchemy>=2.0", "alembic>=1.13", "boto3>=1.34", "delt
 [project.scripts]
 gratimos = "gratimos.cli:main"
 slpie = "slpie.cli:main"
+
+[tool.setuptools]
+# So `pip install` puts the terms in the wheel metadata rather than leaving
+# them only in a repository the installer may never have seen.
+license-files = ["LICENSE"]
 
 [tool.setuptools.packages.find]
 include = ["gratimos*", "slpie*", "slpie_enterprise*"]
