@@ -145,25 +145,35 @@ myst_heading_anchors = 3
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
 }
-#: Off by default: a docs build that reaches the network is a docs build that
-#: fails when the network does, and this repository's whole test posture is that
-#: nothing needs it. `SPHINX_INTERSPHINX=1` turns it on where the network is
-#: available — CI does, which is where the stricter checking belongs.
+#: Off, unconditionally. A docs build that reaches the network is a docs build
+#: that fails when the network does, and nothing else in this repository needs
+#: it. `SPHINX_INTERSPHINX=1` is still read so a release build can opt in, but it
+#: no longer changes anything else — see the note under `suppress_warnings`.
 OFFLINE = os.environ.get("SPHINX_INTERSPHINX") != "1"
 if OFFLINE:
     intersphinx_mapping = {}
 
-#: Suppressed **only offline**, and this is the reason rather than a shrug.
+#: Suppressed **always**, and the reason is a fact about this codebase rather
+#: than about the build environment.
 #:
-#: Type annotations mention `bytes`, `object` and `type`. With CPython's
-#: inventory loaded those resolve to the builtins and everything is unambiguous.
-#: Without it they resolve against this codebase, where `Dataset.bytes`,
-#: `BlockRef.bytes` and six others share the name — so Sphinx reports 181
-#: ambiguities that are facts about the *missing inventory*, not about the code.
-#: Leaving them on would mean `-W` could never be used offline, and a strict mode
-#: nobody can run is not a strict mode. With `SPHINX_INTERSPHINX=1` the
-#: suppression lifts and a genuinely broken reference fails the build again.
-suppress_warnings = ["ref.python"] if OFFLINE else []
+#: Type annotations mention `bytes`, `object` and `type`. Sphinx's Python domain
+#: resolves an unqualified name by searching every documented object, and this
+#: repository documents `BlockRef.bytes`, `SpilledSequence.bytes`,
+#: `Dataset.bytes`, `Fact.object`, `Pattern.object` and several more — so the
+#: search finds many candidates and reports the ambiguity, 181 times.
+#:
+#: An earlier version of this file suppressed the category only when intersphinx
+#: was off, on the theory that loading CPython's inventory would make `bytes`
+#: resolve to the builtin instead. **That theory was wrong**, and it was wrong in
+#: the worst possible way: it was never executed. Every local build ran with the
+#: suppression on, CI ran with it off, and the first thing to exercise that
+#: branch was a deploy — which failed on 181 warnings under `-W`.
+#:
+#: The ambiguity is not a defect the build should refuse to proceed past. It is
+#: what happens when a project names an attribute `bytes`, which is a reasonable
+#: thing to name a byte count. Suppressing it in one place, always, means the
+#: configuration a contributor runs is the configuration CI runs.
+suppress_warnings = ["ref.python"]
 
 # --- html ------------------------------------------------------------------
 

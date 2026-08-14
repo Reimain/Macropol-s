@@ -106,10 +106,64 @@ def test_undocumented_members_are_still_listed(conf):
     assert conf.autodoc_default_options["member-order"] == "bysource"
 
 
-def test_the_build_does_not_need_the_network(conf, monkeypatch):
-    """Intersphinx is off unless asked for. A docs build that reached out would
-    fail whenever the network did, which no other build here does."""
+def test_the_build_does_not_need_the_network(conf):
+    """A docs build that reached out would fail whenever the network did, which
+    no other build in this repository does."""
     assert conf.intersphinx_mapping == {}
+
+
+def test_the_ambiguity_suppression_does_not_depend_on_the_environment():
+    """The regression test for a deploy that failed on 181 warnings.
+
+    `suppress_warnings` used to be `["ref.python"] if OFFLINE else []`. Every
+    local build ran with the suppression on; CI set `SPHINX_INTERSPHINX=1` and
+    ran with it off. The branch CI took had therefore never been executed, and
+    the first thing to exercise it was a Pages deploy, which died under `-W`.
+
+    The theory behind the branch was that loading CPython's inventory would make
+    `bytes` resolve to the builtin. It does not: Sphinx's Python domain searches
+    every *documented* object for an unqualified name, and this repository
+    documents `BlockRef.bytes`, `Dataset.bytes`, `Fact.object` and more, so the
+    ambiguity is a property of the code and no inventory removes it.
+
+    So the rule is the one that was violated: loading the configuration under
+    any environment must produce the same configuration.
+    """
+    import importlib.util
+    import os
+
+    def load(**environment):
+        previous = {k: os.environ.get(k) for k in environment}
+        os.environ.update({k: v for k, v in environment.items() if v is not None})
+        for key, value in environment.items():
+            if value is None:
+                os.environ.pop(key, None)
+        try:
+            spec = importlib.util.spec_from_file_location(
+                "_docs_conf_probe", ROOT / "docs" / "conf.py",
+            )
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module.suppress_warnings
+        finally:
+            for key, value in previous.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+    off = load(SPHINX_INTERSPHINX=None)
+    on = load(SPHINX_INTERSPHINX="1")
+
+    assert off == on, (
+        f"the docs configuration changes with the environment: {off} vs {on}. "
+        f"Whatever CI runs must be what a contributor runs, or the branch CI "
+        f"takes is one nobody has ever built."
+    )
+    assert "ref.python" in off, (
+        "the cross-reference ambiguity suppression is gone; `-W` will fail on "
+        "181 warnings about attributes named `bytes` and `object`"
+    )
 
 
 # --- the bridge -------------------------------------------------------------
