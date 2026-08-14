@@ -7,7 +7,21 @@ name: docs
 # on the public URL.
 on:
   push:
-    branches: ["main"]
+    branches:
+      - "main"
+      # TEMPORARY — remove once this branch is merged.
+      #
+      # `docs.yml` does not exist on `main` yet, so nothing can deploy: a push
+      # trigger only fires for branches that carry the workflow, and
+      # `workflow_dispatch` needs it on the default branch before the button
+      # appears at all. This entry exists so the site can be seen live before
+      # the merge, at the owner's explicit request.
+      #
+      # It is worth removing afterwards. Publishing from an unreviewed branch is
+      # what the `main`-only trigger was for — whatever is on this branch goes
+      # to the public URL, review or no review — and a "temporary" exception
+      # nobody deletes is just the rule changing without anyone deciding to.
+      - "claude/interactive-notebooks"
   workflow_dispatch:
 
 # Least privilege. `contents: read` to check out, `pages`/`id-token` for the
