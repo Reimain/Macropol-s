@@ -113,7 +113,19 @@ export function tabs(screens, current) {
   const root = screens.find((screen) => screen.key === rootKey);
   if (!root) return null;
 
-  const family = [root, ...screens.filter((screen) => screen.parent === rootKey)];
+  // A view whose path takes a *required* subject is not reachable as a tab: its
+  // link would resolve to `#/impact/` with nothing to be the impact of, and a
+  // tab that lands on an empty screen is worse than an absent one. Those views
+  // are reached by picking a subject — from the graph, from a finding — and
+  // once you are on one, the tab stays so you can get back.
+  //
+  // Optional params (`:severity?`) are fine: the screen has a meaningful
+  // subject-less state, which is exactly what the `?` declares.
+  const needsSubject = (screen) =>
+    /\/:[^/?]+(?!\?)(?:\/|$)/.test(screen.path) && screen.key !== current;
+
+  const family = [root, ...screens.filter((screen) => screen.parent === rootKey)]
+    .filter((screen) => !needsSubject(screen));
   if (family.length < 2 || family.length > TAB_LIMIT) return null;
 
   return h("nav", { class: "tabs", "aria-label": `${root.title} views` },

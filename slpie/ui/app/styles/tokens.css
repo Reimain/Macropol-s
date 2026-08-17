@@ -58,6 +58,24 @@
                              purpose, so it can never read as a severity */
 
   --shadow: 0 1px 2px rgba(16, 24, 32, 0.06), 0 1px 1px rgba(16, 24, 32, 0.04);
+
+  /* The certainty ramp. Ordinal, one hue, dark = known — and validated rather
+     than eyeballed:
+
+       node scripts/validate_palette.js "#0b4f9e,#1f6fc4,#5192d6,#86b0e2" \
+         --ordinal --mode light --surface "#ffffff"
+       → ALL CHECKS PASS (monotone L · adjacent ΔL ≥ 0.06 · light end 2.25:1
+                          · hue spread 5°)
+
+     `--ramp-none` is off the ramp on purpose. "Nothing was read here" is not the
+     low end of a confidence scale, it is absent from the scale, and giving it
+     the palest blue would file it under "we are a bit unsure" — which is the
+     one conflation this whole platform exists to refuse. */
+  --ramp-4: #0b4f9e;   /* surveyed */
+  --ramp-3: #1f6fc4;   /* recorded */
+  --ramp-2: #5192d6;   /* inferred */
+  --ramp-1: #86b0e2;   /* guessed  */
+  --ramp-none: #98a4b0; /* unknown — neutral, not pale blue */
 }
 
 /* Dark is a navy rather than a black — the same choice both references make.
@@ -84,6 +102,23 @@
   --sim: #a691e8;
 
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  /* The dark ramp is *selected for the dark surface*, not the light ramp
+     inverted — an automatic flip puts the light end below the surface and the
+     dark end into it. Validated as its own set:
+
+       node scripts/validate_palette.js "#5aa2f0,#3f87dd,#2f6cb8,#255492" \
+         --ordinal --mode dark --surface "#14242c"
+       → ALL CHECKS PASS (light end 2.09:1 · hue spread 4°)
+
+     Note the direction reverses with the ground: on white, *darker* reads as
+     more certain; on a dark ground, *brighter* does. The token names are by
+     role, so nothing downstream knows this happened. */
+  --ramp-4: #5aa2f0;
+  --ramp-3: #3f87dd;
+  --ramp-2: #2f6cb8;
+  --ramp-1: #255492;
+  --ramp-none: #64757f;
 }
 
 /* The system preference, honoured only when nobody has chosen. Scoped with

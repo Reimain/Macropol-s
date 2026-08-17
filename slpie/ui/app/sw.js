@@ -20,7 +20,7 @@
  * cache that is not this one, so the bump is what evicts a stale shell — a
  * version left alone across a restructure serves yesterday's modules from
  * cache and the page dies on an import that no longer exists. */
-const VERSION = "slpie-v2";
+const VERSION = "slpie-v3";
 
 /* Every file the app needs to open with the network unplugged. Listed rather
  * than discovered, because discovery needs a request and the whole point is to
@@ -41,9 +41,10 @@ const SHELL = [
   "/core/result.js", "/core/format.js",
   "/data/client.js", "/data/http.js", "/data/live.js", "/data/queries.js",
   "/ui/panel.js", "/ui/table.js", "/ui/pill.js", "/ui/nav.js", "/ui/density.js",
-  "/ui/opener.js",
+  "/ui/opener.js", "/ui/chart.js", "/ui/graph.js",
   "/screens/index.js", "/screens/console.js", "/screens/compose.js",
-  "/screens/findings.js", "/screens/catalog.js", "/screens/workspaces.js",
+  "/screens/findings.js", "/screens/graph.js", "/screens/catalog.js",
+  "/screens/workspaces.js",
   "/screens/inspector.js",
 ];
 

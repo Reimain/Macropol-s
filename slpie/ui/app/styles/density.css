@@ -50,6 +50,9 @@
   --page-w: 1600px;
   --card-min: 260px;
   --glyph-w: 16px;
+  --hero-w: 240px;
+  --stat-w: 110px;
+  --chart-w: 720px;
 
   /* Named widths for fields that must line up column-to-column. */
   --field-w: 100px;
@@ -92,6 +95,9 @@
   --page-w: 1360px;
   --card-min: 300px;
   --glyph-w: 18px;
+  --hero-w: 280px;
+  --stat-w: 130px;
+  --chart-w: 640px;
 
   --field-w: 150px;
   --label-w: 124px;

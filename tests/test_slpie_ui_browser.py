@@ -79,6 +79,55 @@ def served():
     running.stop()
 
 
+#: A manifest with enough shape to produce a real graph: several kinds, a
+#: boundary, and services that depend on each other.
+POPULATED = """
+apiVersion: slpie/v1
+environment: acme-production
+target: simulated
+security:
+  concerns: [pci-dss]
+  boundaries:
+    - name: cardholder-data
+      contains: [payments, vault]
+codebase:
+  - root: ./services/payments
+    team: payments
+  - root: ./services/vault
+    team: security
+data:
+  - uri: postgres://analytics/orders
+    kind: database
+network:
+  - name: payments-api
+    url: https://api.acme.com/v1
+    kind: rest
+"""
+
+
+@pytest.fixture(scope="module")
+def populated(tmp_path_factory):
+    """A server with an environment actually open.
+
+    Every visual test until now ran against `engine=None`, which meant every
+    screen was an empty state — the graph in particular renders *nothing*
+    without data, so its layout, its hit targets and its selection behaviour
+    were entirely unexercised. An empty engine cannot fail those, which is the
+    same vacuous pass §29 Stage 1 went hunting for, wearing a different hat.
+    """
+    from slpie.engine import Engine
+
+    engine = Engine.from_text(POPULATED)
+    engine.declare()
+    engine.simulate(root=str(tmp_path_factory.mktemp("world")))
+    engine.attach()
+    engine.scan()
+
+    running = UiServer(engine=engine, port=0).start()
+    yield running
+    running.stop()
+
+
 def _open(page, served, fragment=""):
     page.goto(served.url + fragment, wait_until="networkidle")
     page.wait_for_timeout(400)
@@ -324,3 +373,84 @@ def test_the_keyboard_reaches_the_interactive_elements(page, served):
     assert {"A", "BUTTON", "INPUT", "SELECT"} & set(reached), (
         f"eight tabs reached only {sorted(set(reached))}"
     )
+
+
+# --- the graph, against real data --------------------------------------------
+
+
+def test_the_graph_draws_the_estate(page, populated):
+    """The screen the platform should be judged on, with something in it.
+
+    Asserted against a populated engine because an empty one draws nothing and
+    would pass every check here by having no marks to get wrong.
+    """
+    _open(page, populated, "#/graph")
+
+    nodes = page.eval_on_selector_all(".node", "els => els.length")
+    wires = page.eval_on_selector_all(".wire", "els => els.length")
+    assert nodes > 5, f"only {nodes} nodes drawn — the diagram is empty"
+    assert wires > 5, f"only {wires} edges drawn"
+
+    real = [m for m in page.errors if "Failed to load resource" not in m]
+    assert not real, f"the graph logged {real}"
+
+
+def test_no_column_grows_past_the_wrap_limit(page, populated):
+    """A power-law kind distribution must not produce a spike and twelve stubs.
+
+    One kind holds most of the nodes in any real estate. Unwrapped, that drew a
+    seventeen-deep column beside twelve single-node ones, leaving most of the
+    canvas empty and the tall column's labels crossed by every edge. The wrap is
+    what keeps the drawing roughly rectangular whatever the distribution.
+    """
+    _open(page, populated, "#/graph")
+
+    ys = page.eval_on_selector_all(
+        ".node",
+        """els => els.map(e => {
+             const t = e.getAttribute('transform') || '';
+             const m = t.match(/translate\\(([-\\d.]+) ([-\\d.]+)\\)/);
+             return m ? [Number(m[1]), Number(m[2])] : null;
+           }).filter(Boolean)""",
+    )
+    assert ys, "no nodes were placed"
+
+    per_column = {}
+    for x, _ in ys:
+        per_column[x] = per_column.get(x, 0) + 1
+    assert max(per_column.values()) <= 11, (
+        f"a column holds {max(per_column.values())} nodes; the wrap limit is 11"
+    )
+
+
+def test_picking_a_node_dims_what_it_does_not_touch(page, populated):
+    """Selection is the interaction the screen exists for.
+
+    The dimming is the point: an unconnected node stays visible at low opacity
+    rather than disappearing, because the shape of what is *not* connected is
+    information too.
+    """
+    _open(page, populated, "#/graph")
+
+    page.eval_on_selector(".node .hit", "e => e.dispatchEvent(new MouseEvent('click', {bubbles: true}))")
+    page.wait_for_timeout(300)
+
+    opacities = page.eval_on_selector_all(
+        ".node", "els => els.map(e => Number(e.getAttribute('opacity')))",
+    )
+    assert 1 in opacities, "nothing stayed at full strength"
+    assert any(0 < o < 1 for o in opacities), "nothing was dimmed"
+    assert 0 not in opacities, "a node was hidden rather than dimmed"
+
+
+def test_an_edge_never_swallows_a_click_meant_for_a_node(page, populated):
+    """Every edge terminates exactly on a dot, so its painted stroke sits over
+    the target the reader is aiming at. Found by a click that Playwright refused
+    to deliver, reporting the wire as the interception."""
+    _open(page, populated, "#/graph")
+
+    events = page.eval_on_selector_all(
+        ".wires path", "els => els.map(e => getComputedStyle(e).pointerEvents)",
+    )
+    assert events, "no wires drawn"
+    assert set(events) == {"none"}, f"wires are hit-testable: {set(events)}"

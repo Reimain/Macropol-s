@@ -18,6 +18,7 @@ import { SCREENS } from "../data/client.js";
 import * as consoleScreen from "./console.js";
 import * as composeScreen from "./compose.js";
 import * as findingsScreen from "./findings.js";
+import * as graphScreen from "./graph.js";
 import * as catalogScreen from "./catalog.js";
 import * as workspacesScreen from "./workspaces.js";
 import * as inspector from "./inspector.js";
@@ -26,6 +27,7 @@ export const AUTHORED = {
   console: consoleScreen,
   compose: composeScreen,
   findings: findingsScreen,
+  graph: graphScreen,
   catalog: catalogScreen,
   workspaces: workspacesScreen,
 };

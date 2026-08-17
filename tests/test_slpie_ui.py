@@ -616,12 +616,28 @@ def test_no_component_declares_a_raw_size(server):
     """
     allowed = {"1px", "2px", "3px", "999px"}
 
+    def declarations(css: str) -> str:
+        """Everything that can actually style something.
+
+        Two things are dropped. A **media query** is a device fact rather than a
+        token, so its breakpoint is not a hardcoded size. A **comment** cannot
+        style anything at all — and the rule these comments exist to explain is
+        precisely about sizes, so a note saying *why* a track is not stretched
+        across 1200px was itself read as a 1200px declaration. Stripping them
+        removes nothing the guard can ever be about.
+        """
+        return re.sub(r"@media[^{]+\{", "{", re.sub(r"/\*.*?\*/", "", css, flags=re.S))
+
+    # The exemptions are tested, because an exemption added to clear a failure is
+    # how a guard becomes a no-op. A real declaration must still be caught, in a
+    # file that also contains a comment mentioning a size.
+    probe = declarations("/* never 40px wide */\n.a { padding: 16px; }")
+    assert "16px" in probe and "40px" not in probe
+
     for sheet in ("/styles/components.css", "/styles/screens.css"):
         css = _raw(server, sheet)[2].decode("utf-8")
-        # Ignore media queries: a breakpoint is a device fact, not a token.
-        body = re.sub(r"@media[^{]+\{", "{", css)
         sizes = {
-            size for size in re.findall(r"(?<![\w-])(\d+px)", body)
+            size for size in re.findall(r"(?<![\w-])(\d+px)", declarations(css))
             if size not in allowed
         }
         assert not sizes, f"{sheet} hardcodes {sorted(sizes)} instead of using a token"

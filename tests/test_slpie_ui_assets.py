@@ -175,15 +175,33 @@ def test_nothing_in_the_interface_reaches_an_external_origin():
     # not: a URL in a comment (documentation), and an XML namespace, which is an
     # identifier the parser compares as a string and never dereferences —
     # `xmlns="http://www.w3.org/2000/svg"` is required markup, not a request.
-    namespace = re.compile(r'''\bxmlns(?::\w+)?\s*=\s*(["'])[^"']*\1''')
+    #
+    # The namespace also appears *as a value*, because `createElementNS` takes it
+    # as an argument: building an SVG node outside its namespace yields an
+    # `HTMLUnknownElement` that renders nothing and reports nothing, so the
+    # constant is unavoidable. Exempted by **literal URI** rather than by syntax:
+    # exempting "a string assigned to a constant" would let any CDN through, and
+    # widening an exemption to clear a failure is precisely how a guard quietly
+    # becomes a no-op.
+    known = "|".join(re.escape(uri) for uri in (
+        "http://www.w3.org/2000/svg",
+        "http://www.w3.org/1999/xlink",
+    ))
+    namespace = re.compile(
+        rf'''\bxmlns(?::\w+)?\s*=\s*(["'])[^"']*\1|(["'])(?:{known})\2''',
+    )
     fetched = re.compile(r'''["']https?://(?!localhost|127\.0\.0\.1)''')
 
-    # The detector, checked against a line it must catch and a line it must not.
-    # Exempting XML namespaces is the kind of narrowing that quietly turns a
-    # guard into a no-op, so the exemption is itself tested.
+    # The detector, checked against the lines it must catch and the lines it must
+    # not. The exemption is itself tested, in both the attribute and the value
+    # form, and a non-W3C URL in the same shape must still be caught.
     assert fetched.search(namespace.sub("", '<script src="https://cdn.example/x.js">'))
+    assert fetched.search(namespace.sub("", 'const CDN = "https://cdn.example/x.js";'))
     assert not fetched.search(
         namespace.sub("", '<svg xmlns="http://www.w3.org/2000/svg">'),
+    )
+    assert not fetched.search(
+        namespace.sub("", 'const SVG_NS = "http://www.w3.org/2000/svg";'),
     )
 
     offenders: list[str] = []

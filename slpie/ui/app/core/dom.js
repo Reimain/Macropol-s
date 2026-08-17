@@ -28,6 +28,36 @@ export function h(tag, props = {}, ...children) {
   return node;
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+/**
+ * `h`, for SVG.
+ *
+ * A separate function rather than a flag on `h`, because the difference is not
+ * cosmetic: `createElement("circle")` yields an `HTMLUnknownElement` that lays
+ * out as nothing and renders as nothing, with no error anywhere. An SVG tree has
+ * to be built in its namespace or it silently does not exist, and a silent
+ * nothing is the worst failure mode a drawing can have.
+ *
+ * Attributes only — SVG has no `className` string property and no useful style
+ * shorthand, so `class` is set as an attribute like everything else.
+ */
+export function svg(tag, props = {}, ...children) {
+  const node = document.createElementNS(SVG_NS, tag);
+
+  for (const [key, value] of Object.entries(props || {})) {
+    if (value === null || value === undefined || value === false) continue;
+    if (key === "dataset") Object.assign(node.dataset, value);
+    else if (key === "style") Object.assign(node.style, value);
+    else if (key.startsWith("on") && typeof value === "function") {
+      node.addEventListener(key.slice(2).toLowerCase(), value);
+    } else node.setAttribute(key, value === true ? "" : String(value));
+  }
+
+  append(node, children);
+  return node;
+}
+
 /** Text, a node, or any nesting of arrays of those. */
 export function append(node, children) {
   for (const child of children.flat(Infinity)) {

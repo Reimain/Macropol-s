@@ -1559,7 +1559,7 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Nodes and edges as the platform observed them, shaded by the confidence of the evidence behind each one.",
-    "authored": false
+    "authored": true
   },
   {
     "key": "cycles",
