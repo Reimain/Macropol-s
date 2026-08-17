@@ -6,6 +6,129 @@
     "description": "Capabilities are verbs that compose. Every route below is a projection of the verb registry, so a capability added once appears in the CLI, this contract, the manual and every client. The x-slpie-consumes/produces extensions carry the type graph, so a client can reject an impossible composition before sending it."
   },
   "paths": {
+    "/api/admin/datasets": {
+      "get": {
+        "summary": "GET /api/admin/datasets",
+        "operationId": "get_api_admin_datasets",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/admin/quota": {
+      "get": {
+        "summary": "GET /api/admin/quota",
+        "operationId": "get_api_admin_quota",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/admin/workspaces": {
+      "get": {
+        "summary": "GET /api/admin/workspaces",
+        "operationId": "get_api_admin_workspaces",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
     "/api/causation": {
       "get": {
         "summary": "GET /api/causation",

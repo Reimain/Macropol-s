@@ -97,9 +97,19 @@ def test_every_referenced_asset_is_present_locally(server):
 
 
 def test_the_javascript_and_stylesheet_ship_with_the_package():
+    """The entry points, by their stable names.
+
+    `app.js` was the whole interface and is now `shell.js` plus four tiers of
+    modules; `styles.css` was the whole stylesheet and is now its import root.
+    Both keep an entry point at a fixed name so this assertion still means
+    something — the alternative is a test that names whichever file happened to
+    be biggest last week.
+    """
     assert (APP_ROOT / "index.html").is_file()
-    assert (APP_ROOT / "app.js").is_file()
+    assert (APP_ROOT / "boot.js").is_file()
+    assert (APP_ROOT / "shell.js").is_file()
     assert (APP_ROOT / "styles.css").is_file()
+    assert (APP_ROOT / "data" / "client.js").is_file()
 
 
 def test_an_asset_path_cannot_escape_the_app_directory(server):
@@ -398,9 +408,13 @@ def test_every_shipped_asset_is_served(server):
     of missing, so each asset is fetched rather than assumed present."""
     for path, expected in (
         ("/", "text/html"),
-        ("/app.js", "text/javascript"),
-        ("/compose.js", "text/javascript"),
+        ("/boot.js", "text/javascript"),
+        ("/shell.js", "text/javascript"),
+        ("/core/store.js", "text/javascript"),
+        ("/data/client.js", "text/javascript"),
+        ("/screens/console.js", "text/javascript"),
         ("/styles.css", "text/css"),
+        ("/styles/tokens.css", "text/css"),
         ("/sw.js", "text/javascript"),
         ("/manifest.webmanifest", "application/manifest+json"),
         ("/icon.svg", "image/svg+xml"),
@@ -438,6 +452,26 @@ def test_every_asset_the_worker_precaches_actually_exists(server):
         assert status == 200, f"the worker precaches {path}, which is not served"
 
 
+def _stream_path() -> str:
+    """The path the client actually streams from, read out of the client.
+
+    The module that opens the feed names it once as a constant and builds the
+    URL from it, because a resume appends `?since=`. So the constant is the
+    source of truth, not the `new EventSource(...)` call — and taking it from
+    the module that does the streaming is what keeps this test honest. Naming
+    the path here instead would only confirm somebody typed it twice, which is
+    exactly how the `/events` defect survived three phases.
+    """
+    for path in sorted(APP_ROOT.rglob("*.js")):
+        source = path.read_text(encoding="utf-8")
+        if "new EventSource(" not in source:
+            continue
+        found = re.search(r'const STREAM = "([^"]+)"', source)
+        assert found, f"{path.name} opens a stream and does not name its path"
+        return found.group(1)
+    raise AssertionError("nothing in the interface opens an EventSource")
+
+
 def test_the_worker_never_caches_the_event_stream(server):
     """A cached SSE response would replay history as though it were happening now.
 
@@ -452,11 +486,7 @@ def test_the_worker_never_caches_the_event_stream(server):
     the assertion mean something.
     """
     _status, _headers, worker = _raw(server, "/sw.js")
-    _status, _headers, client = _raw(server, "/app.js")
-
-    opened = re.search(r'new EventSource\(\s*"([^"]+)"', client.decode("utf-8"))
-    assert opened, "the app no longer opens an EventSource; this test is checking nothing"
-    path = opened.group(1)
+    path = _stream_path()
 
     source = worker.decode("utf-8")
     assert f'"{path}"' in source, (
@@ -476,9 +506,7 @@ def test_the_stream_path_the_worker_excludes_is_a_route_that_exists(server):
     the client agree is not enough on its own — they could agree on a path the
     server does not have.
     """
-    _status, _headers, client = _raw(server, "/app.js")
-    opened = re.search(r'new EventSource\(\s*"([^"]+)"', client.decode("utf-8"))
-    path = opened.group(1)
+    path = _stream_path()
 
     _status, body = call(server, "/api/routes")
     assert f"GET {path}" in body["routes"], (
@@ -501,7 +529,7 @@ def test_nothing_in_the_interface_reaches_an_external_origin(server):
     no analytics. Asserted rather than trusted, because one `<link>` would do it."""
     import re
 
-    for path in ("/", "/app.js", "/compose.js", "/styles.css", "/sw.js"):
+    for path in ("/", "/shell.js", "/data/client.js", "/styles.css", "/sw.js"):
         _status, _headers, body = _raw(server, path)
         text = body.decode("utf-8")
         external = re.findall(
@@ -599,38 +627,55 @@ def test_no_component_declares_a_raw_size(server):
         assert not sizes, f"{sheet} hardcodes {sorted(sizes)} instead of using a token"
 
 
-def test_the_compose_view_is_reachable_from_the_navigation(server):
+def test_the_compose_screen_is_reachable_from_the_manifest(server):
+    """The navigation is generated now, so the assertion moves to its source.
+
+    The page carried eight hand-written `<section>` elements and a `data-view`
+    attribute per nav button — a second routing table maintained by hand beside
+    the real one. It carries a shell and an outlet now, and the screens come
+    from `contract.screens()`, so what is worth asserting is that the manifest
+    has a compose screen and that the page still declares itself installable.
+    """
     _status, _headers, body = _raw(server, "/")
     html = body.decode("utf-8")
 
-    assert 'data-view="compose"' in html
-    assert 'id="view-compose"' in html
-    assert 'src="/compose.js"' in html
+    assert 'id="outlet"' in html
+    assert 'src="/shell.js"' in html
     assert 'rel="manifest"' in html
 
+    _status, manifest = call(server, "/api/screens")
+    keys = {screen["key"] for screen in manifest["screens"]}
+    assert {"console", "compose", "findings", "catalog", "workspaces"} <= keys
 
-def test_the_compose_view_builds_itself_from_the_registry_not_from_a_hard_list(
+
+def test_the_compose_screen_builds_itself_from_the_registry_not_from_a_hard_list(
     server,
 ):
     """A palette listing verbs by hand would drift the moment one was added."""
-    _status, _headers, body = _raw(server, "/compose.js")
+    _status, _headers, body = _raw(server, "/screens/compose.js")
     source = body.decode("utf-8")
 
-    assert 'api.get("verbs")' in source
-    assert 'api.get("manual")' in source
-    assert "checkPipeline" in source, "the client type-checks locally"
-    assert "api.post(\"run\"" in source
+    assert "GROUPS" in source and "VERBS" in source, "the palette is generated"
+    assert "validate(" in source, "the client type-checks locally"
+    assert "data/client.js" in source, "the palette reads the generated contract"
 
 
-def test_the_client_side_type_check_mirrors_the_servers_rule(server):
+def test_the_client_side_type_check_is_generated_rather_than_written_twice(server):
     """It must agree with the server, or the builder offers compositions the
-    server then refuses — which reads as a bug in the platform."""
-    _status, _headers, body = _raw(server, "/compose.js")
+    server then refuses — which reads as a bug in the platform.
+
+    The rule used to be written by hand in `compose.js` *and* emitted for the
+    TypeScript clients *and* implemented on the server: three copies, and the
+    browser's was the one nothing checked. It is emitted once now.
+    """
+    _status, _headers, body = _raw(server, "/data/client.js")
     source = body.decode("utf-8")
 
     assert '"any"' in source, "polymorphic verbs accept anything"
     assert '"same"' in source, "passthrough verbs keep the kind"
     assert '"nothing"' in source, "a source verb starts from nothing"
+    assert "export function validate" in source
+    assert "export function producedKind" in source
 
 
 def _raw(server, path: str):

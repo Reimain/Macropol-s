@@ -100,6 +100,24 @@ class Response:
         return Response(self.body, status=self.status, headers=self.headers + extra)
 
 
+def _no_plane() -> "Response":
+    """No control plane attached — a state to report, not to fake.
+
+    The workspace plane is optional: a single-tenant install has no tenancy to
+    administer and attaches none. Answering with an empty tenant list would be
+    indistinguishable from a plane with no tenants in it, and the platform's
+    whole argument is that "nothing is there" and "I could not look" are
+    different answers.
+    """
+    return Response({
+        "error": (
+            "no control plane is attached to this engine, so there is no "
+            "tenancy to administer"
+        ),
+        "type": "NoControlPlane",
+    }, status=409)
+
+
 _UNSET = object()
 
 
@@ -237,6 +255,54 @@ class Api:
                 "type": "WrongTransport",
                 "transport": "sse",
             }, status=400)
+
+        @self.route("GET", "/api/admin/workspaces")
+        def admin_workspaces(_request: Request) -> Any:
+            """`ControlPlane.status()`, which its own docstring calls what an
+            administrator's console renders. Rendered, at last."""
+            plane = getattr(engine, "plane", None)
+            if plane is None:
+                return _no_plane()
+            return plane.status()
+
+        @self.route("GET", "/api/admin/quota")
+        def admin_quota(request: Request) -> Any:
+            """Headroom per tenant, or for one named tenant."""
+            plane = getattr(engine, "plane", None)
+            if plane is None:
+                return _no_plane()
+            tenant = request.param("tenant")
+            if not tenant:
+                return {"tenants": plane.status().get("tenants", [])}
+            quota = plane.quota_of(tenant)
+            usage = plane.usage_of(tenant)
+            return {
+                "tenant": tenant,
+                "quota": quota.to_dict(),
+                "usage": usage.to_dict(),
+                "headroom": quota.headroom(usage),
+            }
+
+        @self.route("GET", "/api/admin/datasets")
+        def admin_datasets(request: Request) -> Any:
+            """What the catalogue lists, scoped to one tenant and realm.
+
+            The grants are not filtered by principal here — the gateway has not
+            landed, so there is no principal to filter by, and inventing one
+            would be a second authorisation model. When it lands this delegates
+            to `ControlPlane.datasets_for`, which already asks the RBAC engine.
+            """
+            plane = getattr(engine, "plane", None)
+            if plane is None:
+                return _no_plane()
+            tenant = request.param("tenant")
+            realm = request.param("realm")
+            grants = [
+                grant.to_dict() for grant in getattr(plane, "grants", ())
+                if (not tenant or grant.dataset.scope.tenant == tenant)
+                and (not realm or grant.dataset.scope.realm == realm)
+            ]
+            return {"tenant": tenant, "realm": realm, "datasets": grants}
 
         @self.route("GET", "/api/screens")
         def screens(_request: Request) -> Any:

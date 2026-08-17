@@ -594,7 +594,8 @@ DESIGNED: tuple[Screen, ...] = (
            events=("scenario_fired", "target_changed"),
            action="environment.target"),
     Screen("catalog", "/catalog/:tenant?/:realm?/:dataset?/:object?", "Catalog",
-           "catalog", reads=("GET /api/search",), verbs=("scan", "changed"),
+           "catalog", reads=("GET /api/search", "GET /api/admin/datasets"),
+           verbs=("scan", "changed"),
            events=("node_asserted", "node_retired"), action="dataset.read"),
     Screen("portal", "/portal/:api?", "Developer portal", "api",
            reads=("GET /api/manual", "GET /api/contract"),
@@ -602,6 +603,7 @@ DESIGNED: tuple[Screen, ...] = (
     Screen("gateway", "/gateway", "Gateway", "api",
            reads=("GET /api/routes",), action="apim.gateway.read"),
     Screen("workspaces", "/admin/workspaces/:id?", "Workspaces", "admin",
+           reads=("GET /api/admin/workspaces", "GET /api/admin/quota"),
            action="workspace.create"),
 )
 

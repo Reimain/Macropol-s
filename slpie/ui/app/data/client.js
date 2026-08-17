@@ -1490,7 +1490,7 @@ export const SCREENS = Object.freeze([
     "action": "intelligence.ask",
     "resource": "*",
     "crumbs": [],
-    "authored": false
+    "authored": true
   },
   {
     "key": "compose",
@@ -1507,7 +1507,7 @@ export const SCREENS = Object.freeze([
     "action": "platform.discover",
     "resource": "*",
     "crumbs": [],
-    "authored": false
+    "authored": true
   },
   {
     "key": "cycles",
@@ -1544,7 +1544,7 @@ export const SCREENS = Object.freeze([
     "action": "analysis.findings",
     "resource": "*",
     "crumbs": [],
-    "authored": false
+    "authored": true
   },
   {
     "key": "graph",
@@ -1865,7 +1865,8 @@ export const SCREENS = Object.freeze([
     "title": "Catalog",
     "section": "catalog",
     "reads": [
-      "GET /api/search"
+      "GET /api/search",
+      "GET /api/admin/datasets"
     ],
     "verbs": [
       "scan",
@@ -1878,7 +1879,7 @@ export const SCREENS = Object.freeze([
     "action": "dataset.read",
     "resource": "*",
     "crumbs": [],
-    "authored": false
+    "authored": true
   },
   {
     "key": "gateway",
@@ -1916,17 +1917,35 @@ export const SCREENS = Object.freeze([
     "path": "/admin/workspaces/:id?",
     "title": "Workspaces",
     "section": "admin",
-    "reads": [],
+    "reads": [
+      "GET /api/admin/workspaces",
+      "GET /api/admin/quota"
+    ],
     "verbs": [],
     "events": [],
     "action": "workspace.create",
     "resource": "*",
     "crumbs": [],
-    "authored": false
+    "authored": true
   }
 ]);
 
 export const ROUTES = Object.freeze([
+  {
+    "method": "GET",
+    "path": "/api/admin/datasets",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/quota",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/admin/workspaces",
+    "transport": "json"
+  },
   {
     "method": "GET",
     "path": "/api/causation",

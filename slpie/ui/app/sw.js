@@ -36,11 +36,14 @@ const SHELL = [
   "/styles.css",
   "/styles/tokens.css", "/styles/density.css", "/styles/base.css",
   "/styles/layout.css", "/styles/components.css", "/styles/screens.css",
-  "/boot.js", "/shell.js", "/app.js", "/compose.js",
+  "/boot.js", "/shell.js",
   "/core/dom.js", "/core/store.js", "/core/bus.js", "/core/router.js",
   "/core/result.js", "/core/format.js",
   "/data/client.js", "/data/http.js", "/data/live.js", "/data/queries.js",
   "/ui/panel.js", "/ui/table.js", "/ui/pill.js", "/ui/nav.js", "/ui/density.js",
+  "/screens/index.js", "/screens/console.js", "/screens/compose.js",
+  "/screens/findings.js", "/screens/catalog.js", "/screens/workspaces.js",
+  "/screens/inspector.js",
 ];
 
 /* The live feed's path, which must never be cached. Named once here and

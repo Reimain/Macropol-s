@@ -363,3 +363,67 @@ def test_every_module_parses_as_javascript():
                 f"{path.relative_to(APP_ROOT)} does not parse:\n"
                 f"{done.stderr.decode('utf-8', 'replace')}"
             )
+
+
+# --- the screens -------------------------------------------------------------
+
+
+def test_every_authored_screen_honours_the_mount_contract():
+    """`mount` is the whole interface between the shell and a screen.
+
+    A screen missing it is registered, routed to, and then silently draws
+    nothing — which looks exactly like a screen whose data is empty. Checking
+    the export is cheap; distinguishing those two states after the fact is not.
+    """
+    screens = sorted((APP_ROOT / "screens").glob("*.js"))
+    assert screens, "there are no screens at all"
+
+    for path in screens:
+        if path.name == "index.js":
+            continue
+        source = path.read_text(encoding="utf-8")
+        assert "export function mount(" in source, (
+            f"{path.name} is a screen and exports no mount()"
+        )
+
+
+def test_the_authored_flag_is_read_from_disk_not_declared():
+    """A manifest that claims a screen exists when it does not is worse than one
+    that admits it does not: the reader is routed to a blank page instead of to
+    an inspector that works."""
+    from slpie.ui.api import Api
+    from slpie.ui.contract import screens
+
+    manifest = screens(routes=Api(engine=None).routes)
+    for screen in manifest:
+        on_disk = (APP_ROOT / "screens" / f"{screen.key}.js").is_file()
+        assert screen.authored == on_disk, (
+            f"{screen.key} claims authored={screen.authored} and the file "
+            f"{'exists' if on_disk else 'does not exist'}"
+        )
+
+    authored = [screen.key for screen in manifest if screen.authored]
+    assert len(authored) >= 4, f"only {authored} are authored"
+
+
+def test_no_screen_calls_fetch_directly():
+    """Every request leaves through `data/http.js`.
+
+    The trace id, the credential and the version headers are cross-cutting, and
+    a concern applied in each caller is a concern applied in most callers. This
+    is the browser's version of putting the gateway in `Api.handle` rather than
+    in each route.
+    """
+    offenders = [
+        f"{path.relative_to(APP_ROOT)}:{line}"
+        for path in _assets()
+        if path.suffix == ".js" and path.parent.name in {"screens", "ui"}
+        for line, text in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1,
+        )
+        if re.search(r"(?<![.\w])fetch\s*\(", text)
+    ]
+    assert not offenders, (
+        f"these bypass the request chain and will silently lose the trace id "
+        f"and the version headers: {offenders}"
+    )

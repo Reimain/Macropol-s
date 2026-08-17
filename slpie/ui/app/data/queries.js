@@ -36,6 +36,12 @@ export const routes = () => query("routes", "/api/routes");
 export const screens = () => query("screens", "/api/screens");
 export const streamStatus = () => query("stream-status", "/api/stream/status");
 
+export const workspaces = () => query("admin-workspaces", "/api/admin/workspaces");
+export const quota = (tenant = "") =>
+  query(`quota:${tenant}`, url("/api/admin/quota", { tenant }));
+export const datasets = (tenant = "", realm = "") =>
+  query(`datasets:${tenant}/${realm}`, url("/api/admin/datasets", { tenant, realm }));
+
 export const findings = (severity = "") =>
   query(`findings:${severity}`, url("/api/findings", { severity }));
 
