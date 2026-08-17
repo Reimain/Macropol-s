@@ -10,6 +10,10 @@
   <title>SLPIE</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="manifest" href="/manifest.webmanifest">
+  <!-- Named explicitly, or the browser asks for `/favicon.ico` on every load
+       and logs a 404 nobody put there. Found by opening the page in a real
+       browser, which is the only way that request is visible at all. -->
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <meta name="theme-color" content="#0d1117">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

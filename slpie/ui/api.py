@@ -139,8 +139,13 @@ def answered(result: Any, body: Any = _UNSET) -> Response:
 class Api:
     """Routes HTTP onto the buses. Holds no state of its own."""
 
-    def __init__(self, engine: Any) -> None:
+    def __init__(self, engine: Any, *, gateway: Any = None) -> None:
         self.engine = engine
+        #: The API manager, or nothing. `None` is the default and reproduces the
+        #: behaviour this class had before it existed — which is what makes the
+        #: hook safe to land before anybody has written a policy, and is proven
+        #: by the whole pre-existing suite passing untouched.
+        self.gateway = gateway
         self._routes: dict[tuple[str, str], Handler] = {}
         self._register()
 
@@ -156,7 +161,38 @@ class Api:
         return tuple(sorted(self._routes))
 
     def handle(self, request: Request) -> Response:
+        """Admit, then dispatch. One hook, in one place.
+
+        Enforcement goes here rather than inside handlers for the same reason
+        the module docstring gives about the live-target gate: a cross-cutting
+        rule applied in each handler is a rule applied in most handlers, and the
+        one it is missing from is the one somebody finds.
+        """
+        admitted = self._admit(request)
+        if admitted is not None:
+            return admitted
         return self._dispatch(request).with_headers(*self._position())
+
+    def _admit(self, request: Request) -> Response | None:
+        """The gateway's refusal, or nothing. Absent gateway, always nothing."""
+        if self.gateway is None:
+            return None
+        try:
+            decision = self.gateway.admit(request)
+        except Exception as error:  # noqa: BLE001 - a broken gateway is a fault
+            # Failing closed. A gateway that cannot decide must not be read as
+            # deciding "allow" — that is the one direction where a bug here
+            # becomes a security hole rather than an outage.
+            return Response({
+                "error": f"the API manager could not decide: {error}",
+                "type": "GatewayFault",
+            }, status=503)
+
+        if decision.allowed:
+            return None
+        return Response(
+            decision.body(), status=decision.status, headers=decision.headers,
+        )
 
     def _position(self) -> tuple[tuple[str, str], ...]:
         """Where the world is, stamped on every response including failures.
@@ -303,6 +339,70 @@ class Api:
                 and (not realm or grant.dataset.scope.realm == realm)
             ]
             return {"tenant": tenant, "realm": realm, "datasets": grants}
+
+        @self.route("GET", "/api/apim/apis")
+        def apim_apis(_request: Request) -> Any:
+            """The catalogue. Derived from the registry, so it cannot drift.
+
+            Answered whether or not a gateway is configured: the catalogue is a
+            *description* of what this build serves, and a build with no gateway
+            still serves it. Only enforcement needs the gateway.
+            """
+            from ..apim import ApiCatalog
+
+            catalog = (
+                self.gateway.catalog if self.gateway is not None
+                and getattr(self.gateway, "catalog", None) is not None
+                else ApiCatalog.from_registry(verbs=self.verbs, routes=self.routes)
+            )
+            return catalog.to_dict()
+
+        @self.route("GET", "/api/apim/gateway")
+        def apim_gateway(_request: Request) -> Any:
+            """The chain, its hit counts and its refusals — `iptables -L -v`.
+
+            With no gateway attached this says so rather than showing an empty
+            chain, which would read as "nothing is being enforced because no
+            rule matched" instead of "nothing is being enforced".
+            """
+            if self.gateway is None:
+                return {
+                    "attached": False,
+                    "detail": (
+                        "no API manager is attached, so every route is served "
+                        "without lifecycle, subscription, throttling or "
+                        "mediation checks"
+                    ),
+                }
+            return {"attached": True, **self.gateway.status()}
+
+        @self.route("GET", "/api/apim/throttles")
+        def apim_throttles(_request: Request) -> Any:
+            from ..apim.throttle import TIERS
+
+            if self.gateway is not None:
+                return self.gateway.throttler.status()
+            return {"tiers": [tier.to_dict() for tier in TIERS.values()],
+                    "tracked": 0, "calls": 0}
+
+        @self.route("GET", "/api/apim/subscriptions")
+        def apim_subscriptions(request: Request) -> Any:
+            if self.gateway is None or self.gateway.subscriptions is None:
+                return {"subscriptions": [], "attached": False}
+            ledger = self.gateway.subscriptions
+            application = request.param("application")
+            held = ledger.of(application) if application else tuple(ledger)
+            return {
+                "attached": True,
+                "subscriptions": [item.to_dict() for item in held],
+                **ledger.status(),
+            }
+
+        @self.route("GET", "/api/apim/analytics")
+        def apim_analytics(_request: Request) -> Any:
+            if self.gateway is None:
+                return {"attached": False, "calls": 0}
+            return {"attached": True, **self.gateway.analytics.summary()}
 
         @self.route("GET", "/api/screens")
         def screens(_request: Request) -> Any:

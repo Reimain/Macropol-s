@@ -242,12 +242,22 @@ class Cli:
         engine = self._environment(root)
         try:
             from .ui import UiServer
+            from .ui.api import Api
+
+            gateway = None
+            if options.get("gateway"):
+                # Built over this build's own route table, so the catalogue
+                # cannot describe an API the server does not serve.
+                from .apim import Gateway
+
+                gateway = Gateway.over(Api(engine=None).routes)
 
             server = UiServer(
                 engine,
                 host=str(options.get("host", "127.0.0.1")),
                 port=int(options.get("port", 8420)),
                 verbose=bool(options.get("verbose", False)),
+                gateway=gateway,
             )
         except OSError as error:
             # A busy port is the single most common way this fails, and the
@@ -261,6 +271,8 @@ class Cli:
         where = "no environment — catalogue, manual and compose only"
         if engine is not None:
             where = f"environment {getattr(engine.manifest, 'environment', root)}"
+        if options.get("gateway"):
+            where += "; API manager on"
         self._out(f"{server.url}  ({where})")
 
         if options.get("once"):
@@ -586,7 +598,7 @@ if __name__ == "__main__":  # pragma: no cover - process entry point
 #: on the way to a composition, and `ui` is not one — a `--port` reaching the
 #: composition parser would be a verb parameter nobody declared.
 UI_FLAGS = {"--port": int, "--host": str, "--root": str}
-UI_SWITCHES = frozenset({"--once", "--verbose"})
+UI_SWITCHES = frozenset({"--once", "--verbose", "--gateway"})
 
 
 def _ui_flags(arguments: Sequence[str]) -> dict[str, Any]:

@@ -200,3 +200,52 @@ def test_the_audit_no_longer_records_the_command_as_missing():
         "the audit still records the gap as open after it was closed"
     )
     assert "Closed by §30 step 0" in text
+
+
+# --- the API manager is reachable -------------------------------------------
+
+
+def test_the_gateway_can_actually_be_turned_on(cli):
+    """A layer that exists and cannot be enabled is, from outside, a layer that
+    does not exist — which is §24's own argument about capabilities.
+
+    `slpie/apim/` was built before anything could reach it. This is the flag
+    that closes that, and the assertion that it stays closed.
+    """
+    code, out, err = cli(["ui", "--port", "0", "--gateway", "--once"])
+
+    assert code == 0, err
+    assert "API manager on" in out
+
+
+def test_the_server_passes_the_gateway_through_to_the_api():
+    from slpie.apim import Gateway
+
+    plain = Api(engine=None)
+    gateway = Gateway.over(plain.routes)
+    server = UiServer(engine=None, port=0, gateway=gateway)
+    try:
+        assert server._server.api.gateway is gateway
+    finally:
+        server.stop()
+
+
+def test_without_the_flag_no_gateway_is_attached(cli):
+    """The default is off, and off means the hook is inert rather than lenient."""
+    server = UiServer(engine=None, port=0)
+    try:
+        assert server._server.api.gateway is None
+    finally:
+        server.stop()
+
+
+def test_stopping_a_server_that_never_started_returns():
+    """`shutdown()` waits for `serve_forever` to acknowledge it.
+
+    A server that never started never acknowledges anything, so the call blocks
+    for ever — and it blocks in the shape everybody writes: construct, inspect,
+    close in a `finally`. Found by writing exactly that and watching the suite
+    hang rather than fail, which is the worse way to find it.
+    """
+    server = UiServer(engine=None, port=0)
+    server.stop()          # must return; a hang here is the regression

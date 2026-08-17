@@ -341,6 +341,8 @@ pinned by an assertion in `tests/test_slpie_api_defects.py` or
 | 3.6 | **`GET /api/node` returned 200 with an error body** for a node that is not there. | A client cannot tell "absent" from "present but empty", so a retired node rendered as a blank panel. Now 404. |
 | 3.7 | **`workspace:create` could not be granted by any wildcard.** `matches_action` (`rbac/model.py:102`) has only ever understood dotted prefixes, and `plane.py:45-46` used a colon — so `allow workspace.* on "*"` matched nothing and said nothing. | Every test spelled the action out in full, which is the case that worked. |
 
+| 3.8 | **`UiServer.stop()` hung for ever on a server that was never started.** `shutdown()` blocks until `serve_forever` acknowledges it, and a server that never started never acknowledges anything. | Every existing caller started before stopping. It fails in the shape everybody writes — construct, inspect, close in a `finally` — and it fails by *hanging* rather than raising, which is the worse way to find anything. Found by writing that shape and watching the suite stop instead of fail. |
+
 3.7 is the one worth dwelling on: it is a **silent authorisation failure**, the direction that
 denies rather than grants, which is why it survived. The actions are now dotted, and
 `matches_action` normalises a colon in the action position so existing policy files keep

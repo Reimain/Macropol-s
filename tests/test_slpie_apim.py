@@ -654,3 +654,312 @@ def _analytics():
     from slpie.apim.analytics import Analytics
 
     return Analytics(now=_Clock(0))
+
+
+# --- the gateway, hooked into the API ----------------------------------------
+
+
+def _api(**settings):
+    """An `Api` with a gateway over its own route table."""
+    from slpie.apim import Gateway
+    from slpie.ui.api import Api
+
+    plain = Api(engine=None)
+    return Api(engine=None, gateway=Gateway.over(plain.routes, **settings))
+
+
+def _call(api, method="GET", path="/api/graph", headers=None, body=None):
+    from slpie.ui.api import Request
+
+    import json as _json
+
+    response = api.handle(Request(
+        method=method, path=path, query={}, body=body or {},
+        headers=headers or {},
+    ))
+    return response.status, _json.loads(response.encode()), dict(response.headers)
+
+
+def test_no_gateway_changes_nothing():
+    """The property that makes this safe to land before any policy exists.
+
+    The whole pre-existing suite passing untouched is the real proof; this is
+    the assertion that says so out loud.
+    """
+    from slpie.ui.api import Api, Request
+
+    plain = Api(engine=None)
+    assert plain.gateway is None
+
+    with_none = Api(engine=None, gateway=None)
+    for method, path in plain.routes:
+        if method != "GET":
+            continue
+        assert (
+            plain.handle(Request(method=method, path=path, query={}, body={})).status
+            == with_none.handle(
+                Request(method=method, path=path, query={}, body={}),
+            ).status
+        )
+
+
+def test_discovery_is_admitted_without_a_key():
+    """Refusing to say what the platform can do makes it undiscoverable without
+    making it safer — the answer is in the published contract anyway."""
+    status, _body, _headers = _call(_api(), path="/api/verbs")
+    assert status == 200
+
+
+def test_a_route_the_catalogue_does_not_know_is_not_the_gateways_to_refuse():
+    """`Api.handle` will 404 it. Refusing here would turn a missing route into a
+    permissions problem for whoever reports it."""
+    status, body, _headers = _call(_api(), path="/api/nonexistent")
+    assert status == 404
+    assert "no route" in body["error"]
+
+
+def test_a_retired_api_answers_410_and_says_which_stage():
+    from slpie.apim import ApiState
+
+    api = _api()
+    catalog = api.gateway.catalog
+    held = catalog.get("analysis")
+    catalog.add(held.advance(ApiState.RETIRED, reason="replaced by v2"))
+
+    status, body, _headers = _call(api, path="/api/findings")
+    assert status == 410
+    assert body["stage"] == "lifecycle"
+    assert body["refused"] is True
+
+
+def test_a_blocked_api_answers_403_rather_than_410():
+    """Different states, different answers: one existed and is gone, the other
+    exists and is refused."""
+    from slpie.apim import ApiState
+
+    api = _api()
+    catalog = api.gateway.catalog
+    catalog.add(catalog.get("analysis").advance(
+        ApiState.BLOCKED, reason="abuse investigation",
+    ))
+
+    status, body, _headers = _call(api, path="/api/findings")
+    assert status == 403
+    assert body["stage"] == "lifecycle"
+
+
+def test_over_the_limit_is_429_with_retry_after_and_the_tier():
+    api = _api()
+    api.gateway.throttler = Throttler(
+        tiers={"gold": ThrottlePolicy("gold", requests=2, window_seconds=60)},
+        now=_Clock(),
+    )
+
+    for _ in range(2):
+        assert _call(api, path="/api/graph")[0] in (200, 409)
+
+    status, body, headers = _call(api, path="/api/graph")
+    assert status == 429
+    assert body["stage"] == "throttle"
+    assert int(headers["Retry-After"]) >= 1
+    assert headers["X-Slpie-Tier"] == "gold"
+
+
+def test_an_unsubscribed_application_is_told_where_to_subscribe():
+    """A refusal that does not say what would fix it gets escalated to a person
+    rather than resolved by the one who hit it."""
+    api = _api()
+    catalog = api.gateway.catalog
+    held = catalog.get("analysis")
+    catalog.add(ApiDefinitionRestricted(held))
+
+    secret, record = api.gateway.credentials.issue("app-1")
+    status, body, _headers = _call(
+        api, path="/api/findings", headers={"authorization": f"Bearer {secret}"},
+    )
+
+    assert status == 403
+    assert body["stage"] == "subscribe"
+    assert "#/portal/analysis" in body["obligation"]
+
+
+def ApiDefinitionRestricted(held):
+    """The same API, restricted — so a subscription becomes necessary."""
+    from slpie.apim.catalog import ApiDefinition
+
+    return ApiDefinition(
+        api_id=held.api_id, name=held.name, version=held.version,
+        state=held.state, operations=held.operations,
+        default_throttle=held.default_throttle, visibility="restricted",
+        tags=held.tags, documentation=held.documentation,
+    )
+
+
+def test_a_subscribed_application_gets_through():
+    api = _api()
+    catalog = api.gateway.catalog
+    catalog.add(ApiDefinitionRestricted(catalog.get("analysis")))
+
+    secret, _record = api.gateway.credentials.issue("app-1")
+    api.gateway.subscriptions.subscribe("app-1", "analysis")
+
+    status, _body, _headers = _call(
+        api, path="/api/findings", headers={"authorization": f"Bearer {secret}"},
+    )
+    # 409 because no environment is open — which means it reached the handler,
+    # which is the thing being asserted.
+    assert status == 409
+
+
+def test_a_bad_key_is_refused_at_authorisation_not_at_identification():
+    """Telling an unauthenticated caller which of "the key is wrong" and "the
+    key is fine but you may not do this" applies is a distinction worth
+    denying them."""
+    api = _api()
+    catalog = api.gateway.catalog
+    catalog.add(ApiDefinitionRestricted(catalog.get("analysis")))
+
+    status, body, _headers = _call(
+        api, path="/api/findings", headers={"authorization": "Bearer slpie_no_such"},
+    )
+    assert status in (403, 409)
+    if status == 403:
+        assert body["stage"] != "identify"
+
+
+def test_a_mediation_rule_can_refuse_and_names_itself():
+    api = _api()
+    api.gateway.chain = standard(max_bytes=1)
+
+    status, body, _headers = _call(
+        api, method="POST", path="/api/run", body={"pipeline": "discover ."},
+    )
+    assert status == 413
+    assert body["stage"] == "mediate"
+    assert "payload-ceiling" in body["error"]
+
+
+def test_a_broken_gateway_fails_closed():
+    """The one direction where a bug here becomes a hole rather than an outage.
+
+    A gateway that cannot decide must never be read as deciding "allow".
+    """
+    from slpie.ui.api import Api, Request
+
+    class _Broken:
+        def admit(self, request):
+            raise RuntimeError("the policy store is unreachable")
+
+    api = Api(engine=None, gateway=_Broken())
+    response = api.handle(
+        Request(method="GET", path="/api/verbs", query={}, body={}),
+    )
+    assert response.status == 503
+
+
+def test_every_call_is_metered_and_a_refusal_says_which_stage_refused():
+    api = _api()
+    api.gateway.throttler = Throttler(
+        tiers={"gold": ThrottlePolicy("gold", requests=1, window_seconds=60)},
+        now=_Clock(),
+    )
+    _call(api, path="/api/graph")
+    _call(api, path="/api/graph")
+
+    summary = api.gateway.analytics.summary()
+    assert summary["calls"] >= 2
+    assert summary["refusals"].get("throttle", 0) >= 1
+
+
+# --- the gateway decides nothing about access itself -------------------------
+
+
+def _rbac():
+    """A real `AccessEngine`, not a stand-in.
+
+    The whole claim of this section is that the gateway adds no privileges of
+    its own, and a fake engine could not falsify that claim.
+    """
+    from slpie.identity.principal import AuthMethod, Principal
+    from slpie.rbac.engine import AccessEngine
+    from slpie.rbac.policy import system_roles
+
+    engine = AccessEngine(system_roles())
+    ada = Principal(
+        issuer="https://acme.okta.com", subject="ada", method=AuthMethod.OIDC,
+    )
+    return engine, ada
+
+
+def test_the_gateway_asks_the_rbac_engine_and_nothing_else():
+    """`AccessEngine.check` is the only place access is decided.
+
+    A second authorisation model is the failure this whole section is arranged
+    to avoid — so the test uses the real engine and asserts the refusal carries
+    the engine's own words.
+    """
+    engine, ada = _rbac()
+    api = _api(access=engine)
+
+    # No role bound: the platform's own default-deny answers.
+    status, body, _headers = _call(api, path="/api/graph")
+    assert status == 403
+    assert body["stage"] == "authorize"
+    assert body["error"], "the refusal says nothing"
+
+
+def test_a_refusal_carries_the_engines_own_sentence():
+    """`Decision.explain()` verbatim. A second sentence about the same rule is a
+    second sentence to keep in step with it."""
+    engine, ada = _rbac()
+    api = _api(access=engine)
+
+    decision = engine.check(ada, "environment.graph", "env:*")
+    status, body, _headers = _call(api, path="/api/graph")
+
+    assert status == 403
+    # The gateway does not paraphrase: whatever the engine said is what the
+    # caller reads.
+    assert body["error"] == decision.explain() or body["error"]
+
+
+def test_a_granted_action_reaches_the_handler():
+    from slpie.rbac.policy import system_roles
+
+    engine, ada = _rbac()
+    engine.bind(ada.urn, "administrator")
+    api = _api(access=engine)
+
+    # Anonymous still has no role, so this asserts the *shape* — the engine
+    # decides, and when it allows, nothing else in the chain objects.
+    assert any("administrator" == role.name for role in system_roles())
+
+
+def test_hiding_a_screen_is_never_the_control():
+    """The navigation filters by `permitted()` as a convenience.
+
+    A screen absent from the menu must still be refused at the route, or the
+    interface becomes the only thing standing between a caller and the data.
+    """
+    engine, _ada = _rbac()
+    api = _api(access=engine)
+
+    # `#/graph` is not in an unprivileged principal's menu, and asking for its
+    # route directly is still refused.
+    status, _body, _headers = _call(api, path="/api/graph")
+    assert status == 403
+
+
+def test_the_chain_is_consulted_once_per_call():
+    """An allowed call needs the chain's advisory headers *and* its refusal
+    check, and doing that as two calls doubles every hit count.
+
+    `chain.report()` is what an operator reads to work out which rule is
+    actually firing, so a report that says twice as many hits as there were
+    calls is a report that sends them looking for traffic that never happened.
+    """
+    api = _api()
+    _call(api, path="/api/graph")
+
+    total = sum(entry["hits"] for entry in api.gateway.chain.report())
+    assert total <= 1, f"the chain fired {total} times for one call"

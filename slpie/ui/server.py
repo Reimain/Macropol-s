@@ -204,6 +204,7 @@ class UiServer:
         host: str = "127.0.0.1",
         port: int = 8420,
         verbose: bool = False,
+        gateway: Any = None,
     ) -> None:
         if not APP_ROOT.is_dir():
             raise UiError(f"the interface assets are missing from {APP_ROOT}")
@@ -225,7 +226,11 @@ class UiServer:
             engine.stream = self.stream
 
         self._server = ThreadingHTTPServer((host, port), Handler)
-        self._server.api = Api(engine)          # type: ignore[attr-defined]
+        # `gateway=None` is the ordinary case and changes nothing. Passing one
+        # is what makes the API manager reachable at all — a layer that exists
+        # and cannot be turned on is, from outside, indistinguishable from a
+        # layer that does not exist, which is §24's own argument.
+        self._server.api = Api(engine, gateway=gateway)  # type: ignore[attr-defined]
         self._server.stream = self.stream       # type: ignore[attr-defined]
         self._server.verbose = verbose          # type: ignore[attr-defined]
         self._server.daemon_threads = True
@@ -253,10 +258,21 @@ class UiServer:
         self._server.serve_forever()
 
     def stop(self) -> None:
-        self._server.shutdown()
+        """Safe on a server that was never started.
+
+        `shutdown()` blocks until `serve_forever` acknowledges it, and a server
+        that never started will never acknowledge anything — so calling it here
+        unconditionally hangs the caller for ever. That is exactly the shape of
+        an ordinary `try/finally`: construct, discover something, close in the
+        `finally`, and the cleanup never returns. Closing the socket is enough
+        when nothing is serving.
+        """
+        if self._thread is not None:
+            self._server.shutdown()
         self._server.server_close()
         if self._thread is not None:
             self._thread.join(timeout=5)
+            self._thread = None
 
     def __enter__(self) -> "UiServer":
         return self.start()

@@ -44,11 +44,13 @@ library — a throttle is a deque and a clock.
 from __future__ import annotations
 
 from .action import ActionMap, action_for
+from .analytics import Analytics, Bucket
 from .application import Application
 from .catalog import ApiCatalog, ApiDefinition, Operation
 from .chain import Chain, Rule, Situation, Verdict
 from .credential import Credential, CredentialStore
 from .errors import ApimError, LifecycleRefused, SubscriptionRefused, ThrottleRefused
+from .gateway import Admission, Gateway
 from .lifecycle import ApiState, TRANSITIONS, advance
 from .subscription import Subscription, SubscriptionLedger
 from .throttle import ThrottleDecision, ThrottlePolicy, Throttler, TIERS
@@ -59,6 +61,7 @@ __all__ = [
     "ApiState", "TRANSITIONS", "advance",
     "ApimError", "LifecycleRefused", "SubscriptionRefused", "ThrottleRefused",
     "Application",
+    "Admission", "Analytics", "Bucket", "Gateway",
     "Chain", "Rule", "Situation", "Verdict",
     "Credential", "CredentialStore",
     "Subscription", "SubscriptionLedger",

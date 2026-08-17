@@ -1882,16 +1882,47 @@ export const SCREENS = Object.freeze([
     "authored": true
   },
   {
+    "key": "analytics",
+    "path": "/analytics",
+    "title": "Analytics",
+    "section": "api",
+    "reads": [
+      "GET /api/apim/analytics"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "apim.analytics.read",
+    "resource": "*",
+    "crumbs": [],
+    "authored": false
+  },
+  {
     "key": "gateway",
     "path": "/gateway",
     "title": "Gateway",
     "section": "api",
     "reads": [
-      "GET /api/routes"
+      "GET /api/routes",
+      "GET /api/apim/gateway"
     ],
     "verbs": [],
     "events": [],
     "action": "apim.gateway.read",
+    "resource": "*",
+    "crumbs": [],
+    "authored": false
+  },
+  {
+    "key": "keys",
+    "path": "/apps/:application?",
+    "title": "Applications and keys",
+    "section": "api",
+    "reads": [
+      "GET /api/apim/subscriptions"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "apim.subscriptions.read",
     "resource": "*",
     "crumbs": [],
     "authored": false
@@ -1903,11 +1934,27 @@ export const SCREENS = Object.freeze([
     "section": "api",
     "reads": [
       "GET /api/manual",
-      "GET /api/contract"
+      "GET /api/contract",
+      "GET /api/apim/apis"
     ],
     "verbs": [],
     "events": [],
     "action": "platform.discover",
+    "resource": "*",
+    "crumbs": [],
+    "authored": false
+  },
+  {
+    "key": "throttling",
+    "path": "/throttling",
+    "title": "Throttling",
+    "section": "api",
+    "reads": [
+      "GET /api/apim/throttles"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "apim.throttles.read",
     "resource": "*",
     "crumbs": [],
     "authored": false
@@ -1944,6 +1991,31 @@ export const ROUTES = Object.freeze([
   {
     "method": "GET",
     "path": "/api/admin/workspaces",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/apim/analytics",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/apim/apis",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/apim/gateway",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/apim/subscriptions",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/apim/throttles",
     "transport": "json"
   },
   {

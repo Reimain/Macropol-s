@@ -27,11 +27,17 @@ cloud = ["boto3>=1.34"]
 delta = ["deltalake>=0.17"]
 media = ["Pillow>=10.0"]
 dev = ["pytest>=8.0", "pytest-timeout>=2.3", "coverage[toml]>=7.4", "black>=24.3", "isort>=5.13", "pre-commit>=3.7"]
+# Deliberately not in `dev`. Four claims about the interface cannot be
+# string-matched — that it boots, that the density axis changes geometry and
+# only geometry, that a deep link is a location, and that a refusal reads as a
+# refusal — and all four are facts about what a browser does with the files.
+# Chromium is already present in CI images; this is the driver for it.
+e2e = ["playwright>=1.44"]
 # The documentation builds from a kernel-only install: `autodoc_mock_imports`
 # in docs/conf.py stands in for every ring-1 and optional-extra package, so
 # `pip install -e '.[docs]'` never drags in kubernetes or boto3 to render them.
 docs = ["sphinx>=7.2", "furo>=2024.1", "myst-parser>=2.0", "sphinx-copybutton>=0.5"]
-all = ["openpyxl>=3.1", "SQLAlchemy>=2.0", "alembic>=1.13", "boto3>=1.34", "deltalake>=0.17", "Pillow>=10.0", "pytest>=8.0", "pytest-timeout>=2.3", "coverage[toml]>=7.4", "black>=24.3", "isort>=5.13", "pre-commit>=3.7", "kubernetes>=29.0", "PyYAML>=6.0", "sphinx>=7.2", "furo>=2024.1", "myst-parser>=2.0", "sphinx-copybutton>=0.5"]
+all = ["openpyxl>=3.1", "SQLAlchemy>=2.0", "alembic>=1.13", "boto3>=1.34", "deltalake>=0.17", "Pillow>=10.0", "pytest>=8.0", "pytest-timeout>=2.3", "coverage[toml]>=7.4", "black>=24.3", "isort>=5.13", "pre-commit>=3.7", "kubernetes>=29.0", "PyYAML>=6.0", "sphinx>=7.2", "furo>=2024.1", "myst-parser>=2.0", "sphinx-copybutton>=0.5", "playwright>=1.44"]
 
 [project.scripts]
 gratimos = "gratimos.cli:main"
@@ -79,10 +85,14 @@ testpaths = ["tests"]
 # materialise a temp filesystem and run a subprocess plugin, which is seconds.
 timeout = 300
 markers = [
+    "browser: needs a real browser; install the e2e extra and select with -m browser",
     "slow: materializes a large tree or runs a real subprocess",
     "corpus: needs the fetched corpus tier; skipped when the cache is cold",
     "network: needs outbound access — never run in the default suite",
 ]
+# The browser tier is opt-in. `-m browser` selects it; the default run skips it,
+# so a machine with no Chromium still gets a green suite that means something.
+addopts = "-m 'not browser'"
 filterwarnings = ["error::DeprecationWarning:slpie.*"]
 
 [tool.coverage.run]
