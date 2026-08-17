@@ -37,6 +37,7 @@ from . import (
     guidance,
     incremental,
     intelligence,
+    rivals,
     shaping,
 )
 
@@ -56,7 +57,7 @@ FAMILIES = (
     _Family(analysis), _Family(intelligence), _Family(governance),
     _Family(artifacts), _Family(capture), _Family(audit), _Family(shaping),
     _Family(guidance), _Family(incremental), _Family(dispatch),
-    _Family(environment),
+    _Family(environment), _Family(rivals),
 )
 
 

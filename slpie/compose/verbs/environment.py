@@ -26,11 +26,27 @@ def _step(claim: str, operation: str = "query") -> ReasoningStep:
     return ReasoningStep(claim=claim, layer="environment", operation=operation)
 
 
+def _scenarios() -> tuple[str, ...]:
+    """The scenario names, read from the registry rather than typed here.
+
+    A hand-written list would be the twelfth place a capability is declared, and
+    the one that goes stale the first time somebody adds a scenario — which is
+    the whole argument for the verb registry, applied one level down.
+    """
+    from ...simulator.scenarios import available
+
+    return available()
+
+
 def _declare(flow: Flow, _arguments: Mapping[str, Any], context: Context) -> Flow:
     engine = context.require_engine("declare")
     count = engine.declare()
+    # `declarations`, not `elements`. The wrong name here made every `declare`
+    # composition fail with an AttributeError, and nothing caught it because
+    # this module was the one at 27% coverage — a verb no test ran.
     return flow.then(
-        Kind.ELEMENTS, engine.manifest.elements if engine.manifest else (),
+        Kind.ELEMENTS,
+        tuple(engine.manifest.declarations) if engine.manifest else (),
         stage="declare",
         steps=[_step(f"declared {count} nodes from the manifest alone", "declare")],
         facts={"declared": count},
@@ -161,6 +177,76 @@ def _status(flow: Flow, _arguments: Mapping[str, Any], context: Context) -> Flow
     )
 
 
+def _simulate(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
+    """Materialise the declared world as real files, then bind to it.
+
+    Real artifacts, not mocks: a genuine `package-lock.json`, a genuine git
+    repository, genuine Kubernetes YAML. The same discoverers and the same
+    plugins run against it unchanged, which is what makes a green simulator case
+    evidence about the real code path rather than about the fixtures.
+    """
+    engine = context.require_engine("simulate")
+    # Named `at`, not `root`. `Context.root` already means "the tree being
+    # examined", and a parameter of the same name would materialise a default
+    # into `arguments` that wins the `or` chain against it — the shadowing bug
+    # `changed` already had.
+    world = engine.simulate(root=arguments.get("at") or None)
+
+    elements = tuple(engine.manifest.declarations) if engine.manifest else ()
+    artifacts = tuple(world.artifacts)
+    return flow.then(
+        Kind.ELEMENTS, elements, stage="simulate",
+        steps=[_step(
+            f"materialised {len(elements)} declared element(s) as "
+            f"{len(artifacts)} real artifact(s) under {world.root}",
+            "materialize",
+        )],
+        gaps=engine.gaps(),
+        facts={"root": str(world.root),
+               "elements": len(elements), "artifacts": len(artifacts)},
+    )
+
+
+def _fire(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
+    """Fire a scripted condition at the simulated world.
+
+    The outcome carries what the platform *ought* to conclude —
+    `expect_findings` and `expect_gaps` — as data rather than as a docstring, so
+    a caller can assert against it instead of reading the result and agreeing
+    with itself.
+    """
+    from ...simulator.scenarios import available
+
+    engine = context.require_engine("fire")
+    name = str(arguments.get("scenario") or "")
+    if not name:
+        raise VerbError(
+            f"fire needs a scenario name; this build has {', '.join(available())}"
+        )
+
+    parameters = {
+        key: value
+        for key, value in (("package", arguments.get("package")),
+                           ("version", arguments.get("version")))
+        if value
+    }
+    outcome = engine.fire(name, **parameters)
+
+    return flow.then(
+        Kind.REPORT, outcome.to_dict(), stage="fire",
+        steps=[_step(
+            f"fired {outcome.scenario}: {outcome.detail}", "simulate",
+        )],
+        gaps=engine.gaps(),
+        facts={
+            "scenario": outcome.scenario,
+            "changed": len(outcome.changed),
+            "expect_findings": list(outcome.expect_findings),
+            "expect_gaps": list(outcome.expect_gaps),
+        },
+    )
+
+
 def _target(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
     """Flip the one tag. Gated by `binding/guard.py`, not by anything here."""
     engine = context.require_engine("target")
@@ -184,6 +270,54 @@ def verbs() -> tuple[Verb, ...]:
             summary="build the skeleton graph from the manifest, before reading a file",
             examples=("declare", "declare | count"),
             run=_declare,
+        ),
+        Verb(
+            name="simulate", group=GROUP, produces=Kind.ELEMENTS, mutates=True,
+            summary="materialise the declared world as real files on disk",
+            detail=(
+                "Writes genuine artifacts — a real `package-lock.json`, a real "
+                "git repository, real Kubernetes YAML — rather than mocks, so "
+                "the same discoverers and the same plugins run against it "
+                "unchanged. A green simulator case is therefore evidence about "
+                "the real code path.\n\n"
+                "`mutates` because it writes to a filesystem, so a composition "
+                "containing it is confirmed as a whole at plan time through the "
+                "same guard that refuses an unconfirmed live binding."
+            ),
+            params=(
+                Param("at", "str", "where to materialise it; a temp directory "
+                      "is used when this is omitted"),
+            ),
+            # Not `simulate | attach | scan`: those three are all source verbs,
+            # each reading the engine rather than the flow, and `attach`
+            # accepting an upstream would also make `findings | attach`
+            # type-check — the refusal the composition tests use as their
+            # canonical example. They are separate invocations against one
+            # engine, which is what `acceptance.py` does.
+            examples=("simulate", "simulate --at ./world"),
+            run=_simulate,
+        ),
+        Verb(
+            name="fire", group=GROUP, produces=Kind.REPORT, mutates=True,
+            summary="fire a scripted condition at the simulated world",
+            detail=(
+                "A CVE lands, a major version bumps, a service dies, a boundary "
+                "is breached. The outcome carries what the platform *ought* to "
+                "conclude — `expect_findings` and `expect_gaps` — as data, so a "
+                "caller can assert against it rather than reading the result and "
+                "agreeing with itself.\n\n"
+                "Requires a world: run `simulate` first."
+            ),
+            params=(
+                Param("scenario", "str", "which condition to fire", required=True,
+                      choices=_scenarios()),
+                Param("package", "str", "the package the scenario acts on, "
+                      "where it takes one"),
+                Param("version", "str", "the version the scenario acts on, "
+                      "where it takes one"),
+            ),
+            examples=("fire cve --package lodash", "fire boundary-breach"),
+            run=_fire,
         ),
         Verb(
             name="attach", group=GROUP, produces=Kind.ELEMENTS,

@@ -18,13 +18,13 @@ will reveal stated up front.
 
 The split that keeps the learned part safe:
 
-==================== ============= =========
-                     deterministic   learned
-==================== ============= =========
-what may be offered      yes            no
-the guidance attached    yes            no
-which comes first         no           yes
-==================== ============= =========
+=====================  =============  =======
+..                     deterministic  learned
+=====================  =============  =======
+what may be offered    yes            no
+the guidance attached  yes            no
+which comes first      no             yes
+=====================  =============  =======
 
 Candidates come from the type graph, so a suggestion can never be something the
 platform cannot do and never a pipeline that would not run. Only the *order* is

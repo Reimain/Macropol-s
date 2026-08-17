@@ -62,6 +62,7 @@ RUNNER_FLAGS = frozenset({
 DISPLAY_FACTS = (
     "answer", "guidance", "rules", "enterprise", "risk", "c4", "sbom",
     "changed", "agent_tools", "routines", "quarantine", "chain", "audit",
+    "rivals",
 )
 
 OK = 0

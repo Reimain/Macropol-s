@@ -8,7 +8,8 @@ four methods without ring 0 learning that S3 exists.
 Four rules, and each is about a way concurrent writers destroy each other:
 
 **Writes are atomic.** A block is written to a uniquely-named temporary file in
-the same directory and then `os.replace`d into place, which is atomic on POSIX
+the same directory and then moved into place with `os.replace`, which is atomic
+on POSIX
 and on Windows. A reader therefore sees a whole block or no block — never the
 first half of one another process is still writing. Writing directly to the final
 path is the single most common way a cache becomes a source of truncated reads

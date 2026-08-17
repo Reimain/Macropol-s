@@ -326,6 +326,31 @@ def builtin_tools(root: str = ".") -> tuple[Tool, ...]:
             ),
         ),
         Tool(
+            name="competitive_position",
+            summary="where the field is thin, and what it would take us to serve it",
+            template="rivals {gaps}",
+            params=(
+                ToolParam(
+                    "gaps", "'true' to rank the white space instead of listing "
+                    "the recorded field", boolean=True, choices=("true", "false"),
+                ),
+            ),
+            detail=(
+                "Computed from cited product records, not from an opinion. Every "
+                "capability assessment carries the URL it was checked against and "
+                "the month it was checked, and one with no source will not "
+                "construct -- the honest answer there is UNKNOWN, which counts "
+                "against the comparison's verified share rather than quietly "
+                "reading as a zero.\n\n"
+                "This is the tool to reach for when the question is positioning: "
+                "what nobody serves, what we would have to build to serve it, and "
+                "-- named in the same output -- the capabilities the field leads "
+                "us on. A comparison that only flattered us would be worth "
+                "nothing to the person asking, so the ranking reports both "
+                "directions."
+            ),
+        ),
+        Tool(
             name="run_composition",
             summary="run any composition of verbs directly",
             template="{pipeline}",
