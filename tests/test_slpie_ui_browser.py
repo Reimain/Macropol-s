@@ -103,11 +103,47 @@ def test_the_app_boots_with_no_console_error(page, served):
     assert not real, f"the interface logged {real}"
 
 
-def test_the_navigation_is_generated_from_the_manifest(page, served):
-    _open(page, served)
-    sections = page.eval_on_selector_all("header nav a", "els => els.map(e => e.textContent)")
+def test_the_rail_lists_destinations_and_never_their_views(page, served):
+    """The rail is a map of the product, not a table of contents.
 
-    assert sections == ["Console", "Operate", "Build", "Catalog", "API", "Admin"]
+    A screen declaring a `parent` is a *view of* something — Node and Impact and
+    Cycles are things you look at about a graph — so it belongs on its parent's
+    page as a tab and never as a rail row beside its own parent. The manifest has
+    always carried the hierarchy (`node` declares `crumbs=("graph",)`); the rail
+    ignored it and listed eleven Operate rows, four of which were details of
+    another row.
+
+    Both directions are asserted, because only the second one fails when the
+    filter is dropped: every destination appears, and no view does.
+    """
+    _open(page, served)
+    listed = page.eval_on_selector_all(
+        ".rail nav a", "els => els.map(e => e.textContent.trim())",
+    )
+    assert listed, "the rail rendered nothing — did the shell markup move?"
+
+    manifest = page.evaluate("window.__screens || []")
+    if not manifest:
+        manifest = _manifest_from_contract()
+
+    destinations = {screen["title"] for screen in manifest if not screen["parent"]}
+    views = {screen["title"] for screen in manifest if screen["parent"]}
+
+    assert set(listed) == destinations, "the rail is not the destination set"
+    assert not (set(listed) & views), (
+        f"the rail is listing views of other screens: {sorted(set(listed) & views)}"
+    )
+    # The guard that would have caught the original defect: Node, Impact and
+    # Cycles are views of Graph and must not sit beside it.
+    assert "Graph" in listed
+    for view in ("Node", "Impact", "Cycles", "Reconciliation", "History"):
+        assert view not in listed, f"{view} is a view of another screen"
+
+
+def _manifest_from_contract():
+    from slpie.ui.contract import screens
+
+    return [screen.to_dict() for screen in screens()]
 
 
 def test_the_palette_is_built_from_the_registry(page, served):
@@ -142,14 +178,50 @@ def test_switching_register_changes_geometry_and_only_geometry(page, served):
 
 
 def test_switching_theme_changes_palette_and_only_palette(page, served):
-    _open(page, served)
-    before = (_token(page, "--bg"), _token(page, "--row-h"))
+    """The other half of the axis split, and it switches to the theme that is
+    not already on.
 
-    page.evaluate("document.documentElement.dataset.theme = 'light'")
+    Written against a literal `'light'` this passed only while dark was the
+    default, and silently became a no-op assertion the day the default flipped —
+    "the theme changed nothing" firing on a theme switch that never happened.
+    The target is derived from what is actually applied instead.
+    """
+    _open(page, served)
+    current = page.evaluate("document.documentElement.dataset.theme") or "light"
+    other = "dark" if current == "light" else "light"
+
+    before = (_token(page, "--bg"), _token(page, "--row-h"))
+    page.evaluate(f"document.documentElement.dataset.theme = '{other}'")
     after = (_token(page, "--bg"), _token(page, "--row-h"))
 
-    assert after[0] != before[0], "the theme changed nothing"
+    assert after[0] != before[0], f"switching {current} to {other} changed nothing"
     assert after[1] == before[1], "the theme changed a size"
+
+
+def test_the_appearance_controls_name_what_they_switch_to(page, served):
+    """A button is a verb.
+
+    Both controls used to be labelled with the state already applied, so the
+    theme button read "light" on a page that was already light — a control that
+    looks like it was pressed and ignored. The label must name the destination,
+    and it must flip when pressed.
+    """
+    _open(page, served)
+    buttons = page.query_selector_all("#appearance button")
+    assert len(buttons) == 2, "the appearance controls did not render"
+
+    theme_button = buttons[1]
+    applied = page.evaluate("document.documentElement.dataset.theme") or "light"
+    assert theme_button.text_content().strip().lower() != applied, (
+        "the theme button names the theme already applied"
+    )
+
+    theme_button.click()
+    switched = page.evaluate("document.documentElement.dataset.theme")
+    assert switched != applied, "pressing the theme button changed nothing"
+    assert theme_button.text_content().strip().lower() != switched, (
+        "the label did not follow the switch"
+    )
 
 
 def test_the_register_survives_a_reload(page, served):

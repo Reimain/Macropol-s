@@ -1,49 +1,179 @@
-/* Panels, pills, chips, controls, states.
+/* The shared vocabulary: cards, metrics, facets, tabs, chips, states.
  *
- * No raw size appears below — every dimension is a token, and
- * `test_no_component_declares_a_raw_size` is what keeps that true. The two
- * exceptions are hairlines (`1px`) and fully-rounded pills (`999px`), neither
- * of which is a size that should change with the register.
+ * ── How certainty reads ──────────────────────────────────────────────────
+ *
+ * The platform's whole claim is that a *known* thing, an *inferred* thing and
+ * an *unlooked-at* thing are three different answers, so a reviewer has to be
+ * able to tell them apart without reading a number. The references solve this
+ * with a **coloured glyph plus a word** — never colour alone, never a texture —
+ * and this console does the same:
+ *
+ *     ● surveyed   a lockfile pin, a runtime trace: 1.00
+ *     ● recorded   a manifest, a static import: ~0.90
+ *     ◐ inferred   a config reference, a DI registration: ~0.65
+ *     ○ guessed    reflection, a name heuristic: ≤0.40
+ *     ⊘ unknown    nothing was read here
+ *
+ * The word survives a colour-blind reader and a screenshot pasted into a
+ * ticket, which is where most of these end up. The text never dims: rendering a
+ * 0.25 claim at a quarter opacity is the obvious move and it makes the thing
+ * unreadable, so the uncertainty lives in the chip and the ink stays at full
+ * contrast.
+ *
+ * **Absence gets its own card.** Where the platform declined to look — an
+ * INDETERMINATE verdict, a refused capability, a quarantined document — the
+ * panel is not empty. It says what it did not look at and why, and offers the
+ * thing that would make it look. Blank means "there is nothing here"; this
+ * means "I did not look here", and the entire product rests on those being
+ * different answers.
+ *
+ * No raw size appears below: every dimension is a token, which is what keeps
+ * the density axis real rather than decorative.
  */
+
+/* --- cards -------------------------------------------------------------- */
 
 .card {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: var(--card-pad);
+  box-shadow: var(--shadow);
 }
-.card h2 {
-  margin: 0 0 var(--sp-3);
-  font-size: var(--fs-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+.card > h2 {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--fs-md);
   font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
 }
+.card > h2 .count {
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A metric card, as both references open every page with: the number large
+   enough to read across a desk, the label above it, and — where the number is
+   a proportion — the bar and its legend beneath. The bar is the part that turns
+   "67%" into something a reader can act on without arithmetic. */
+.metric-card { display: grid; gap: var(--sp-3); }
+.metric-card .head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.metric-card .head .when { margin-left: auto; font-size: var(--fs-xs); }
 
 .metric {
   font-size: var(--fs-xl);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 .metric small {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   color: var(--muted);
   font-weight: 400;
   margin-left: var(--sp-3);
+  letter-spacing: 0;
 }
 
-/* --- pills and chips ---------------------------------------------------- */
+/* A proportion, drawn. Segments are laid side by side rather than stacked, so
+   the bar reads as one whole divided — which is the claim being made. */
+.bar {
+  height: var(--sp-3);
+  background: var(--panel-2);
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+}
+.bar > div { height: 100%; }
+.bar > .ok { background: var(--ok); }
+.bar > .warn { background: var(--warn); }
+.bar > .bad { background: var(--bad); }
+.bar > .rest { background: var(--line); }
 
-.pill {
+.legend { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font-size: var(--fs-sm); }
+.legend span { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--muted); }
+.legend i {
+  width: var(--sp-3);
+  height: var(--sp-3);
+  border-radius: 2px;
   display: inline-block;
+}
+.legend i.ok { background: var(--ok); }
+.legend i.warn { background: var(--warn); }
+.legend i.bad { background: var(--bad); }
+
+/* --- status: a glyph, a word, a colour ---------------------------------- */
+
+.status {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+.status::before { font-size: var(--fs-sm); line-height: 1; margin-right: var(--sp-1); }
+.status.ok { color: var(--ok); }
+.status.ok::before { content: "\25CF"; }
+.status.warn { color: var(--warn); }
+.status.warn::before { content: "\25D0"; }
+.status.bad { color: var(--bad); }
+.status.bad::before { content: "\2298"; }
+.status.crit { color: var(--crit); }
+.status.crit::before { content: "\2298"; }
+.status.none { color: var(--muted); }
+.status.none::before { content: "\25CB"; }
+.status.unknown { color: var(--muted); }
+.status.unknown::before { content: "\2298"; }
+
+/* Certainty is a status like any other, so it inherits the glyph-plus-word
+   treatment rather than inventing a second vocabulary for the same job. */
+[data-certainty] {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+[data-certainty]::after {
+  font-size: var(--fs-xs);
+  line-height: 1;
+  opacity: 0.9;
+}
+/* A non-breaking space rather than a plain one: CSS `content` collapses a
+   leading space against the glyph, so the mark rendered as "●surveyed". */
+[data-certainty="surveyed"]::after { content: "\25CF\00A0surveyed"; color: var(--ok); }
+[data-certainty="recorded"]::after { content: "\25CF\00A0recorded"; color: var(--ok); }
+[data-certainty="inferred"]::after { content: "\25D0\00A0inferred"; color: var(--warn); }
+[data-certainty="guessed"]::after { content: "\25CB\00A0guessed"; color: var(--warn); }
+[data-certainty="unknown"]::after { content: "\2298\00A0unknown"; color: var(--muted); }
+
+/* The key, shown once per screen that uses the marks rather than on every row.
+   A legend repeated in forty places is noise; a legend nowhere is a cipher. */
+.key { display: flex; gap: var(--sp-3) var(--sp-6); flex-wrap: wrap; }
+.key > span { display: inline-flex; align-items: baseline; gap: var(--sp-2); }
+.key .means { color: var(--muted); font-size: var(--fs-sm); }
+
+/* --- pills, chips, facets ----------------------------------------------- */
+
+/* A pill states a fact about the current context — the target, the feed. It is
+   never interactive, which is why it is never blue. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   padding: var(--sp-1) var(--sp-4);
   border-radius: 999px;
-  font-size: var(--fs-xs);
-  font-weight: 600;
   border: 1px solid var(--line);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  background: var(--panel);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
 }
 .pill.simulated { color: var(--sim); border-color: var(--sim); }
 .pill.live { color: var(--bad); border-color: var(--bad); }
@@ -51,83 +181,191 @@
 .pill.warn { color: var(--warn); border-color: var(--warn); }
 .pill.bad { color: var(--bad); border-color: var(--bad); }
 
-/* Colour is never the only channel. Every state carries a glyph too, so the
- * palette is legible to a colour-blind reader and survives a screenshot. */
-.pill::before { margin-right: var(--sp-2); }
-.pill.ok::before { content: "\2713"; }
-.pill.warn::before { content: "\26A0"; }
-.pill.bad::before { content: "\2715"; }
+/* Colour is never the only channel. Every state carries a mark as well, so the
+   palette survives a colour-blind reader and a screenshot pasted into a
+   ticket — which is where most of these end up. */
+.pill::before { line-height: 1; }
+.pill.ok::before { content: "\25CF"; }
+.pill.warn::before { content: "\25D0"; }
+.pill.bad::before { content: "\2298"; }
 .pill.live::before { content: "\25CF"; }
 .pill.simulated::before { content: "\25CB"; }
 
-.chip {
-  display: inline-block;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  color: var(--text);
-  border-radius: 999px;
+/* A facet *filters*, so it is interactive, so the selected one is blue. Counts
+   sit inside the facet because a filter whose size you cannot see is a filter
+   you have to click to evaluate. */
+.facets { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.facet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-4);
-  margin: var(--sp-1) var(--sp-2) var(--sp-1) 0;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
   cursor: pointer;
-  font-size: var(--fs-md);
-  font-family: var(--mono);
+  font-size: var(--fs-sm);
   min-height: var(--control-h);
 }
-.chip.usable:hover { border-color: var(--accent); color: var(--accent); }
+.facet:hover { border-color: var(--line-strong); }
+.facet .count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.facet.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.facet.on .count { color: var(--accent); }
+
+/* Tabs within a page, ruled underneath — the references' detail-page pattern.
+   Distinct from the rail on purpose: the rail moves you between products, tabs
+   move you between views of the one thing you are already looking at. */
+.tabs {
+  display: flex;
+  gap: var(--sp-5);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--sp-5);
+  overflow-x: auto;
+}
+.tabs a, .tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  padding: var(--sp-3) 0;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: var(--fs-md);
+  min-height: var(--control-h);
+}
+.tabs a:hover, .tabs button:hover { color: var(--text); }
+.tabs a.active, .tabs button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-4);
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  font-family: var(--face-fact);
+  min-height: var(--control-h);
+}
+.chip.usable:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 /* Disabled rather than hidden: hiding an unusable verb hides the type graph,
-   and the shape of what can follow what is the thing worth learning. */
-.chip.blocked { opacity: 0.35; cursor: not-allowed; }
-.chip.danger { border-color: var(--bad); }
-.chip.danger.usable:hover { color: var(--bad); border-color: var(--bad); }
+   and the shape of what can follow what is the thing worth learning here. */
+.chip.blocked { opacity: 0.45; cursor: not-allowed; background: var(--panel-2); }
+.chip.danger { border-color: var(--warn); color: var(--warn); }
+.chip.danger.usable:hover { border-color: var(--bad); color: var(--bad); background: var(--panel); }
 
 /* --- controls ----------------------------------------------------------- */
 
+/* One filled blue button per screen: the thing to do. Everything else is
+   outlined. A screen with three filled buttons has told the reader nothing
+   about which one they came for. */
 button.go {
   background: var(--accent);
   color: var(--accent-ink);
-  border: none;
-  padding: var(--sp-3) var(--sp-6);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--accent);
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--radius);
   cursor: pointer;
   font-weight: 600;
-  min-height: var(--control-h);
-}
-button.go:hover { filter: brightness(1.1); }
-button.go.danger { background: var(--bad); }
-button.go[disabled] { opacity: 0.4; cursor: not-allowed; }
-
-.ask { display: flex; gap: var(--sp-3); margin-bottom: var(--gap); }
-.ask input {
-  flex: 1;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  padding: var(--sp-3) var(--sp-5);
-  border-radius: var(--radius-lg);
-  font-size: var(--fs-lg);
-  min-height: var(--control-h);
-}
-.ask input:focus { outline: none; border-color: var(--accent); }
-
-.param { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-md);
-         color: var(--muted); }
-.param input[type="text"], .param input:not([type]), .param select {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--sp-2) var(--sp-3);
   font-size: var(--fs-md);
   min-height: var(--control-h);
+  white-space: nowrap;
+}
+button.go:hover { filter: brightness(1.08); }
+button.go.danger { background: var(--bad); border-color: var(--bad); }
+button.go[disabled] { opacity: 0.45; cursor: not-allowed; filter: none; }
+
+button.go.quiet {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--line);
+  font-weight: 400;
+}
+button.go.quiet:hover { border-color: var(--line-strong); filter: none; }
+
+.ask { display: flex; gap: var(--sp-3); }
+.ask input { flex: 1; font-size: var(--fs-md); }
+
+/* Every text field looks like a field. A bare `<input>` inherits the browser's
+   chrome, which on a themed surface is a hole in the page. */
+input[type="text"], input[type="search"], input:not([type]), select, textarea {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-4);
+  min-height: var(--control-h);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+input::placeholder { color: var(--muted); }
+
+.param {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.param > span { font-family: var(--face-fact); }
+.param input[type="text"], .param input:not([type]), .param select {
+  font-family: var(--face-fact);
+  font-size: var(--fs-sm);
   min-width: var(--field-w);
 }
 
 /* --- panel states ------------------------------------------------------- */
 
-.empty { color: var(--muted); font-style: italic; padding: var(--sp-5) 0; }
+/* Genuinely empty: the platform looked and there was nothing. Quiet, centred,
+   and deliberately *not* the same treatment as unsurveyed ground. */
+.empty {
+  color: var(--muted);
+  padding: var(--sp-6) var(--sp-5);
+  text-align: center;
+}
+
+/* Ground nobody surveyed. A dashed frame rather than a solid one — the same
+   convention a chart uses for a projected series — plus the glyph, what was not
+   looked at, why, and where that leaves the reader. It must never be mistaken
+   for `.empty`, because "I found nothing" and "I did not look" are the two
+   answers this whole platform exists to keep apart. */
+.unsurveyed {
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--panel-2);
+  padding: var(--sp-6) var(--sp-5);
+  display: grid;
+  gap: var(--sp-3);
+  justify-items: center;
+  text-align: center;
+}
+.unsurveyed .glyph { font-size: var(--fs-xl); color: var(--muted); line-height: 1; }
+.unsurveyed .what { font-weight: 600; font-size: var(--fs-lg); }
+.unsurveyed .why { color: var(--muted); max-width: var(--measure); }
 
 /* A skeleton row rather than a spinner. A spinner says "something is
- * happening"; a skeleton says "a table of this shape is arriving", which is
- * the difference between waiting and knowing what you are waiting for. And it
- * does not move, which matters under `prefers-reduced-motion`. */
+   happening"; a skeleton says "a table of this shape is arriving", which is the
+   difference between waiting and knowing what you are waiting for — and it does
+   not move, which matters to a reader who asked for reduced motion. */
 .skeleton { display: grid; gap: var(--sp-2); }
 .skeleton > i {
   display: block;
@@ -136,61 +374,65 @@ button.go[disabled] { opacity: 0.4; cursor: not-allowed; }
   border-radius: var(--radius);
 }
 
-/* A refusal is an answer, not a fault. It uses the accent, never the danger
- * colour: rendering a 403 in red teaches people that policy is a bug, and then
- * they file tickets about it. */
-.refusal {
-  border-left: 3px solid var(--accent);
-  background: var(--panel-2);
-  padding: var(--sp-4);
-  border-radius: 0 var(--radius) var(--radius) 0;
+/* A refusal is the platform working, not failing. It takes the notice
+   treatment, never the danger colour: rendering policy in red teaches people
+   that policy is a bug, and then they file tickets about their own
+   permissions. */
+.refusal, .fault, .stale, .gap {
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: var(--sp-4) var(--sp-5);
 }
-.refusal h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-md); }
+.refusal { border-left-color: var(--accent); }
+.fault { border-left-color: var(--bad); }
+.stale { border-left-color: var(--warn); font-size: var(--fs-sm); }
+.gap { border-left-color: var(--warn); }
+
+.refusal h3, .fault h3 {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-md);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.refusal h3 { color: var(--accent); }
+.refusal h3::before { content: "\26BF"; }
+.fault h3 { color: var(--bad); }
+.fault h3::before { content: "\2298"; }
+.refusal p, .fault p { margin: 0; }
 .refusal .obligation { color: var(--muted); font-size: var(--fs-sm); margin-top: var(--sp-3); }
 
-.fault {
-  border-left: 3px solid var(--bad);
-  background: var(--panel-2);
-  padding: var(--sp-4);
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
-.stale {
-  border-left: 3px solid var(--warn);
-  padding: var(--sp-3) var(--sp-4);
-  background: var(--panel-2);
+.gap .what {
+  font-weight: 600;
+  color: var(--warn);
   font-size: var(--fs-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
 }
+.gap .what::before { content: "\25D0"; }
+.gap .fix { color: var(--text); margin-top: var(--sp-1); }
 
-/* --- evidence and findings ---------------------------------------------- */
-
-.gap {
-  border-left: 3px solid var(--warn);
-  padding: var(--sp-3) var(--sp-4);
-  background: var(--panel-2);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  margin-bottom: var(--sp-3);
-}
-.gap .what { font-weight: 600; font-size: var(--fs-md); }
-.gap .fix { color: var(--muted); font-size: var(--fs-sm); margin-top: var(--sp-1); }
+/* --- evidence ----------------------------------------------------------- */
 
 .finding { border-left-width: 3px; border-left-style: solid; }
 .finding.critical { border-left-color: var(--crit); }
 .finding.high { border-left-color: var(--bad); }
 .finding.medium { border-left-color: var(--warn); }
-.finding.low, .finding.info { border-left-color: var(--muted); }
+.finding.low, .finding.info { border-left-color: var(--line-strong); }
 
+/* A reasoning step is a claim; its citation is a fact. The citation sets in the
+   monospace face because it is a file and a line — something the platform read
+   and is quoting back, not something it wrote. */
 .step {
   padding: var(--sp-2) 0 var(--sp-2) var(--sp-5);
   border-left: 2px solid var(--line);
-  font-size: var(--fs-md);
 }
-.step .cite { color: var(--muted); font-family: var(--mono); font-size: var(--fs-xs); }
+.step .cite { color: var(--accent); font-family: var(--face-fact); font-size: var(--fs-xs); }
 
-.bar { height: var(--sp-3); background: var(--panel-2); border-radius: var(--radius); overflow: hidden; }
-.bar > div { height: 100%; background: var(--accent); }
-
-.facts { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: var(--sp-3) 0; }
-.facts .fact { font-size: var(--fs-md); }
-.facts .k { color: var(--muted); }
-.facts .v { font-family: var(--mono); margin-left: var(--sp-3); }
+.facts { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6); margin: var(--sp-3) 0; }
+.facts .fact { display: grid; gap: var(--sp-1); }
+.facts .k { color: var(--muted); font-size: var(--fs-xs); }
+.facts .v { font-family: var(--face-fact); font-size: var(--fs-sm); }

@@ -24,7 +24,9 @@ export function classify(status, body) {
   const payload = body || {};
 
   if (status === 403 || payload.refused) return REFUSAL;
-  if (status === 409 || payload.type === "NoEnvironment") return NO_ENVIRONMENT;
+  // Both 409s say the same thing about different subsystems: the platform
+  // could not look. One classification, so one rendering.
+  if (status === 409) return NO_ENVIRONMENT;
   if (status === 429) return THROTTLED;
   if (status === 404) return ABSENT;
   if (status === 400 && payload.type === "TypeMismatch") return TYPE_ERROR;
@@ -54,7 +56,12 @@ export function describe(status, body) {
       };
     case NO_ENVIRONMENT:
       return {
-        kind, className: "empty", heading: "No environment open", message,
+        kind,
+        className: "empty",
+        heading: payload.type === "NoControlPlane"
+          ? "no tenancy surveyed"
+          : "no environment surveyed",
+        message,
       };
     case THROTTLED:
       return {

@@ -4,7 +4,7 @@
  *
  *   bench    dense and tabular — the register for somebody working a list all
  *            day, and the one the interface opens in.
- *   reading  calm — more leading, fewer rows, a capped measure. For reading an
+ *   reading  calm — more leading, taller rows, a capped measure. For reading an
  *            answer rather than scanning a table.
  *
  * This is a token axis rather than two layouts on purpose. Two layouts would
@@ -24,31 +24,41 @@
   --sp-5: 14px;
   --sp-6: 20px;
 
-  --fs-xs: 10px;
-  --fs-sm: 11px;
-  --fs-md: 12px;
-  --fs-lg: 14px;
-  --fs-xl: 22px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 26px;
+  --fs-2xl: 22px;   /* the page title */
 
-  --lh: 1.35;
-  --row-h: 24px;
-  --control-h: 26px;
-  --radius: 5px;
+  --lh: 1.45;
+  --row-h: 30px;
+  --control-h: 30px;
+  --radius: 6px;
   --radius-lg: 8px;
 
-  --card-pad: var(--sp-4);
-  --gap: var(--sp-3);
-  --measure: 100%;
+  --card-pad: var(--sp-5);
+  --gap: var(--sp-5);
+  --measure: 78ch;
   --numerals: tabular-nums;
 
-  /* Named widths. These are geometry like any other: a field that stays 90px
-     wide while the type around it grows is the tell that a register was bolted
-     on rather than designed in. */
-  --field-w: 90px;
-  --label-w: 92px;
-  --seq-w: 42px;
-  --kind-w: 170px;
-  --feed-h: 460px;
+  /* The shell's own frame. Geometry like any other, so the rail and the bar
+     breathe with the register instead of staying fixed while the type grows —
+     which is the tell that a register was bolted on rather than designed in. */
+  --rail-w: 216px;
+  --topbar-h: 52px;
+  --page-w: 1600px;
+  --card-min: 260px;
+  --glyph-w: 16px;
+
+  /* Named widths for fields that must line up column-to-column. */
+  --field-w: 100px;
+  --label-w: 96px;
+  --seq-w: 48px;
+  --kind-w: 180px;
+  --feed-h: 420px;
+
+  --tracking: 0.04em;
 }
 
 [data-density="reading"] {
@@ -59,28 +69,37 @@
   --sp-5: 24px;
   --sp-6: 32px;
 
-  --fs-xs: 11px;
-  --fs-sm: 12px;
-  --fs-md: 14px;
-  --fs-lg: 17px;
-  --fs-xl: 30px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 34px;
+  --fs-2xl: 28px;
 
-  --lh: 1.6;
-  --row-h: 40px;
+  --lh: 1.65;
+  --row-h: 44px;
   --control-h: 38px;
   --radius: 8px;
   --radius-lg: 12px;
 
-  --card-pad: var(--sp-5);
-  --gap: var(--sp-4);
-  --measure: 72ch;
+  --card-pad: var(--sp-6);
+  --gap: var(--sp-5);
+  --measure: 68ch;
   --numerals: normal;
 
-  --field-w: 140px;
-  --label-w: 120px;
-  --seq-w: 56px;
-  --kind-w: 210px;
-  --feed-h: 360px;
+  --rail-w: 248px;
+  --topbar-h: 64px;
+  --page-w: 1360px;
+  --card-min: 300px;
+  --glyph-w: 18px;
+
+  --field-w: 150px;
+  --label-w: 124px;
+  --seq-w: 60px;
+  --kind-w: 220px;
+  --feed-h: 380px;
+
+  --tracking: 0.06em;
 }
 
 /* Hit targets, whatever the register. 44px is the floor below which a thumb

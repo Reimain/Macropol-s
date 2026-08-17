@@ -14,7 +14,7 @@ import { fill, h, link } from "../core/dom.js";
 import { cell, subscribe } from "../core/store.js";
 import { confidence, count, short } from "../core/format.js";
 import { datasets as loadDatasets, search as loadSearch } from "../data/queries.js";
-import { card, panel } from "../ui/panel.js";
+import { card, claim, key, panel, unsurveyed } from "../ui/panel.js";
 import { pill } from "../ui/pill.js";
 import { scrolling, table } from "../ui/table.js";
 
@@ -78,15 +78,23 @@ function results(nodes) {
       key: "id",
       label: "Node",
       className: "mono",
-      render: (row) => link(
-        `#/node/${encodeURIComponent(row.id)}`, {}, short(row.identity || row.id, 28),
+      // The identity carries its own certainty as a rule beneath it, so a
+      // reader scanning the column sees how each row was arrived at without
+      // reading a single number.
+      render: (row) => claim(
+        link(`#/node/${encodeURIComponent(row.id)}`, {}, short(row.identity || row.id, 28)),
+        row.confidence,
       ),
     },
     { key: "kind", label: "Kind", density: "bench" },
     {
       key: "confidence",
-      label: "Confidence",
+      label: "Score",
       className: "right mono",
+      // Kept, and demoted to the dense register only. The number is what you
+      // check once you have decided a row is worth checking; the mark is what
+      // makes you decide.
+      density: "bench",
       render: (row) => confidence(row.confidence),
     },
   ];
@@ -124,13 +132,23 @@ export function mount(outlet, params, query) {
     fill(outlet, h("div", { class: "stack" },
       trail(params),
       h("div", { class: "ask" }, field, go),
-      card("Datasets", panel(grants, (value) =>
-        datasetRows(value.datasets || [], params), {
-        sentence: "No control plane is attached, so no datasets are catalogued.",
-      })),
+      card("Datasets", panel(grants, (value) => {
+        const rows = value.datasets || [];
+        // A tenancy nobody has provisioned and a tenancy this build cannot see
+        // are different answers, and only one of them is an empty table.
+        return rows.length
+          ? datasetRows(rows, params)
+          : unsurveyed(
+            "not catalogued",
+            "No control plane is attached to this build, so nothing here has "
+            + "been surveyed — this is not the same as there being no datasets.",
+          );
+      }, { sentence: "Nothing here has been catalogued." })),
       term
-        ? card(`Matches for “${term}”`, panel(found, (value) =>
-          results(value.results || []), { sentence: "Nothing matched." }))
+        ? card(`Matches for “${term}”`,
+          panel(found, (value) => h("div", { class: "stack" },
+            key(), results(value.results || [])),
+          { sentence: "Nothing matched." }))
         : null));
   }
 

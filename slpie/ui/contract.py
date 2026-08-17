@@ -529,7 +529,23 @@ class Screen:
     action: str = ""                     # the RBAC action, dotted
     resource: str = "*"
     crumbs: tuple[str, ...] = ()         # parent screen keys, outermost first
+    parent: str = ""                     # the screen this is a *view of*
+    summary: str = ""                    # one line, shown under the page title
     authored: bool = False               # a hand-built screens/<key>.js exists
+
+    @property
+    def is_destination(self) -> bool:
+        """Whether this belongs in the rail.
+
+        A screen with a parent is a *view of* something rather than a place you
+        go, so it appears as a tab on its parent's page and never as a rail row.
+        Without this rule the rail listed Node, Impact, Cycles and History as
+        peers of Graph — while those same screens declared `crumbs=("graph",)`,
+        so the manifest already knew they were children and the navigation was
+        contradicting its own data. Eleven Operate rows, of which four were
+        details of another row, is how a rail stops being a map.
+        """
+        return not self.parent
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -543,6 +559,8 @@ class Screen:
             "action": self.action,
             "resource": self.resource,
             "crumbs": list(self.crumbs),
+            "parent": self.parent,
+            "summary": self.summary,
             "authored": self.authored,
         }
 
@@ -551,67 +569,115 @@ class Screen:
 #: inspector, and an inspector is deliberately utilitarian: four finished screens
 #: and thirty-two honest inspectors reads as a platform, where thirty-six
 #: half-designed screens reads as a broken product.
+#:
+#: **A screen with a `parent` is a view, not a destination.** It renders as a tab
+#: on its parent's page and never appears in the rail. Node, Impact and Cycles
+#: are things you look at *about a graph*; History is a view *of the ledger*;
+#: Reconciliation is a view *of the environment*. Listing them beside their own
+#: parents made the rail a list of every page rather than a map of the product,
+#: which is the difference between navigation and a table of contents.
 DESIGNED: tuple[Screen, ...] = (
     Screen("console", "/", "Console", "console",
            reads=("GET /api/status", "GET /api/manifest", "GET /api/stream"),
            verbs=("ask", "options", "suggest", "accept", "dismiss"),
-           events=("*",), action="intelligence.ask"),
+           events=("*",), action="intelligence.ask",
+           summary="Ask about this environment and get the answer with the "
+                   "reasoning that produced it and the gaps that limit it."),
     Screen("compose", "/compose", "Compose", "operate",
            reads=("GET /api/verbs",), verbs=("routine",),
-           action="platform.discover"),
+           action="platform.discover",
+           summary="Build a pipeline from typed verbs. Invalid compositions are "
+                   "refused before anything runs."),
     Screen("findings", "/findings/:severity?", "Findings", "operate",
            reads=("GET /api/findings",), verbs=("findings", "govern", "rules"),
            events=("finding_raised", "constraint_violated"),
-           action="analysis.findings"),
+           action="analysis.findings",
+           summary="Everything the rules raised, ranked by severity, each with "
+                   "its evidence and a remediation."),
+
     Screen("graph", "/graph", "Graph", "operate",
            reads=("GET /api/graph",), verbs=("graph", "search"),
            events=("node_asserted", "edge_asserted", "node_retired"),
-           action="environment.graph"),
-    Screen("node", "/node/:id", "Node", "operate",
+           action="environment.graph",
+           summary="Nodes and edges as the platform observed them, shaded by "
+                   "the confidence of the evidence behind each one."),
+    Screen("node", "/node/:id", "Node", "operate", parent="graph",
            reads=("GET /api/node",), events=("node_asserted", "node_retired"),
            action="environment.graph", crumbs=("graph",)),
-    Screen("impact", "/impact/:id", "Impact", "operate",
+    Screen("impact", "/impact/:id", "Impact", "operate", parent="graph",
            reads=("GET /api/impact",), verbs=("impact", "radius"),
            action="environment.impact", crumbs=("graph", "node")),
-    Screen("cycles", "/cycles", "Cycles", "operate",
-           reads=("GET /api/cycles",), action="environment.graph"),
-    Screen("reconcile", "/reconcile", "Reconciliation", "operate",
-           reads=("GET /api/reconcile",), verbs=("reconcile", "declare"),
-           events=("contradiction_found",), action="environment.reconcile"),
-    Screen("station", "/station", "Station", "operate",
+    Screen("cycles", "/cycles", "Cycles", "operate", parent="graph",
+           reads=("GET /api/cycles",), action="environment.graph",
+           crumbs=("graph",)),
+
+    Screen("station", "/station", "Environment", "operate",
            reads=("GET /api/station",), verbs=("attach", "gaps", "status"),
            events=("element_attached", "capability_refused"),
-           action="environment.attach"),
-    Screen("history", "/history/:subject?", "History", "operate",
-           reads=("GET /api/history", "GET /api/causation"),
-           verbs=("history",), action="dispatch.history"),
+           action="environment.attach",
+           summary="What is attached, which capabilities each element granted "
+                   "or refused, and the gaps those refusals put on every answer."),
+    Screen("reconcile", "/reconcile", "Reconciliation", "operate",
+           parent="station", crumbs=("station",),
+           reads=("GET /api/reconcile",), verbs=("reconcile", "declare"),
+           events=("contradiction_found",), action="environment.reconcile"),
+
     Screen("ledger", "/ledger", "Ledger", "operate",
            reads=("GET /api/integrity", "GET /api/projections",
                   "GET /api/stream/status"),
-           action="platform.discover"),
+           action="platform.discover",
+           summary="The append-only record every answer is derived from: chain "
+                   "integrity, projection lag, and the live feed's own health."),
+    Screen("history", "/history/:subject?", "History", "operate",
+           parent="ledger", crumbs=("ledger",),
+           reads=("GET /api/history", "GET /api/causation"),
+           verbs=("history",), action="dispatch.history"),
+
     Screen("simulator", "/simulator", "Simulator", "operate",
            reads=("GET /api/scenarios",), verbs=("simulate", "fire", "target"),
            events=("scenario_fired", "target_changed"),
-           action="environment.target"),
+           action="environment.target",
+           summary="Materialise the declared world as real files, fire a "
+                   "scenario at it, and watch the platform react."),
+
     Screen("catalog", "/catalog/:tenant?/:realm?/:dataset?/:object?", "Catalog",
            "catalog", reads=("GET /api/search", "GET /api/admin/datasets"),
            verbs=("scan", "changed"),
-           events=("node_asserted", "node_retired"), action="dataset.read"),
+           events=("node_asserted", "node_retired"), action="dataset.read",
+           summary="Tenants, realms, datasets and objects — everything the "
+                   "platform has catalogued, with its lineage."),
+
+    Screen("verbs", "/verbs", "Verbs", "build",
+           reads=("GET /api/verbs",), action="platform.discover",
+           summary="Every capability this build has, as a typed verb. Each one "
+                   "is reachable from the CLI, the API and a pipeline."),
+
     Screen("portal", "/portal/:api?", "Developer portal", "api",
            reads=("GET /api/manual", "GET /api/contract", "GET /api/apim/apis"),
-           action="platform.discover"),
+           action="platform.discover",
+           summary="The APIs this platform publishes, their operations, and a "
+                   "console to try them."),
     Screen("gateway", "/gateway", "Gateway", "api",
            reads=("GET /api/routes", "GET /api/apim/gateway"),
-           action="apim.gateway.read"),
-    Screen("throttling", "/throttling", "Throttling", "api",
+           action="apim.gateway.read",
+           summary="The live route table and the policy chain in front of it — "
+                   "which rule admitted or refused each call, and why."),
+    Screen("throttling", "/throttling", "Throttling", "api", parent="gateway",
+           crumbs=("gateway",),
            reads=("GET /api/apim/throttles",), action="apim.throttles.read"),
-    Screen("analytics", "/analytics", "Analytics", "api",
+    Screen("analytics", "/analytics", "Analytics", "api", parent="gateway",
+           crumbs=("gateway",),
            reads=("GET /api/apim/analytics",), action="apim.analytics.read"),
     Screen("keys", "/apps/:application?", "Applications and keys", "api",
-           reads=("GET /api/apim/subscriptions",), action="apim.subscriptions.read"),
+           reads=("GET /api/apim/subscriptions",), action="apim.subscriptions.read",
+           summary="Applications, their subscriptions, and the credentials "
+                   "issued to them."),
+
     Screen("workspaces", "/admin/workspaces/:id?", "Workspaces", "admin",
            reads=("GET /api/admin/workspaces", "GET /api/admin/quota"),
-           action="workspace.create"),
+           action="workspace.create",
+           summary="Tenancy, quotas and headroom, and the grants that decide "
+                   "who may read which dataset."),
 )
 
 
@@ -651,11 +717,18 @@ def screens(
             # Every verb in this group already has a designed home. An inspector
             # would be a second, worse way to reach the same capability.
             continue
+        # A group inspector is a *view of the verb catalogue*, not a place in
+        # the product, so it hangs off `verbs` rather than taking a rail row of
+        # its own. Eleven generated rows sitting beside the designed screens was
+        # the rail advertising the implementation's shape instead of the
+        # product's.
         known.setdefault(f"group-{group}", Screen(
             key=f"group-{group}",
             path=f"/inspect/{group}",
             title=group.replace("-", " ").title(),
             section="build",
+            parent="verbs",
+            crumbs=("verbs",),
             verbs=uncovered,
             action=f"{group}.*",
         ))
@@ -670,16 +743,23 @@ def screens(
             path=f"/inspect{path.replace('/api', '')}",
             title=path.replace("/api/", "").replace("/", " ").title(),
             section="build",
+            parent="verbs",
+            crumbs=("verbs",),
             reads=(f"{method} {path}",),
             action="platform.discover",
         ))
 
+    # Destinations first within each section, then their views. The rail reads
+    # the first group and a parent's page reads the second, so one ordering
+    # serves both rather than each sorting the manifest its own way.
     return tuple(
         Screen(**{**screen.to_dict(), "authored": _authored(screen.key),
                   "reads": screen.reads, "verbs": screen.verbs,
                   "events": screen.events, "crumbs": screen.crumbs})
         for screen in sorted(known.values(), key=lambda s: (
             SECTIONS.index(s.section) if s.section in SECTIONS else len(SECTIONS),
+            s.parent or s.key,
+            bool(s.parent),
             s.key,
         ))
     )

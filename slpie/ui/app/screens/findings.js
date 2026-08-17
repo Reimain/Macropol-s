@@ -11,7 +11,7 @@ import { fill, h, link } from "../core/dom.js";
 import { cell, subscribe } from "../core/store.js";
 import { cite, count } from "../core/format.js";
 import { findings as loadFindings } from "../data/queries.js";
-import { card, panel } from "../ui/panel.js";
+import { card, claim, key, panel, unsurveyed } from "../ui/panel.js";
 import { severity } from "../ui/pill.js";
 import { scrolling, table } from "../ui/table.js";
 
@@ -36,12 +36,19 @@ function evidence(item) {
   if (!found.length) {
     // Not "no evidence" — the platform does not raise a finding without any.
     // An empty list here means this projection did not carry it, which is a
-    // different statement and should read as one.
-    return h("p", { class: "muted" }, "evidence not included in this view");
+    // different statement and has to read as one.
+    return unsurveyed(
+      "evidence not carried",
+      "This view did not fetch the evidence behind the finding. It exists — "
+      + "the platform raises nothing without it — and it is not here.",
+    );
   }
   return h("ul", { class: "reasoning" },
     found.map((piece) => h("li", {},
-      h("span", {}, piece.kind || "evidence"),
+      // The kind of evidence *is* the certainty: a lockfile pin and a name
+      // heuristic are both "evidence", and conflating them is the mistake the
+      // whole confidence ladder exists to prevent.
+      claim(piece.kind || "evidence", piece.confidence),
       h("div", { class: "cite mono" }, cite(piece.location)),
       piece.excerpt ? h("div", { class: "muted mono" }, piece.excerpt) : null)));
 }
@@ -95,11 +102,11 @@ function list(items, chosen) {
 
 export function mount(outlet, params, query) {
   const chosen = params.severity || "";
-  const key = `findings:${chosen}`;
+  const cellKey = `findings:${chosen}`;
   const opened = query.open || "";
 
   function draw() {
-    const held = cell(key);
+    const held = cell(cellKey);
     const body = panel(held, (value) => {
       const items = (value && value.findings) || [];
       const open = items.find((item) => String(item.id) === opened);
@@ -107,13 +114,14 @@ export function mount(outlet, params, query) {
         h("p", { class: "muted" },
           `${count(items.length)} finding${items.length === 1 ? "" : "s"}`),
         list(items, chosen),
-        open ? detail(open) : null);
+        open ? detail(open) : null,
+        open ? key() : null);
     }, { sentence: "No findings.", rows: 6 });
 
     fill(outlet, h("div", { class: "stack" }, facets(chosen), card("", body)));
   }
 
-  stop = subscribe(key, draw);
+  stop = subscribe(cellKey, draw);
   draw();
   loadFindings(chosen);
 }

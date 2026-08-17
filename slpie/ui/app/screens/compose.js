@@ -174,7 +174,10 @@ export function mount(outlet, params, query) {
     "aria-label": "ask for a composition",
   });
 
-  const text = h("input", { type: "text", class: "mono", "aria-label": "pipeline" });
+  const text = h("input", {
+    type: "text", class: "mono", "aria-label": "the composition, as text",
+    style: { flex: "1" },
+  });
   const confirm = h("input", { type: "checkbox" });
 
   redraw = () => {
@@ -226,7 +229,7 @@ export function mount(outlet, params, query) {
             },
           }, "Run"),
           h("button", {
-            type: "button", class: "go",
+            type: "button", class: "go quiet",
             onclick: () => {
               stages = [];
               outcome = null;

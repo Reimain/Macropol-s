@@ -13,7 +13,8 @@
 
 import { h } from "../core/dom.js";
 import { ERROR, LOADING, READY, REFUSED } from "../core/store.js";
-import { ago } from "../core/format.js";
+import { ago, certainty, CERTAINTY, CERTAINTY_MEANS } from "../core/format.js";
+import { NO_ENVIRONMENT } from "../core/result.js";
 
 /** Skeleton rows at the current row height, not a spinner.
  *
@@ -28,6 +29,87 @@ export function loading(rows = 4) {
 
 export function empty(sentence) {
   return h("p", { class: "empty" }, sentence);
+}
+
+/**
+ * Ground the platform did not survey.
+ *
+ * Not `empty`. Blank means "there is nothing here"; this means "I did not look
+ * here", and the whole product rests on those being different answers —
+ * `Coverage.UNKNOWN`, `INDETERMINATE`, a refused capability, a quarantined
+ * document. A dashboard that renders all four as an empty panel has quietly
+ * turned "I could not see" into "there was nothing", which is the one mistake
+ * this platform exists to refuse.
+ *
+ * `next` is the thing that would make it look — the console's own suggestion
+ * mechanism, at the moment a reader is most stuck. An unknown-state card that
+ * only reports is a dead end; one that offers the composition is a step.
+ */
+export function unsurveyed(what, why, next = null) {
+  return h("div", { class: "unsurveyed", role: "note" },
+    h("div", { class: "glyph", "aria-hidden": "true" }, "⊘"),
+    h("div", { class: "what" }, what),
+    why ? h("div", { class: "why" }, why) : null,
+    next);
+}
+
+/**
+ * A claim, carrying the mark for how it was arrived at.
+ *
+ * The text never dims. Rendering a 0.25 claim at a quarter opacity is the
+ * obvious move and it makes the thing unreadable, so the uncertainty lives in
+ * the trailing chip and the ink stays at full contrast.
+ */
+export function claim(value, confidence) {
+  const band = certainty(confidence);
+  return h("span", {
+    dataset: { certainty: band },
+    title: `${CERTAINTY_MEANS[band]}${
+      confidence == null ? "" : ` (${Number(confidence).toFixed(2)})`
+    }`,
+  }, value);
+}
+
+/** The key, shown once per screen that uses the marks — never per row. */
+export function key() {
+  return h("div", { class: "key" },
+    CERTAINTY.map((band) =>
+      h("span", {},
+        h("span", { dataset: { certainty: band } }),
+        h("span", { class: "means" }, CERTAINTY_MEANS[band]))));
+}
+
+/** A status: a glyph, a word, a colour. Never colour alone — that is unreadable
+ *  to a colour-blind reviewer and to a screenshot pasted into a ticket, which
+ *  is where most of these end up. */
+export function status(word, tone = "none") {
+  return h("span", { class: `status ${tone}` }, word);
+}
+
+/** A proportion, drawn as one whole divided. `parts` is `[[count, tone], …]`. */
+export function bar(parts) {
+  const total = parts.reduce((sum, [count]) => sum + Number(count || 0), 0);
+  if (!total) return h("div", { class: "bar" }, h("div", { class: "rest", style: { width: "100%" } }));
+  return h("div", { class: "bar" },
+    parts.filter(([count]) => count > 0).map(([count, tone]) =>
+      h("div", { class: tone, style: { width: `${(count / total) * 100}%` } })));
+}
+
+/** The metric card both references open every page with: label, big number,
+ *  and — where the number is a proportion — the bar and its legend. */
+export function metric(label, value, { unit = "", when = "", parts = null } = {}) {
+  return h("div", { class: "metric-card" },
+    h("div", { class: "head" },
+      h("span", {}, label),
+      when ? h("span", { class: "when" }, when) : null),
+    h("div", { class: "metric" }, String(value),
+      unit ? h("small", {}, unit) : null),
+    parts ? bar(parts) : null,
+    parts
+      ? h("div", { class: "legend" }, parts.filter(([count]) => count > 0)
+        .map(([count, tone, name]) =>
+          h("span", {}, h("i", { class: tone }), `${count} ${name || tone}`)))
+      : null);
 }
 
 export function refusal(error) {
@@ -72,6 +154,15 @@ export function panel(cell, body, { sentence = "Nothing here.", rows = 4 } = {})
   if (cell.status === REFUSED) return refusal(cell.error || {});
   if (cell.status === ERROR && cell.value === null) {
     const error = cell.error || {};
+    // A 409 is the platform saying it could not look — no environment is open,
+    // no control plane is attached. That is unsurveyed ground, not an empty
+    // result, and rendering it as one italic sentence is exactly the
+    // conflation this console exists to refuse. Handling it here rather than
+    // in each screen makes every screen honest by construction instead of by
+    // remembering.
+    if (error.kind === NO_ENVIRONMENT) {
+      return unsurveyed(error.heading || "not surveyed", error.message);
+    }
     return error.className === "empty"
       ? empty(error.message || sentence)
       : fault(error);

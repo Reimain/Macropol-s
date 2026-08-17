@@ -24,6 +24,16 @@ export function target(name) {
   return pill(name || "simulated", name === "live" ? "live" : "simulated");
 }
 
+/* The feed's own words. Never "live", which is what a *target* is: two pills
+ * sitting side by side reading "SIMULATED" and "LIVE" is a contradiction on
+ * the screen even though both are true of different things. */
+const FEED = {
+  live: "streaming",
+  connecting: "connecting",
+  reconnecting: "reconnecting",
+  offline: "not streaming",
+};
+
 /**
  * The connection indicator, which says which sequence it last saw.
  *
@@ -33,7 +43,7 @@ export function target(name) {
  */
 export function connection({ state, lastSequence }) {
   const tone = state === "live" ? "ok" : state === "offline" ? "bad" : "warn";
-  const node = pill(state, tone);
+  const node = pill(FEED[state] || state, tone);
   node.id = "connection";
   node.title = lastSequence
     ? `last event seen: ${lastSequence}`

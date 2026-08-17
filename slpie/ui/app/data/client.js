@@ -1490,6 +1490,8 @@ export const SCREENS = Object.freeze([
     "action": "intelligence.ask",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "Ask about this environment and get the answer with the reasoning that produced it and the gaps that limit it.",
     "authored": true
   },
   {
@@ -1507,22 +1509,9 @@ export const SCREENS = Object.freeze([
     "action": "platform.discover",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "Build a pipeline from typed verbs. Invalid compositions are refused before anything runs.",
     "authored": true
-  },
-  {
-    "key": "cycles",
-    "path": "/cycles",
-    "title": "Cycles",
-    "section": "operate",
-    "reads": [
-      "GET /api/cycles"
-    ],
-    "verbs": [],
-    "events": [],
-    "action": "environment.graph",
-    "resource": "*",
-    "crumbs": [],
-    "authored": false
   },
   {
     "key": "findings",
@@ -1544,6 +1533,8 @@ export const SCREENS = Object.freeze([
     "action": "analysis.findings",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "Everything the rules raised, ranked by severity, each with its evidence and a remediation.",
     "authored": true
   },
   {
@@ -1566,24 +1557,27 @@ export const SCREENS = Object.freeze([
     "action": "environment.graph",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "Nodes and edges as the platform observed them, shaded by the confidence of the evidence behind each one.",
     "authored": false
   },
   {
-    "key": "history",
-    "path": "/history/:subject?",
-    "title": "History",
+    "key": "cycles",
+    "path": "/cycles",
+    "title": "Cycles",
     "section": "operate",
     "reads": [
-      "GET /api/history",
-      "GET /api/causation"
+      "GET /api/cycles"
     ],
-    "verbs": [
-      "history"
-    ],
+    "verbs": [],
     "events": [],
-    "action": "dispatch.history",
+    "action": "environment.graph",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "graph"
+    ],
+    "parent": "graph",
+    "summary": "",
     "authored": false
   },
   {
@@ -1605,23 +1599,8 @@ export const SCREENS = Object.freeze([
       "graph",
       "node"
     ],
-    "authored": false
-  },
-  {
-    "key": "ledger",
-    "path": "/ledger",
-    "title": "Ledger",
-    "section": "operate",
-    "reads": [
-      "GET /api/integrity",
-      "GET /api/projections",
-      "GET /api/stream/status"
-    ],
-    "verbs": [],
-    "events": [],
-    "action": "platform.discover",
-    "resource": "*",
-    "crumbs": [],
+    "parent": "graph",
+    "summary": "",
     "authored": false
   },
   {
@@ -1642,26 +1621,49 @@ export const SCREENS = Object.freeze([
     "crumbs": [
       "graph"
     ],
+    "parent": "graph",
+    "summary": "",
     "authored": false
   },
   {
-    "key": "reconcile",
-    "path": "/reconcile",
-    "title": "Reconciliation",
+    "key": "ledger",
+    "path": "/ledger",
+    "title": "Ledger",
     "section": "operate",
     "reads": [
-      "GET /api/reconcile"
+      "GET /api/integrity",
+      "GET /api/projections",
+      "GET /api/stream/status"
     ],
-    "verbs": [
-      "reconcile",
-      "declare"
-    ],
-    "events": [
-      "contradiction_found"
-    ],
-    "action": "environment.reconcile",
+    "verbs": [],
+    "events": [],
+    "action": "platform.discover",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "The append-only record every answer is derived from: chain integrity, projection lag, and the live feed's own health.",
+    "authored": false
+  },
+  {
+    "key": "history",
+    "path": "/history/:subject?",
+    "title": "History",
+    "section": "operate",
+    "reads": [
+      "GET /api/history",
+      "GET /api/causation"
+    ],
+    "verbs": [
+      "history"
+    ],
+    "events": [],
+    "action": "dispatch.history",
+    "resource": "*",
+    "crumbs": [
+      "ledger"
+    ],
+    "parent": "ledger",
+    "summary": "",
     "authored": false
   },
   {
@@ -1684,12 +1686,14 @@ export const SCREENS = Object.freeze([
     "action": "environment.target",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "Materialise the declared world as real files, fire a scenario at it, and watch the platform react.",
     "authored": false
   },
   {
     "key": "station",
     "path": "/station",
-    "title": "Station",
+    "title": "Environment",
     "section": "operate",
     "reads": [
       "GET /api/station"
@@ -1706,6 +1710,49 @@ export const SCREENS = Object.freeze([
     "action": "environment.attach",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "What is attached, which capabilities each element granted or refused, and the gaps those refusals put on every answer.",
+    "authored": false
+  },
+  {
+    "key": "reconcile",
+    "path": "/reconcile",
+    "title": "Reconciliation",
+    "section": "operate",
+    "reads": [
+      "GET /api/reconcile"
+    ],
+    "verbs": [
+      "reconcile",
+      "declare"
+    ],
+    "events": [
+      "contradiction_found"
+    ],
+    "action": "environment.reconcile",
+    "resource": "*",
+    "crumbs": [
+      "station"
+    ],
+    "parent": "station",
+    "summary": "",
+    "authored": false
+  },
+  {
+    "key": "verbs",
+    "path": "/verbs",
+    "title": "Verbs",
+    "section": "build",
+    "reads": [
+      "GET /api/verbs"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "platform.discover",
+    "resource": "*",
+    "crumbs": [],
+    "parent": "",
+    "summary": "Every capability this build has, as a typed verb. Each one is reachable from the CLI, the API and a pipeline.",
     "authored": false
   },
   {
@@ -1723,7 +1770,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "analysis.*",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1741,7 +1792,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "artifacts.*",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1757,7 +1812,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "audit.*",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1774,7 +1833,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "capture.*",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1790,7 +1853,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "dispatch.*",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1805,7 +1872,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "incremental.*",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1820,7 +1891,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "rivals.*",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1841,7 +1916,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "shaping.*",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1856,7 +1935,11 @@ export const SCREENS = Object.freeze([
     "events": [],
     "action": "platform.discover",
     "resource": "*",
-    "crumbs": [],
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
     "authored": false
   },
   {
@@ -1879,22 +1962,9 @@ export const SCREENS = Object.freeze([
     "action": "dataset.read",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "Tenants, realms, datasets and objects \u2014 everything the platform has catalogued, with its lineage.",
     "authored": true
-  },
-  {
-    "key": "analytics",
-    "path": "/analytics",
-    "title": "Analytics",
-    "section": "api",
-    "reads": [
-      "GET /api/apim/analytics"
-    ],
-    "verbs": [],
-    "events": [],
-    "action": "apim.analytics.read",
-    "resource": "*",
-    "crumbs": [],
-    "authored": false
   },
   {
     "key": "gateway",
@@ -1910,6 +1980,46 @@ export const SCREENS = Object.freeze([
     "action": "apim.gateway.read",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "The live route table and the policy chain in front of it \u2014 which rule admitted or refused each call, and why.",
+    "authored": false
+  },
+  {
+    "key": "analytics",
+    "path": "/analytics",
+    "title": "Analytics",
+    "section": "api",
+    "reads": [
+      "GET /api/apim/analytics"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "apim.analytics.read",
+    "resource": "*",
+    "crumbs": [
+      "gateway"
+    ],
+    "parent": "gateway",
+    "summary": "",
+    "authored": false
+  },
+  {
+    "key": "throttling",
+    "path": "/throttling",
+    "title": "Throttling",
+    "section": "api",
+    "reads": [
+      "GET /api/apim/throttles"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "apim.throttles.read",
+    "resource": "*",
+    "crumbs": [
+      "gateway"
+    ],
+    "parent": "gateway",
+    "summary": "",
     "authored": false
   },
   {
@@ -1925,6 +2035,8 @@ export const SCREENS = Object.freeze([
     "action": "apim.subscriptions.read",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "Applications, their subscriptions, and the credentials issued to them.",
     "authored": false
   },
   {
@@ -1942,21 +2054,8 @@ export const SCREENS = Object.freeze([
     "action": "platform.discover",
     "resource": "*",
     "crumbs": [],
-    "authored": false
-  },
-  {
-    "key": "throttling",
-    "path": "/throttling",
-    "title": "Throttling",
-    "section": "api",
-    "reads": [
-      "GET /api/apim/throttles"
-    ],
-    "verbs": [],
-    "events": [],
-    "action": "apim.throttles.read",
-    "resource": "*",
-    "crumbs": [],
+    "parent": "",
+    "summary": "The APIs this platform publishes, their operations, and a console to try them.",
     "authored": false
   },
   {
@@ -1973,6 +2072,8 @@ export const SCREENS = Object.freeze([
     "action": "workspace.create",
     "resource": "*",
     "crumbs": [],
+    "parent": "",
+    "summary": "Tenancy, quotas and headroom, and the grants that decide who may read which dataset.",
     "authored": true
   }
 ]);

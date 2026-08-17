@@ -41,6 +41,7 @@ const SHELL = [
   "/core/result.js", "/core/format.js",
   "/data/client.js", "/data/http.js", "/data/live.js", "/data/queries.js",
   "/ui/panel.js", "/ui/table.js", "/ui/pill.js", "/ui/nav.js", "/ui/density.js",
+  "/ui/opener.js",
   "/screens/index.js", "/screens/console.js", "/screens/compose.js",
   "/screens/findings.js", "/screens/catalog.js", "/screens/workspaces.js",
   "/screens/inspector.js",

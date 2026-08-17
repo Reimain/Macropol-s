@@ -1,73 +1,134 @@
-/* The palette. One axis, and it carries no sizes.
+/* The palette and the faces. One axis, and it carries no sizes.
  *
- * The split between this file and `density.css` is what makes two visual
- * registers cost forty declarations instead of a second stylesheet. Palette
- * tokens never mention geometry; geometry tokens never mention colour. The two
- * axes are then genuinely independent: switching density cannot change a colour
- * and switching theme cannot change a size, and both facts are asserted rather
- * than hoped for.
+ * ── The reference ────────────────────────────────────────────────────────
  *
- * Neither register uses pure black on pure white. Contrast is targeted around
- * 7:1 rather than the 21:1 that maximum contrast would give, because this is a
- * surface people leave open all day and 21:1 is where eye strain lives.
+ * This is an operations console, so it is built like the consoles operators
+ * already know — Databricks and AppDynamics. That is not imitation for its own
+ * sake: those surfaces have converged on the same answers because the same
+ * constraints produced them, and a reviewer who has used one should not have to
+ * learn a private visual language before they can read a finding.
+ *
+ * Four things are taken directly:
+ *
+ *   1. **A light ground with white surfaces.** Cards are white and lift off a
+ *      near-white page; the border does the separating, not a fill. Dark is
+ *      offered and is a navy, not black.
+ *   2. **One blue is the interactive colour**, and it means only that: links,
+ *      the primary button, the active nav item, the selected facet. If it is
+ *      blue you can click it.
+ *   3. **Status colour is a separate family from the interactive one** — green,
+ *      amber, red — so "this is healthy" and "this is a link" never compete.
+ *   4. **One sans family throughout, monospace only for identifiers.** Both
+ *      references set every identifier in mono and everything else in the system
+ *      sans, because a purl and a digest cannot be compared in a proportional
+ *      face and prose is unpleasant in a monospaced one.
+ *
+ * ── Confidence still has to read at a glance ─────────────────────────────
+ *
+ * The platform's claim is about evidence and its limits, so a reviewer must be
+ * able to tell a *known* thing from an *inferred* thing from an *unlooked-at*
+ * one. Both references solve this the same way and this console follows them:
+ * a coloured glyph plus a word, never colour alone and never a texture. The
+ * word is what a colour-blind reader and a pasted screenshot both survive.
+ *
+ * Every family is a system stack. `script-src 'self'` and the no-external-origin
+ * rule make a webfont unreachable, and that is a constraint worth honouring
+ * rather than working around: this console runs inside air-gapped networks.
  */
 
 :root,
-[data-theme="dark"] {
-  --bg: #0d1117;
-  --panel: #161b22;
-  --panel-2: #1c2128;
-  --line: #30363d;
-  --text: #e6edf3;
-  --muted: #8b949e;
-  --accent: #58a6ff;
-  --accent-ink: #04101f;
-  --ok: #3fb950;
-  --warn: #d29922;
-  --bad: #f85149;
-  --crit: #ff7b72;
-  --sim: #a371f7;
+[data-theme="light"] {
+  --bg: #f6f7f9;          /* the page ground — near-white, never pure */
+  --panel: #ffffff;       /* surfaces lift off it */
+  --panel-2: #f1f3f5;     /* insets, table stripes, disabled fills */
+  --line: #dfe3e8;
+  --line-strong: #c3cad2; /* a divider that has to be seen, not merely felt */
+  --text: #1c2126;        /* near-black, never #000 */
+  --muted: #5c6b7a;
+
+  --accent: #1668c1;      /* the one interactive blue */
+  --accent-ink: #ffffff;
+  --accent-soft: #e8f1fb; /* its tint, for the selected row and the active tab */
+
+  --ok: #17794c;
+  --warn: #96631a;
+  --bad: #c02a1b;
+  --crit: #8b1a10;
+  --sim: #6b4fbb;         /* simulated-vs-live sits off the status axis on
+                             purpose, so it can never read as a severity */
+
+  --shadow: 0 1px 2px rgba(16, 24, 32, 0.06), 0 1px 1px rgba(16, 24, 32, 0.04);
 }
 
-[data-theme="light"] {
-  --bg: #ffffff;
-  --panel: #f6f8fa;
-  --panel-2: #eaeef2;
-  --line: #d0d7de;
-  --text: #1f2328;
-  --muted: #656d76;
-  --accent: #0969da;
-  --accent-ink: #ffffff;
-  --ok: #1a7f37;
-  --warn: #9a6700;
-  --bad: #cf222e;
-  --crit: #a40e26;
-  --sim: #8250df;
+/* Dark is a navy rather than a black — the same choice both references make.
+ * Pure black with white text is the highest contrast available and the least
+ * comfortable to read for an hour, which is the only duration that matters
+ * for a surface somebody leaves open all day. */
+[data-theme="dark"] {
+  --bg: #0e1a20;
+  --panel: #14242c;
+  --panel-2: #1b2f39;
+  --line: #26404c;
+  --line-strong: #365767;
+  --text: #e4ebef;
+  --muted: #93a7b3;
+
+  --accent: #55a8ee;
+  --accent-ink: #08151a;
+  --accent-soft: #16303f;
+
+  --ok: #4cb98a;
+  --warn: #d6a542;
+  --bad: #ee7b6b;
+  --crit: #f29e8f;
+  --sim: #a691e8;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* The system preference, honoured only when nobody has chosen. Scoped with
  * `:not([data-theme])` so an explicit choice always wins — without that guard a
- * user on a light desktop who picked dark would get their choice overridden by
- * their operating system, which is the opposite of what picking means. */
-@media (prefers-color-scheme: light) {
+ * reader on a dark desktop who picked light would have their choice overridden
+ * by their operating system, which is the opposite of what picking means. */
+@media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #ffffff;
-    --panel: #f6f8fa;
-    --panel-2: #eaeef2;
-    --line: #d0d7de;
-    --text: #1f2328;
-    --muted: #656d76;
-    --accent: #0969da;
-    --accent-ink: #ffffff;
-    --ok: #1a7f37;
-    --warn: #9a6700;
-    --bad: #cf222e;
-    --crit: #a40e26;
-    --sim: #8250df;
+    --bg: #0e1a20;
+    --panel: #14242c;
+    --panel-2: #1b2f39;
+    --line: #26404c;
+    --line-strong: #365767;
+    --text: #e4ebef;
+    --muted: #93a7b3;
+
+    --accent: #55a8ee;
+    --accent-ink: #08151a;
+    --accent-soft: #16303f;
+
+    --ok: #4cb98a;
+    --warn: #d6a542;
+    --bad: #ee7b6b;
+    --crit: #f29e8f;
+    --sim: #a691e8;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 }
 
 :root {
-  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* One sans for everything the instrument says, one mono for everything it
+     read. Two faces, assigned by what a thing *is* rather than by where it
+     sits — which is the only rule that keeps a console legible once it has
+     thirty screens. */
+  --face-chrome: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --face-fact: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  /* Kept as aliases: `--mono`, `--sans` and `--face-claim` are named throughout
+     the existing rules, and renaming every call site to prove a point is not a
+     design decision. Prose now sets in the sans, as it does in both
+     references. */
+  --mono: var(--face-fact);
+  --sans: var(--face-chrome);
+  --face-claim: var(--face-chrome);
 }

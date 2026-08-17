@@ -9,16 +9,43 @@
 import { el, fill, h } from "./core/dom.js";
 import { on } from "./core/bus.js";
 import { navigate, parse, route, start } from "./core/router.js";
-import { invalidate } from "./core/store.js";
+import { cell, invalidate, subscribe } from "./core/store.js";
 import { connect, watchVisibility } from "./data/live.js";
+import { status as loadStatus } from "./data/queries.js";
 import { manifest, mount } from "./screens/index.js";
 import { control } from "./ui/density.js";
-import { connection } from "./ui/pill.js";
-import { crumbs, nav, subnav } from "./ui/nav.js";
+import { connection, target } from "./ui/pill.js";
+import { nav, pageHead, tabs } from "./ui/nav.js";
 
 const screens = manifest();
 
 for (const screen of screens) route(screen.path, screen);
+
+/* The title block's two fixed facts: which environment this sheet describes,
+ * and what is answering for it. They were markup placeholders reading "—" and
+ * "simulated" that nothing ever wrote to, which on a surface whose whole claim
+ * is that a blank field and an unknown one are different answers is the exact
+ * mistake it exists to prevent — a field permanently displaying a value nobody
+ * computed. Filled from the status cell, on every screen rather than only on
+ * the console, because the header is on every screen. */
+function titleBlock(state) {
+  const name = el("environment");
+  if (name) {
+    const open = state.value && state.value.environment;
+    // "none open" rather than a dash. A field showing a value nobody computed
+    // is the one mistake a console about evidence cannot make.
+    name.textContent = open || "none open";
+    name.classList.toggle("unfilled", !open);
+  }
+
+  const slot = el("target");
+  if (slot && state.value) slot.replaceWith(withId(target(state.value.target)));
+}
+
+function withId(node) {
+  node.id = "target";
+  return node;
+}
 
 function outlet() {
   let found = el("outlet");
@@ -32,13 +59,13 @@ function outlet() {
 }
 
 function chrome(screen) {
-  const header = document.querySelector("header");
-  if (!header) return;
-
-  const existing = header.querySelector("nav");
-  const next = nav(screens, { current: screen.key });
-  if (existing) existing.replaceWith(next);
-  else header.insertBefore(next, header.children[1] || null);
+  const rail = document.querySelector(".rail");
+  if (rail) {
+    const existing = rail.querySelector("nav");
+    const next = nav(screens, { current: screen.key });
+    if (existing) existing.replaceWith(next);
+    else rail.appendChild(next);
+  }
 
   const slot = el("appearance");
   if (slot && !slot.childElementCount) fill(slot, control());
@@ -54,11 +81,15 @@ function draw({ params, query, route: entry }) {
   }
   chrome(screen);
 
+  // Breadcrumb, title and section tabs are the shell's, not the screen's, so
+  // thirty-six screens cannot disagree about where a title sits. A screen
+  // renders only its own content into `target`.
   const body = outlet();
-  const trail = crumbs(screens, screen.key);
-  const sub = subnav(screens, screen.key);
-  const target = h("div", {});
-  fill(body, trail, sub, target);
+  const target = h("div", { class: "stack" });
+  fill(body,
+    pageHead(screens, screen.key, { subtitle: screen.summary || "" }),
+    tabs(screens, screen.key),
+    target);
   mount(target, screen, params, query);
 }
 
@@ -90,6 +121,10 @@ on("dropped", ({ missed }) => {
   draw(parse(window.location.hash));
 });
 
+subscribe("status", titleBlock);
+titleBlock(cell("status"));
+
 start(draw);
 watchVisibility();
 connect();
+loadStatus();
