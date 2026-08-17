@@ -14,7 +14,7 @@ inspectable — the UI fetches it to discover what this build supports.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
 from ..core.commands import AskQuestion, ChangeTarget, FireScenario, SealSnapshot
@@ -33,15 +33,31 @@ Handler = Callable[["Request"], Any]
 
 @dataclass(frozen=True, slots=True)
 class Request:
-    """One parsed HTTP request."""
+    """One parsed HTTP request.
+
+    `headers`, `principal` and `context` all default to empty, so every existing
+    construction of this class keeps working unchanged. They exist for the
+    gateway: it reads `headers` to identify the caller, and writes `principal`
+    and `context` back so the route it admits does not have to authenticate a
+    second time.
+    """
 
     method: str
     path: str
     query: Mapping[str, str]
     body: Mapping[str, Any]
+    # `default_factory`, not a shared `MappingProxyType({})`: a dataclass field
+    # default must be hashable, and a mapping proxy is not.
+    headers: Mapping[str, str] = field(default_factory=dict)
+    principal: Any = None
+    context: Mapping[str, Any] = field(default_factory=dict)
 
     def param(self, name: str, default: str = "") -> str:
         return self.query.get(name, default)
+
+    def header(self, name: str, default: str = "") -> str:
+        """Case-insensitively, because HTTP header names are."""
+        return self.headers.get(name.lower(), default)
 
     def integer(self, name: str, default: int = 0) -> int:
         try:
@@ -52,13 +68,54 @@ class Request:
 
 @dataclass(frozen=True, slots=True)
 class Response:
-    """One JSON response, with a status the server maps onto HTTP."""
+    """One JSON response, with a status the server maps onto HTTP.
+
+    `headers` carries the answer's *position in time* rather than its content.
+    A client that redraws on every event receives responses out of order — the
+    refetch triggered by event N can land after the one triggered by event N+1 —
+    and without a version it has no way to tell which is newer, so it paints the
+    older answer and the screen goes backwards.
+
+    Headers rather than a body envelope, deliberately: no existing route's JSON
+    shape changes, the service worker already reads `x-slpie-stale`, and a
+    generated client can read them uniformly across every route without knowing
+    which ones happen to be backed by a `QueryResult`.
+    """
 
     body: Any
     status: int = 200
+    headers: tuple[tuple[str, str], ...] = ()
 
     def encode(self) -> bytes:
         return json.dumps(self.body, default=str).encode("utf-8")
+
+    def with_headers(self, *added: tuple[str, str]) -> "Response":
+        """A copy carrying `added` as well, without overwriting what is set."""
+        if not added:
+            return self
+        present = {name.lower() for name, _ in self.headers}
+        extra = tuple(item for item in added if item[0].lower() not in present)
+        if not extra:
+            return self
+        return Response(self.body, status=self.status, headers=self.headers + extra)
+
+
+_UNSET = object()
+
+
+def answered(result: Any, body: Any = _UNSET) -> Response:
+    """A `QueryResult` as a response that keeps its version.
+
+    Every route below used to call `.value` and throw the rest away, so the one
+    piece of information the read model exists to provide — how current this
+    answer is — never left the process. `body` is for the routes that wrap the
+    value in an envelope of their own; leaving it out sends the value as-is.
+    """
+    return Response(result.value if body is _UNSET else body, headers=(
+        ("X-Slpie-Version", str(result.version)),
+        ("X-Slpie-Projection", result.projection or ""),
+        ("X-Slpie-Stale", "1" if result.stale else "0"),
+    ))
 
 
 class Api:
@@ -81,6 +138,21 @@ class Api:
         return tuple(sorted(self._routes))
 
     def handle(self, request: Request) -> Response:
+        return self._dispatch(request).with_headers(*self._position())
+
+    def _position(self) -> tuple[tuple[str, str], ...]:
+        """Where the world is, stamped on every response including failures.
+
+        A client holding several cells needs to know it is behind without asking
+        a second question per cell, and a failure is exactly when knowing the
+        world moved on matters most.
+        """
+        try:
+            return (("X-Slpie-Ledger-Version", str(self.engine.ledger.version)),)
+        except Exception:  # noqa: BLE001 - no engine, or a ledger not yet open
+            return ()
+
+    def _dispatch(self, request: Request) -> Response:
         handler = self._routes.get((request.method, request.path))
         if handler is None:
             return Response(
@@ -108,6 +180,23 @@ class Api:
             return Response(
                 {"error": str(error).strip("'\""), "type": type(error).__name__}, status=400
             )
+        except AttributeError as error:
+            # The interface runs without an environment on purpose, so roughly
+            # half these routes have nothing to read. Saying so is a different
+            # answer from failing: 409 means "ask again once an environment is
+            # open", and the client renders it as an empty state rather than as
+            # a fault. Without this the same case reached the 500 below and told
+            # an operator to go and read server logs about `NoneType`.
+            if self.engine is None:
+                return Response({
+                    "error": (
+                        "no environment is open, so this route has nothing to "
+                        "read; start the interface from a directory holding "
+                        "slpie.environment.yaml, or pass --root to point at one"
+                    ),
+                    "type": "NoEnvironment",
+                }, status=409)
+            return Response({"error": str(error), "type": "AttributeError"}, status=500)
         except Exception as error:  # pragma: no cover - defensive
             return Response({"error": str(error), "type": type(error).__name__}, status=500)
 
@@ -124,6 +213,40 @@ class Api:
         def routes(_request: Request) -> Any:
             return {"routes": [f"{m} {p}" for m, p in self.routes]}
 
+        @self.route("GET", "/api/stream")
+        def stream(_request: Request) -> Any:
+            """Declared here so the live feed is discoverable; served elsewhere.
+
+            `server.py` intercepts this path before the route table, because an
+            open `text/event-stream` cannot be produced by a function that
+            returns one JSON body. But leaving it out of the table entirely is
+            what made the feed invisible: it appeared in none of the routes, in
+            no OpenAPI document, and therefore in no generated client — the one
+            capability of the platform that no contract described.
+
+            Registering it as metadata means `route_set()` covers it and a
+            client can find it. Reaching it through `Api.handle` means somebody
+            called it with the wrong transport, and saying so beats a 404 that
+            implies the feed does not exist.
+            """
+            return Response({
+                "error": (
+                    "/api/stream is a text/event-stream; open it with "
+                    "EventSource rather than fetching it"
+                ),
+                "type": "WrongTransport",
+                "transport": "sse",
+            }, status=400)
+
+        @self.route("GET", "/api/stream/status")
+        def stream_status(_request: Request) -> Any:
+            """How far behind the feed is, and how far back it can replay."""
+            live = getattr(engine, "stream", None)
+            if live is None:
+                return {"clients": 0, "delivered": 0, "buffered": 0,
+                        "dropped": 0, "oldest": 0, "attached": False}
+            return {**live.status(), "attached": True}
+
         @self.route("GET", "/api/manifest")
         def manifest(_request: Request) -> Any:
             return engine.manifest.to_dict() if engine.manifest else {}
@@ -131,7 +254,7 @@ class Api:
         @self.route("GET", "/api/station")
         def station(request: Request) -> Any:
             if element := request.param("element"):
-                return engine.queries.ask(StationStatus(element=element)).value
+                return answered(engine.queries.ask(StationStatus(element=element)))
             return engine.station.to_dict() if engine.station else {}
 
         @self.route("GET", "/api/graph")
@@ -148,9 +271,23 @@ class Api:
 
         @self.route("GET", "/api/node")
         def node(request: Request) -> Any:
-            found = engine.graph.node(request.param("id"))
+            wanted = request.param("id")
+            if not wanted:
+                return Response({
+                    "error": "/api/node needs an ?id=; ask /api/search for one",
+                    "type": "MissingParameter",
+                }, status=400)
+            found = engine.graph.node(wanted)
             if found is None:
-                return {"error": "no such node"}
+                # 404, not a 200 carrying an error string. The detail views for
+                # the catalogue and for findings both hang off this route, and a
+                # client cannot tell "absent" from "present but empty" when both
+                # arrive as 200 — so a retired node rendered as a blank panel
+                # rather than as the supersession it is.
+                return Response({
+                    "error": f"no node {wanted!r} in this graph",
+                    "type": "NoSuchNode",
+                }, status=404)
             return {
                 "node": found.to_dict(include_evidence=True),
                 "out": [edge.to_dict() for edge in engine.graph.edges_from(found.id)],
@@ -185,37 +322,30 @@ class Api:
 
         @self.route("GET", "/api/findings")
         def findings(request: Request) -> Any:
-            return {
-                "findings": engine.queries.ask(
-                    OpenFindings(severity=request.param("severity"))
-                ).value
-            }
+            answer = engine.queries.ask(OpenFindings(severity=request.param("severity")))
+            return answered(answer, {"findings": answer.value})
 
         @self.route("GET", "/api/history")
         def history(request: Request) -> Any:
-            return {
-                "records": engine.queries.ask(History(
-                    subject=request.param("subject"),
-                    since=request.integer("since"),
-                    limit=request.integer("limit", 100),
-                )).value
-            }
+            answer = engine.queries.ask(History(
+                subject=request.param("subject"),
+                since=request.integer("since"),
+                limit=request.integer("limit", 100),
+            ))
+            return answered(answer, {"records": answer.value})
 
         @self.route("GET", "/api/causation")
         def causation(request: Request) -> Any:
-            return {
-                "chain": engine.queries.ask(
-                    Causation(event_id=request.param("event"))
-                ).value
-            }
+            answer = engine.queries.ask(Causation(event_id=request.param("event")))
+            return answered(answer, {"chain": answer.value})
 
         @self.route("GET", "/api/integrity")
         def integrity(_request: Request) -> Any:
-            return engine.queries.ask(LedgerIntegrity()).value
+            return answered(engine.queries.ask(LedgerIntegrity()))
 
         @self.route("GET", "/api/projections")
         def projections(_request: Request) -> Any:
-            return engine.queries.ask(ProjectionStatus()).value
+            return answered(engine.queries.ask(ProjectionStatus()))
 
         @self.route("GET", "/api/scenarios")
         def scenarios(_request: Request) -> Any:

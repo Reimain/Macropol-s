@@ -42,8 +42,14 @@ class PlaneError(SlpieError):
 #: The action a principal must hold to get a workspace at all. Named as data so
 #: it appears in `AccessEngine.permitted()` alongside every other action rather
 #: than being a special case somebody has to know about.
-WORKSPACE_ACTION = "workspace:create"
-DATASET_ACTION = "dataset:read"
+#: Dotted, not colon-separated. `matches_action` understands `workspace.*` and
+#: has never understood `workspace:*`, so the colon form could not be granted by
+#: any wildcard: an operator writing `allow workspace.* on "*"` got nothing, and
+#: nothing said so. The colon is also already load-bearing on the other side of
+#: the pair — resources are `env:prod/*`, `dataset:sales` — so using it for
+#: actions made two unlike things look alike.
+WORKSPACE_ACTION = "workspace.create"
+DATASET_ACTION = "dataset.read"
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,7 +174,7 @@ class ControlPlane:
         * the **grant's own reach** — is this principal, in this scope, inside
           the visibility the grant was written with;
         * an **RBAC decision** — does this principal hold a role permitting
-          `dataset:read` on that dataset in the scope that owns it.
+          `dataset.read` on that dataset in the scope that owns it.
 
         Requiring both means a bug in either narrows access rather than widening
         it, which is the only safe direction for a bug in this function to fail.

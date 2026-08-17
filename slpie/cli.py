@@ -110,6 +110,8 @@ class Cli:
             return OK
         if head == "contract":
             return self._contract(arguments[1:])
+        if head == "ui":
+            return self._ui(arguments[1:])
         if head == "demo":
             from .demo import Demo
 
@@ -192,6 +194,93 @@ class Cli:
             openapi(verbs=self.verbs, routes=routes), indent=2,
         ))
         return OK
+
+    # -- the interface ---------------------------------------------------
+
+    def _ui(self, arguments: Sequence[str]) -> int:
+        """`slpie ui [--port N] [--host H] [--root DIR] [--once]` — serve it.
+
+        A command rather than a verb, deliberately. A verb consumes a `Flow` and
+        produces one; a server that blocks until interrupted does neither, and
+        registering it would let `discover . | ui` type-check in the composition
+        checker and then never return. `pyproject.toml` and `slpie/demo/runner.py`
+        have both advertised this command since phase 9 and nothing implemented
+        it, which is the drift §24 exists to prevent, on the front door itself.
+
+        The environment is optional. Roughly half the routes need one, and the
+        other half — the verb catalogue, the manual, the contract, the
+        composition type-checker — are exactly what somebody opening the tool for
+        the first time wants, so refusing to start without a manifest would be
+        the wrong way round.
+        """
+        options = _ui_flags(arguments)
+        if options.get("error"):
+            self._err(str(options["error"]))
+            return USAGE
+
+        root = Path(str(options.get("root", ".")))
+        if not root.is_dir():
+            self._err(f"--root {root} is not a directory")
+            return USAGE
+
+        engine = self._environment(root)
+        try:
+            from .ui import UiServer
+
+            server = UiServer(
+                engine,
+                host=str(options.get("host", "127.0.0.1")),
+                port=int(options.get("port", 8420)),
+                verbose=bool(options.get("verbose", False)),
+            )
+        except OSError as error:
+            # A busy port is the single most common way this fails, and the
+            # errno alone sends people to a search engine.
+            self._err(f"could not serve on port {options.get('port', 8420)}: {error}")
+            return USAGE
+        except SlpieError as error:
+            self._err(str(error))
+            return USAGE
+
+        where = "no environment — catalogue, manual and compose only"
+        if engine is not None:
+            where = f"environment {getattr(engine.manifest, 'environment', root)}"
+        self._out(f"{server.url}  ({where})")
+
+        if options.get("once"):
+            # Started, bound, and reported. `--once` exists so this whole path
+            # is exercised by the suite without a subprocess and without a test
+            # that never returns.
+            server.start()
+            server.stop()
+            return OK
+
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:  # pragma: no cover - interactive only
+            self._out("")
+        finally:
+            server.stop()
+        return OK
+
+    def _environment(self, root: Path) -> Any:
+        """Open the environment under `root`, or report why there is none.
+
+        Unlike `_engine`, this honours the directory it was given rather than
+        the process working directory.
+        """
+        for candidate in ("slpie.environment.yaml", "slpie.environment.yml"):
+            path = root / candidate
+            if not path.exists():
+                continue
+            try:
+                from .engine import Engine
+
+                return Engine.from_manifest(str(path))
+            except SlpieError as error:
+                self._err(f"could not open {path}: {error}")
+                return None
+        return None
 
     # -- planning --------------------------------------------------------
 
@@ -475,6 +564,48 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - process entry point
     raise SystemExit(main())
+
+
+#: `slpie ui`'s own flags. Kept out of `RUNNER_FLAGS` because those are consumed
+#: on the way to a composition, and `ui` is not one — a `--port` reaching the
+#: composition parser would be a verb parameter nobody declared.
+UI_FLAGS = {"--port": int, "--host": str, "--root": str}
+UI_SWITCHES = frozenset({"--once", "--verbose"})
+
+
+def _ui_flags(arguments: Sequence[str]) -> dict[str, Any]:
+    """Parse `ui`'s flags, reporting the mistake rather than raising.
+
+    `argparse` is not used here for the reason the rest of this file does not use
+    it: it writes to `sys.stderr` and calls `sys.exit` directly, which would
+    bypass the streams this class exists to hold and make the command untestable
+    without a subprocess.
+    """
+    options: dict[str, Any] = {}
+    index = 0
+    while index < len(arguments):
+        token = arguments[index]
+        if token in UI_SWITCHES:
+            options[token.lstrip("-")] = True
+        elif token in UI_FLAGS:
+            if index + 1 >= len(arguments):
+                options["error"] = f"{token} needs a value"
+                return options
+            cast = UI_FLAGS[token]
+            try:
+                options[token.lstrip("-")] = cast(arguments[index + 1])
+            except ValueError:
+                options["error"] = f"{token} takes a number, not {arguments[index + 1]!r}"
+                return options
+            index += 1
+        else:
+            options["error"] = (
+                f"unknown option {token!r} for `slpie ui`; expected "
+                f"{', '.join(sorted(UI_FLAGS) + sorted(UI_SWITCHES))}"
+            )
+            return options
+        index += 1
+    return options
 
 
 def _routine_command(arguments: Sequence[str]) -> str:

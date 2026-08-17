@@ -25,6 +25,7 @@ Stdlib only: this writes text. No `jsonschema`, no code generator, no build step
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence
 
 from ..compose.flow import Kind
@@ -489,3 +490,308 @@ def route_set(
         for path, operations in document["paths"].items()
         for method in operations
     )
+
+
+# --- the screen manifest ------------------------------------------------
+
+
+#: Where a screen sits in the navigation. Six sections, because that is how many
+#: distinct *jobs* the platform has, not because six is a nice number: asking,
+#: operating, building artifacts, browsing the catalogue, managing the API, and
+#: administering the tenancy.
+SECTIONS = ("console", "operate", "build", "catalog", "api", "admin")
+
+
+@dataclass(frozen=True, slots=True)
+class Screen:
+    """One screen, declared here so the browser does not have to guess.
+
+    The projection lives in Python for the same reason the OpenAPI document
+    does: it can be tested without a browser. `test_every_verb_group_has_a_screen`
+    and `test_every_read_route_is_reachable_from_some_screen` are the frontend's
+    equivalent of `route_set()`, and they fail on the commit that adds an
+    unreachable capability rather than on the day somebody notices.
+
+    `events` is the field that earns this. The interface currently decides what
+    to refetch with a hand-written chain — `if (event.kind.startsWith("finding")
+    && current === "findings")` — which a new event kind silently falls off. As
+    data, the SSE-to-refetch map is generated, so wiring is not something anybody
+    has to remember.
+    """
+
+    key: str
+    path: str
+    title: str
+    section: str
+    reads: tuple[str, ...] = ()          # "GET /api/findings"
+    verbs: tuple[str, ...] = ()
+    events: tuple[str, ...] = ()         # event kinds that invalidate this screen
+    action: str = ""                     # the RBAC action, dotted
+    resource: str = "*"
+    crumbs: tuple[str, ...] = ()         # parent screen keys, outermost first
+    authored: bool = False               # a hand-built screens/<key>.js exists
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "key": self.key,
+            "path": self.path,
+            "title": self.title,
+            "section": self.section,
+            "reads": list(self.reads),
+            "verbs": list(self.verbs),
+            "events": list(self.events),
+            "action": self.action,
+            "resource": self.resource,
+            "crumbs": list(self.crumbs),
+            "authored": self.authored,
+        }
+
+
+#: The screens with a designed identity. Everything else is generated below as an
+#: inspector, and an inspector is deliberately utilitarian: four finished screens
+#: and thirty-two honest inspectors reads as a platform, where thirty-six
+#: half-designed screens reads as a broken product.
+DESIGNED: tuple[Screen, ...] = (
+    Screen("console", "/", "Console", "console",
+           reads=("GET /api/status", "GET /api/manifest", "GET /api/stream"),
+           verbs=("ask", "options", "suggest", "accept", "dismiss"),
+           events=("*",), action="intelligence.ask"),
+    Screen("compose", "/compose", "Compose", "operate",
+           reads=("GET /api/verbs",), verbs=("routine",),
+           action="platform.discover"),
+    Screen("findings", "/findings/:severity?", "Findings", "operate",
+           reads=("GET /api/findings",), verbs=("findings", "govern", "rules"),
+           events=("finding_raised", "constraint_violated"),
+           action="analysis.findings"),
+    Screen("graph", "/graph", "Graph", "operate",
+           reads=("GET /api/graph",), verbs=("graph", "search"),
+           events=("node_asserted", "edge_asserted", "node_retired"),
+           action="environment.graph"),
+    Screen("node", "/node/:id", "Node", "operate",
+           reads=("GET /api/node",), events=("node_asserted", "node_retired"),
+           action="environment.graph", crumbs=("graph",)),
+    Screen("impact", "/impact/:id", "Impact", "operate",
+           reads=("GET /api/impact",), verbs=("impact", "radius"),
+           action="environment.impact", crumbs=("graph", "node")),
+    Screen("cycles", "/cycles", "Cycles", "operate",
+           reads=("GET /api/cycles",), action="environment.graph"),
+    Screen("reconcile", "/reconcile", "Reconciliation", "operate",
+           reads=("GET /api/reconcile",), verbs=("reconcile", "declare"),
+           events=("contradiction_found",), action="environment.reconcile"),
+    Screen("station", "/station", "Station", "operate",
+           reads=("GET /api/station",), verbs=("attach", "gaps", "status"),
+           events=("element_attached", "capability_refused"),
+           action="environment.attach"),
+    Screen("history", "/history/:subject?", "History", "operate",
+           reads=("GET /api/history", "GET /api/causation"),
+           verbs=("history",), action="dispatch.history"),
+    Screen("ledger", "/ledger", "Ledger", "operate",
+           reads=("GET /api/integrity", "GET /api/projections",
+                  "GET /api/stream/status"),
+           action="platform.discover"),
+    Screen("simulator", "/simulator", "Simulator", "operate",
+           reads=("GET /api/scenarios",), verbs=("simulate", "fire", "target"),
+           events=("scenario_fired", "target_changed"),
+           action="environment.target"),
+    Screen("catalog", "/catalog/:tenant?/:realm?/:dataset?/:object?", "Catalog",
+           "catalog", reads=("GET /api/search",), verbs=("scan", "changed"),
+           events=("node_asserted", "node_retired"), action="dataset.read"),
+    Screen("portal", "/portal/:api?", "Developer portal", "api",
+           reads=("GET /api/manual", "GET /api/contract"),
+           action="platform.discover"),
+    Screen("gateway", "/gateway", "Gateway", "api",
+           reads=("GET /api/routes",), action="apim.gateway.read"),
+    Screen("workspaces", "/admin/workspaces/:id?", "Workspaces", "admin",
+           action="workspace.create"),
+)
+
+
+def _authored(key: str) -> bool:
+    """Whether a hand-built screen module exists on disk.
+
+    Read rather than declared, so the flag cannot claim a screen that is not
+    there — which is the failure mode this whole section exists to prevent, at
+    one level down.
+    """
+    from .server import APP_ROOT
+
+    return (APP_ROOT / "screens" / f"{key}.js").is_file()
+
+
+def screens(
+    *,
+    verbs: VerbRegistry | None = None,
+    routes: Sequence[tuple[str, str]] = (),
+) -> tuple[Screen, ...]:
+    """The screen manifest: designed screens, plus an inspector for the rest.
+
+    An inspector is what keeps the manifest total. A verb group with no designed
+    screen still gets one, so the platform never has a capability the interface
+    cannot reach — which is §24's rule applied to the surface rather than to the
+    registry.
+    """
+    verbs = verbs if verbs is not None else default_registry()
+    known = {screen.key: screen for screen in DESIGNED}
+
+    designed_verbs = {name for screen in DESIGNED for name in screen.verbs}
+    for group, members in verbs.groups().items():
+        uncovered = tuple(
+            sorted(verb.name for verb in members if verb.name not in designed_verbs)
+        )
+        if not uncovered:
+            # Every verb in this group already has a designed home. An inspector
+            # would be a second, worse way to reach the same capability.
+            continue
+        known.setdefault(f"group-{group}", Screen(
+            key=f"group-{group}",
+            path=f"/inspect/{group}",
+            title=group.replace("-", " ").title(),
+            section="build",
+            verbs=uncovered,
+            action=f"{group}.*",
+        ))
+
+    claimed = {route for screen in known.values() for route in screen.reads}
+    for method, path in routes:
+        if method != "GET" or f"{method} {path}" in claimed:
+            continue
+        key = "route" + path.replace("/api", "").replace("/", "-")
+        known.setdefault(key, Screen(
+            key=key,
+            path=f"/inspect{path.replace('/api', '')}",
+            title=path.replace("/api/", "").replace("/", " ").title(),
+            section="build",
+            reads=(f"{method} {path}",),
+            action="platform.discover",
+        ))
+
+    return tuple(
+        Screen(**{**screen.to_dict(), "authored": _authored(screen.key),
+                  "reads": screen.reads, "verbs": screen.verbs,
+                  "events": screen.events, "crumbs": screen.crumbs})
+        for screen in sorted(known.values(), key=lambda s: (
+            SECTIONS.index(s.section) if s.section in SECTIONS else len(SECTIONS),
+            s.key,
+        ))
+    )
+
+
+# --- the generated JavaScript client ------------------------------------
+
+
+def javascript(
+    *,
+    verbs: VerbRegistry | None = None,
+    routes: Sequence[tuple[str, str]] = (),
+) -> str:
+    """A native ES module: the contract, as data, plus the client over it.
+
+    The browser gets the same treatment the TypeScript clients get, and for a
+    sharper reason. The composition type-check currently exists in **four**
+    places — here in `typescript()`, twice in `app/compose.js` (`checkPipeline`
+    and `kindAfter`), and once on the server in `Verb.accepts`. Four copies of
+    one rule is precisely the drift this module was written to prevent, and the
+    interface was the one consumer still maintaining its own.
+
+    Emitted to `app/data/client.js` and committed rather than served from a
+    route: the service worker precaches the shell, and a module generated at
+    request time cannot boot with the network unplugged.
+
+    No build step is involved. This is text, and the browser loads it as an ES
+    module because `server.py` serves `.js` as `text/javascript`.
+    """
+    verbs = verbs if verbs is not None else default_registry()
+
+    catalogue = {
+        verb.name: {
+            "group": verb.group,
+            "summary": verb.summary,
+            "consumes": verb.consumes.value if verb.consumes else Kind.NOTHING.value,
+            "produces": verb.produces.value,
+            "mutates": verb.mutates,
+            "source": verb.is_source,
+            "params": [
+                {
+                    "name": param.name,
+                    "type": param.type,
+                    "help": param.help,
+                    "required": param.required,
+                    "choices": list(param.choices or ()),
+                }
+                for param in verb.params
+            ],
+            "examples": list(verb.examples),
+        }
+        for verb in sorted(verbs, key=lambda item: item.name)
+    }
+    groups: dict[str, list[str]] = {}
+    for name, entry in catalogue.items():
+        groups.setdefault(entry["group"], []).append(name)
+
+    manifest = [screen.to_dict() for screen in screens(verbs=verbs, routes=routes)]
+
+    def block(name: str, value: Any) -> str:
+        return f"export const {name} = Object.freeze({json.dumps(value, indent=2)});"
+
+    return "\n".join([
+        "// Generated from the SLPIE verb registry. Do not edit.",
+        "// Regenerate with: slpie contract --javascript",
+        f"// contract {CONTRACT_VERSION}",
+        "",
+        f'export const CONTRACT = "{CONTRACT_VERSION}";',
+        "",
+        block("KINDS", [kind.value for kind in Kind]),
+        "",
+        block("VERBS", catalogue),
+        "",
+        block("GROUPS", {group: sorted(names) for group, names in sorted(groups.items())}),
+        "",
+        block("SCREENS", manifest),
+        "",
+        block("ROUTES", [
+            {"method": method, "path": path,
+             "transport": "sse" if path == "/api/stream" else "json"}
+            for method, path in sorted(routes)
+        ]),
+        "",
+        "/** What is flowing after these stages. `same` passes the kind through. */",
+        "export function producedKind(names) {",
+        '  let current = "nothing";',
+        "  for (const name of names) {",
+        "    const verb = VERBS[name];",
+        "    if (!verb) return current;",
+        '    current = verb.produces === "same" ? current : verb.produces;',
+        "  }",
+        "  return current;",
+        "}",
+        "",
+        "/** The first type error, or null. The server's rule, not a copy of it. */",
+        "export function validate(names) {",
+        '  let current = "nothing";',
+        "  for (let index = 0; index < names.length; index += 1) {",
+        "    const verb = VERBS[names[index]];",
+        "    if (!verb) return `stage ${index + 1}: unknown verb \\`${names[index]}\\``;",
+        '    if (verb.consumes !== "any" && verb.consumes !== current) {',
+        '      if (current === "nothing") {',
+        "        return `stage ${index + 1} \\`${names[index]}\\` needs ` +",
+        "          `${verb.consumes.toUpperCase()} piped into it, but it starts ` +",
+        "          `the pipeline — a source verb has to come first`;",
+        "      }",
+        "      return `stage ${index + 1} \\`${names[index]}\\` consumes ` +",
+        "        `${verb.consumes.toUpperCase()}, but it was given ` +",
+        "        `${current.toUpperCase()}`;",
+        "    }",
+        '    current = verb.produces === "same" ? current : verb.produces;',
+        "  }",
+        "  return null;",
+        "}",
+        "",
+        "/** Every verb that could legally follow what is currently flowing. */",
+        "export function successors(kind) {",
+        "  return Object.keys(VERBS).filter((name) => {",
+        "    const verb = VERBS[name];",
+        '    return verb.consumes === "any" || verb.consumes === kind;',
+        "  });",
+        "}",
+        "",
+    ])

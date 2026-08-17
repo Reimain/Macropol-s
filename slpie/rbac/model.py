@@ -100,8 +100,26 @@ def matches_resource(pattern: str, resource: str) -> bool:
 
 
 def matches_action(pattern: str, action: str) -> bool:
-    """Dotted actions: `graph.*` covers `graph.read`, `*` covers everything."""
-    want = pattern.strip()
+    """Dotted actions: `graph.*` covers `graph.read`, `*` covers everything.
+
+    A colon in the *action* position is normalised to a dot before matching, in
+    both the pattern and the action. `slpie/workspace/plane.py` named its two
+    actions `workspace:create` and `dataset:read`, and nothing here understood
+    the colon — so `allow workspace.* on "*"` matched neither of them and an
+    operator who wrote the obvious grant got a silent refusal.
+
+    Normalising rather than rejecting, because the colon form is in policy files
+    that already exist and a hard failure would lock out the very rules meant to
+    grant access. A `DeprecationWarning` is not an option: `pyproject.toml` sets
+    `filterwarnings = ["error::DeprecationWarning:slpie.*"]`, so warning here
+    would turn a legacy policy file into a crash.
+
+    Note this applies to actions only. Resources keep the colon as their kind
+    separator — `env:prod/*`, `dataset:sales` — and `matches_resource` is
+    untouched.
+    """
+    want = pattern.strip().replace(":", ".")
+    action = action.replace(":", ".")
     if want in (SEGMENT_WILDCARD, DEEP_WILDCARD):
         return True
     if want == action:

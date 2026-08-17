@@ -43,6 +43,14 @@ notebooks:  ## regenerate the notebooks from tools/notebooks/spec.py
 notebooks-check:  ## fail if any notebook is stale against its spec
 	$(PYTHON) -m tools.notebooks.build --check
 
+.PHONY: clients
+clients:  ## regenerate clients/ from the verb registry
+	$(PYTHON) -m tools.clients
+
+.PHONY: clients-check
+clients-check:  ## fail if any committed client has drifted from the registry
+	$(PYTHON) -m tools.clients --check
+
 .PHONY: notebooks-run
 notebooks-run:  ## execute every notebook; any cell that raises fails the build
 	$(PYTHON) -m tools.notebooks.run
@@ -101,7 +109,7 @@ acceptance-baseline:  ## re-record the acceptance timings after a deliberate cha
 
 .PHONY: ui
 ui:  ## serve the stdlib interface on :8765
-	$(PYTHON) -c "from slpie.ui import UiServer; UiServer(engine=None, port=8765).serve_forever()"
+	$(PYTHON) -m slpie.cli ui --port 8765
 
 # --- documentation --------------------------------------------------------
 

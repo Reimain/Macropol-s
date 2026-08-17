@@ -744,6 +744,88 @@
         ]
       }
     },
+    "/api/stream": {
+      "get": {
+        "summary": "GET /api/stream",
+        "operationId": "get_api_stream",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/stream/status": {
+      "get": {
+        "summary": "GET /api/stream/status",
+        "operationId": "get_api_stream_status",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
     "/api/verbs": {
       "get": {
         "summary": "GET /api/verbs",
@@ -1113,6 +1195,269 @@
         ]
       }
     },
+    "/api/v/accept": {
+      "post": {
+        "summary": "record that a suggested path was worth taking",
+        "description": "This is how the ranking learns. Acceptance is a fact, so `why is it offering this first` has a real answer.",
+        "operationId": "verb_accept",
+        "tags": [
+          "guidance"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
+          "constraints",
+          "count",
+          "dismiss",
+          "enterprise",
+          "explain",
+          "filter",
+          "findings",
+          "govern",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "options",
+          "quarantine",
+          "radius",
+          "reason",
+          "risk",
+          "sbom",
+          "sort",
+          "suggest",
+          "tool",
+          "unique",
+          "verdicts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "the suggestion's key"
+                  },
+                  "about": {
+                    "type": "string",
+                    "description": "the subject, if it was stated"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                },
+                "required": [
+                  "key"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/agent-tools": {
+      "post": {
+        "summary": "the capabilities an agent can call, as JSON schemas",
+        "description": "Each tool is a named composition over this registry, so a tool cannot reach a capability that does not exist and adding a verb widens the set with no change to the agent.",
+        "operationId": "verb_agent_tools",
+        "tags": [
+          "incremental"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "one tool, instead of every one"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/ask": {
+      "post": {
+        "summary": "the answer, its reasoning, its gaps, and what to ask next",
+        "description": "Never a bare value. Invariant 5 says every answer carries its reasoning path and its limits, and this is where that becomes a type rather than a convention: the questions are ranked by what answering them would buy, and every one is a composition that will actually run.",
+        "operationId": "verb_ask",
+        "tags": [
+          "intelligence"
+        ],
+        "x-slpie-consumes": "enrichments",
+        "x-slpie-produces": "guidance",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "question": {
+                    "type": "string",
+                    "description": "what you were trying to find out"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/attach": {
       "post": {
         "summary": "register every declared element and negotiate capabilities",
@@ -1126,13 +1471,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -1193,6 +1542,490 @@
         }
       }
     },
+    "/api/v/audit": {
+      "post": {
+        "summary": "judge a tree against its stated architecture",
+        "description": "Deterministic: an AST projected into a graph, then queried. Same tree, same digest, on any machine \u2014 which is what lets CI pin 'the architecture has not drifted' to one comparable value. A rule that cannot decide says INDETERMINATE rather than passing.",
+        "operationId": "verb_audit",
+        "tags": [
+          "audit"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "judgements",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique",
+          "verdicts"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "the tree to judge",
+                    "default": "."
+                  },
+                  "checks": {
+                    "type": "string",
+                    "description": "auto or self",
+                    "enum": [
+                      "auto",
+                      "self"
+                    ],
+                    "default": "auto"
+                  },
+                  "rule": {
+                    "type": "string",
+                    "description": "run only this rule"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/c4": {
+      "post": {
+        "summary": "C4 views of the system, as Mermaid",
+        "description": "Four levels, each answering a different question: context, container, component and code. Only the levels this graph can actually support are built.",
+        "operationId": "verb_c4",
+        "tags": [
+          "artifacts"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "description": "one level, instead of every one",
+                    "enum": [
+                      "context",
+                      "container",
+                      "component",
+                      "code"
+                    ]
+                  },
+                  "container": {
+                    "type": "string",
+                    "description": "a container node id, to build C3"
+                  },
+                  "component": {
+                    "type": "string",
+                    "description": "a component node id, to build C4"
+                  },
+                  "out": {
+                    "type": "string",
+                    "description": "write .mmd files into this directory"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/capture": {
+      "post": {
+        "summary": "identify files by content and run them past the firewall",
+        "description": "An extension is a name heuristic at 0.25; magic bytes and a structural parse are far stronger. When they disagree the file is held rather than routed on a guess. Depth is the optimisation: probe reads 4KB, model reads everything.",
+        "operationId": "verb_capture",
+        "tags": [
+          "capture"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "observations",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "c4",
+          "count",
+          "dismiss",
+          "enterprise",
+          "explain",
+          "filter",
+          "findings",
+          "govern",
+          "head",
+          "json",
+          "link",
+          "quarantine",
+          "reason",
+          "sbom",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "what to capture",
+                    "default": "."
+                  },
+                  "depth": {
+                    "type": "string",
+                    "description": "how far to look",
+                    "enum": [
+                      "probe",
+                      "structure",
+                      "model",
+                      "semantic"
+                    ],
+                    "default": "structure"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "maximum files",
+                    "default": 5000
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/chain": {
+      "post": {
+        "summary": "the firewall's rules, in the order they are evaluated",
+        "description": "the firewall's rules, in the order they are evaluated",
+        "operationId": "verb_chain",
+        "tags": [
+          "capture"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/changed": {
+      "post": {
+        "summary": "what has moved since the last scan, and what it would cost",
+        "description": "Costs a fingerprint pass and nothing else, so you can ask whether a rescan is worth it before paying for one. Compares content, never modification time: a `git checkout` rewrites mtimes on identical files, and a restored build cache writes older ones than were recorded.\n\nNever reports a file it did not read as removed. Strict \u2014 the default \u2014 refuses to plan at all over a tree it could not read in full; `--lenient` plans around those files, lists why each was skipped, and carries a gap saying the plan is partial.",
+        "operationId": "verb_changed",
+        "tags": [
+          "incremental"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "the tree to compare; defaults to the root this session is bound to"
+                  },
+                  "baseline": {
+                    "type": "string",
+                    "description": "where the baseline is kept"
+                  },
+                  "commit": {
+                    "type": "boolean",
+                    "description": "record the current state as the new baseline; do this only after a rescan succeeded",
+                    "default": false
+                  },
+                  "strict": {
+                    "type": "boolean",
+                    "description": "refuse to plan over a tree this pass could not read in full (the default; SLPIE_STRICT=0 turns it off)",
+                    "default": false
+                  },
+                  "lenient": {
+                    "type": "boolean",
+                    "description": "report the unread files and plan around them instead of refusing \u2014 for development",
+                    "default": false
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "how many files the walk may read before it stops"
+                  },
+                  "max-bytes": {
+                    "type": "integer",
+                    "description": "the largest file the walk will read"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/constraints": {
       "post": {
         "summary": "solve the version constraints, naming any conflict",
@@ -1206,13 +2039,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -1289,19 +2126,32 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
           "constraints",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "impact",
           "json",
           "link",
+          "options",
+          "quarantine",
+          "radius",
           "reason",
+          "risk",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
-          "unique"
+          "unique",
+          "verdicts"
         ],
         "requestBody": {
           "required": false,
@@ -1366,13 +2216,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -1439,15 +2293,23 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "c4",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "json",
           "link",
+          "quarantine",
           "reason",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -1511,6 +2373,219 @@
         }
       }
     },
+    "/api/v/dismiss": {
+      "post": {
+        "summary": "record that a suggested path was not useful here",
+        "description": "Weighted equally with acceptance. A system that only learns from acceptance keeps proposing what you have refused four times.",
+        "operationId": "verb_dismiss",
+        "tags": [
+          "guidance"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
+          "constraints",
+          "count",
+          "dismiss",
+          "enterprise",
+          "explain",
+          "filter",
+          "findings",
+          "govern",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "options",
+          "quarantine",
+          "radius",
+          "reason",
+          "risk",
+          "sbom",
+          "sort",
+          "suggest",
+          "tool",
+          "unique",
+          "verdicts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "the suggestion's key"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "why, if you want it on the record"
+                  },
+                  "about": {
+                    "type": "string",
+                    "description": "the subject, if it was stated"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                },
+                "required": [
+                  "key"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/enterprise": {
+      "post": {
+        "summary": "TOGAF views and the deployment topology",
+        "description": "With --write, each view is generated into ./architecture/ as importable Python through an AST three-way merge. An architect's annotation marked `# gratimos:keep` survives regeneration; a genuine conflict raises rather than silently choosing a winner, because either outcome of choosing loses somebody's work with no record.",
+        "operationId": "verb_enterprise",
+        "tags": [
+          "artifacts"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "view": {
+                    "type": "string",
+                    "description": "one view, instead of every one",
+                    "enum": [
+                      "application",
+                      "data",
+                      "technology",
+                      "standards",
+                      "topology"
+                    ]
+                  },
+                  "write": {
+                    "type": "boolean",
+                    "description": "generate into ./architecture/",
+                    "default": false
+                  },
+                  "out": {
+                    "type": "string",
+                    "description": "generate here instead"
+                  },
+                  "policy": {
+                    "type": "string",
+                    "description": "what to do on a merge conflict",
+                    "enum": [
+                      "raise",
+                      "mark",
+                      "local",
+                      "generated"
+                    ],
+                    "default": "raise"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/explain": {
       "post": {
         "summary": "render the reasoning, the sources and the gaps behind this",
@@ -1524,19 +2599,32 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
           "constraints",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "impact",
           "json",
           "link",
+          "options",
+          "quarantine",
+          "radius",
           "reason",
+          "risk",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
-          "unique"
+          "unique",
+          "verdicts"
         ],
         "requestBody": {
           "required": false,
@@ -1606,19 +2694,32 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
           "constraints",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "impact",
           "json",
           "link",
+          "options",
+          "quarantine",
+          "radius",
           "reason",
+          "risk",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
-          "unique"
+          "unique",
+          "verdicts"
         ],
         "requestBody": {
           "required": false,
@@ -1695,13 +2796,18 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
+          "risk",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -1766,6 +2872,116 @@
         }
       }
     },
+    "/api/v/fire": {
+      "post": {
+        "summary": "fire a scripted condition at the simulated world",
+        "description": "A CVE lands, a major version bumps, a service dies, a boundary is breached. The outcome carries what the platform *ought* to conclude \u2014 `expect_findings` and `expect_gaps` \u2014 as data, so a caller can assert against it rather than reading the result and agreeing with itself.\n\nRequires a world: run `simulate` first.",
+        "operationId": "verb_fire",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": true,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scenario": {
+                    "type": "string",
+                    "description": "which condition to fire",
+                    "enum": [
+                      "boundary-breach",
+                      "capability-refused",
+                      "contract-broken",
+                      "cve",
+                      "declaration-drift",
+                      "duplicate-versions",
+                      "license-change",
+                      "major-bump",
+                      "partial-scan",
+                      "service-dies",
+                      "shadow-dependency",
+                      "unmaintained"
+                    ]
+                  },
+                  "package": {
+                    "type": "string",
+                    "description": "the package the scenario acts on, where it takes one"
+                  },
+                  "version": {
+                    "type": "string",
+                    "description": "the version the scenario acts on, where it takes one"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  },
+                  "confirmed": {
+                    "type": "boolean",
+                    "description": "required: this verb changes the environment and is refused without it, by the same guard the CLI hits"
+                  }
+                },
+                "required": [
+                  "scenario"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/gaps": {
       "post": {
         "summary": "everything the platform currently cannot see",
@@ -1779,13 +2995,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -1796,6 +3016,141 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/govern": {
+      "post": {
+        "summary": "run every governance rule over what was scanned",
+        "description": "Many findings, never one verdict. A rule that raises abstains and the run continues; a rule that lacks the data it needs declines rather than guessing. Both are reported as gaps, because a clean list from checks that never ran is the wrong kind of clean.",
+        "operationId": "verb_govern",
+        "tags": [
+          "governance"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "findings",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "risk",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "where to read source for secret scanning"
+                  },
+                  "severity": {
+                    "type": "string",
+                    "description": "keep only this severity",
+                    "enum": [
+                      "critical",
+                      "high",
+                      "medium",
+                      "low",
+                      "info"
+                    ]
+                  },
+                  "family": {
+                    "type": "string",
+                    "description": "comma-separated families, instead of all"
+                  },
+                  "advisories": {
+                    "type": "string",
+                    "description": "an OSV document or directory of them"
+                  },
+                  "popular": {
+                    "type": "string",
+                    "description": "a JSON popularity list, for typosquats"
+                  },
+                  "distribution": {
+                    "type": "string",
+                    "description": "how this software reaches users",
+                    "enum": [
+                      "internal_only",
+                      "network_service",
+                      "distributed_binary",
+                      "distributed_source",
+                      "embedded"
+                    ]
+                  },
+                  "linkage": {
+                    "type": "string",
+                    "description": "how dependencies are incorporated",
+                    "enum": [
+                      "dynamic",
+                      "static",
+                      "separate_process",
+                      "unmodified"
+                    ]
+                  },
+                  "project_license": {
+                    "type": "string",
+                    "description": "this project's own licence"
+                  },
+                  "no_sources": {
+                    "type": "boolean",
+                    "description": "skip secret scanning",
+                    "default": false
+                  },
                   "upstream": {
                     "$ref": "#/components/schemas/Flow",
                     "description": "the flow to continue from; omit for a source verb"
@@ -1852,14 +3207,18 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": true,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "impact",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -1931,19 +3290,32 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
           "constraints",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "impact",
           "json",
           "link",
+          "options",
+          "quarantine",
+          "radius",
           "reason",
+          "risk",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
-          "unique"
+          "unique",
+          "verdicts"
         ],
         "requestBody": {
           "required": false,
@@ -2013,13 +3385,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": true,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2096,13 +3472,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2183,19 +3563,32 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
           "constraints",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "impact",
           "json",
           "link",
+          "options",
+          "quarantine",
+          "radius",
           "reason",
+          "risk",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
-          "unique"
+          "unique",
+          "verdicts"
         ],
         "requestBody": {
           "required": false,
@@ -2265,14 +3658,18 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "constraints",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2331,6 +3728,261 @@
         }
       }
     },
+    "/api/v/options": {
+      "post": {
+        "summary": "every upgrade available, with the cost of each",
+        "description": "Enumerates; it does not recommend. Which upgrade to take depends on how well tested this codebase is and whether it uses the thing a major bump changed \u2014 judgements the platform cannot make for somebody. It can say exactly what each option costs, and it orders the free ones first.",
+        "operationId": "verb_options",
+        "tags": [
+          "intelligence"
+        ],
+        "x-slpie-consumes": "enrichments",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "description": "one family of option",
+                    "enum": [
+                      "safe_upgrade",
+                      "upgrade_option",
+                      "duplicate_versions",
+                      "unconstrained_range"
+                    ]
+                  },
+                  "safe": {
+                    "type": "boolean",
+                    "description": "only what breaks nothing",
+                    "default": false
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/quarantine": {
+      "post": {
+        "summary": "what was held rather than admitted, and why",
+        "description": "A platform that quarantines without a way to list what it holds has lost the data with extra steps.",
+        "operationId": "verb_quarantine",
+        "tags": [
+          "capture"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/radius": {
+      "post": {
+        "summary": "what depends on what, without needing a database",
+        "description": "The environment's `impact` verb answers the same question over a graph store. This one answers it over the resolution the layers just built, so it works on a bare checkout \u2014 and confidence propagates as a minimum, so a radius reached only through a dynamic load is reported as the weak thing it is.",
+        "operationId": "verb_radius",
+        "tags": [
+          "intelligence"
+        ],
+        "x-slpie-consumes": "enrichments",
+        "x-slpie-produces": "impact",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "package": {
+                    "type": "string",
+                    "description": "keep only radii whose subject matches"
+                  },
+                  "min_size": {
+                    "type": "integer",
+                    "description": "ignore anything smaller",
+                    "default": 1
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/reason": {
       "post": {
         "summary": "run the reasoning layers over what was observed",
@@ -2344,13 +3996,20 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "ask",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "options",
+          "quarantine",
+          "radius",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2421,13 +4080,18 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
+          "risk",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2438,6 +4102,461 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/risk": {
+      "post": {
+        "summary": "findings aggregated into a ranked risk register",
+        "description": "A findings list is a work queue; a register answers which parts of the estate are dangerous. Ranked by severity times reach, because a critical in a leaf nobody imports is a smaller problem than a high one in the package forty modules touch.",
+        "operationId": "verb_risk",
+        "tags": [
+          "artifacts"
+        ],
+        "x-slpie-consumes": "findings",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": "integer",
+                    "description": "how many to show",
+                    "default": 20
+                  },
+                  "markdown": {
+                    "type": "boolean",
+                    "description": "render as markdown",
+                    "default": false
+                  },
+                  "out": {
+                    "type": "string",
+                    "description": "write the markdown report here"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/rivals": {
+      "post": {
+        "summary": "what else is on the market, and where nobody serves the buyer",
+        "description": "Every product carries a homepage, every capability assessment carries the URL it was checked against and the month it was checked, and an assessment with no source will not construct \u2014 `Coverage.UNKNOWN` is the honest answer instead.\n\n`--gaps` computes where the field is thin and ranks what it would take us to serve it. Nothing in that ranking is typed by hand: a capability we do not appear to lead on will not claim that we do, and the capabilities the field leads on are reported beside the ones we lead on.",
+        "operationId": "verb_rivals",
+        "tags": [
+          "rivals"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gaps": {
+                    "type": "boolean",
+                    "description": "the white space, ranked, instead of the comparison table",
+                    "default": false
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/routine": {
+      "post": {
+        "summary": "claim what you did as a short key, or list what you claimed",
+        "description": "Claiming is deliberate and validated: a routine that would not run cannot be claimed, because a short key is a promise.",
+        "operationId": "verb_routine",
+        "tags": [
+          "guidance"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "description": "list, claim or forget",
+                    "enum": [
+                      "list",
+                      "claim",
+                      "forget"
+                    ],
+                    "default": "list"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "what to call it"
+                  },
+                  "pipeline": {
+                    "type": "string",
+                    "description": "the composition; omit to claim the session"
+                  },
+                  "key": {
+                    "type": "string",
+                    "description": "a specific key, instead of a minted one"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/rules": {
+      "post": {
+        "summary": "what this build checks, and each rule's fingerprint",
+        "description": "A rule's `source_digest` covers its logic, not just its name, so a finding raised last month can be checked against the rule as it stands today: if the digest moved, the question moved.",
+        "operationId": "verb_rules",
+        "tags": [
+          "governance"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tag": {
+                    "type": "string",
+                    "description": "only rules carrying this tag"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/sbom": {
+      "post": {
+        "summary": "a bill of materials, in CycloneDX or SPDX",
+        "description": "Identity passes through rather than being translated: packages are already purls, which is what CycloneDX, SPDX and OSV all speak. Nothing reads the clock \u2014 the timestamp is an argument, so identical graphs produce byte-identical documents that can be diffed and attested.",
+        "operationId": "verb_sbom",
+        "tags": [
+          "artifacts"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "description": "which standard",
+                    "enum": [
+                      "cyclonedx",
+                      "spdx"
+                    ],
+                    "default": "cyclonedx"
+                  },
+                  "out": {
+                    "type": "string",
+                    "description": "write the document here"
+                  },
+                  "subject": {
+                    "type": "string",
+                    "description": "what this SBOM is about"
+                  },
+                  "subject_version": {
+                    "type": "string",
+                    "description": "its version"
+                  },
+                  "timestamp": {
+                    "type": "integer",
+                    "description": "document time, epoch seconds"
+                  },
                   "upstream": {
                     "$ref": "#/components/schemas/Flow",
                     "description": "the flow to continue from; omit for a source verb"
@@ -2494,15 +4613,23 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "c4",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "json",
           "link",
+          "quarantine",
           "reason",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2569,14 +4696,18 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": true,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "impact",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2642,6 +4773,91 @@
         }
       }
     },
+    "/api/v/simulate": {
+      "post": {
+        "summary": "materialise the declared world as real files on disk",
+        "description": "Writes genuine artifacts \u2014 a real `package-lock.json`, a real git repository, real Kubernetes YAML \u2014 rather than mocks, so the same discoverers and the same plugins run against it unchanged. A green simulator case is therefore evidence about the real code path.\n\n`mutates` because it writes to a filesystem, so a composition containing it is confirmed as a whole at plan time through the same guard that refuses an unconfirmed live binding.",
+        "operationId": "verb_simulate",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "elements",
+        "x-slpie-mutates": true,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "at": {
+                    "type": "string",
+                    "description": "where to materialise it; a temp directory is used when this is omitted"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  },
+                  "confirmed": {
+                    "type": "boolean",
+                    "description": "required: this verb changes the environment and is refused without it, by the same guard the CLI hits"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/sort": {
       "post": {
         "summary": "order by a field",
@@ -2655,19 +4871,32 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
           "constraints",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "impact",
           "json",
           "link",
+          "options",
+          "quarantine",
+          "radius",
           "reason",
+          "risk",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
-          "unique"
+          "unique",
+          "verdicts"
         ],
         "requestBody": {
           "required": false,
@@ -2741,13 +4970,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": true,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2758,6 +4991,104 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/suggest": {
+      "post": {
+        "summary": "what to look at next, and why",
+        "description": "Produces SAME, so appending it never changes what a pipeline yields \u2014 guidance that altered the answer would be guidance nobody could safely add to a working command. Candidates come from the type graph, so a suggestion can never be something this platform cannot do; only their order is learned.",
+        "operationId": "verb_suggest",
+        "tags": [
+          "guidance"
+        ],
+        "x-slpie-consumes": "any",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
+          "constraints",
+          "count",
+          "dismiss",
+          "enterprise",
+          "explain",
+          "filter",
+          "findings",
+          "govern",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "options",
+          "quarantine",
+          "radius",
+          "reason",
+          "risk",
+          "sbom",
+          "sort",
+          "suggest",
+          "tool",
+          "unique",
+          "verdicts"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "about": {
+                    "type": "string",
+                    "description": "the node, finding or term you are stuck on"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "description": "the touch kind, when the flow does not say"
+                  },
                   "upstream": {
                     "$ref": "#/components/schemas/Flow",
                     "description": "the flow to continue from; omit for a source verb"
@@ -2814,13 +5145,17 @@
         "x-slpie-mutates": true,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2902,13 +5237,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -2986,13 +5325,17 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": true,
         "x-slpie-successors": [
+          "accept",
           "count",
+          "dismiss",
           "explain",
           "filter",
           "findings",
           "head",
           "json",
+          "quarantine",
           "sort",
+          "suggest",
           "tool",
           "unique"
         ],
@@ -3059,19 +5402,32 @@
         "x-slpie-mutates": false,
         "x-slpie-cacheable": false,
         "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
           "constraints",
           "count",
+          "dismiss",
+          "enterprise",
           "explain",
           "filter",
           "findings",
+          "govern",
           "head",
           "impact",
           "json",
           "link",
+          "options",
+          "quarantine",
+          "radius",
           "reason",
+          "risk",
+          "sbom",
           "sort",
+          "suggest",
           "tool",
-          "unique"
+          "unique",
+          "verdicts"
         ],
         "requestBody": {
           "required": false,
@@ -3083,6 +5439,107 @@
                   "field": {
                     "type": "string",
                     "description": "the field that identifies a duplicate"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/verdicts": {
+      "post": {
+        "summary": "keep only judgements with one verdict",
+        "description": "keep only judgements with one verdict",
+        "operationId": "verb_verdicts",
+        "tags": [
+          "audit"
+        ],
+        "x-slpie-consumes": "judgements",
+        "x-slpie-produces": "same",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "ask",
+          "c4",
+          "constraints",
+          "count",
+          "dismiss",
+          "enterprise",
+          "explain",
+          "filter",
+          "findings",
+          "govern",
+          "head",
+          "impact",
+          "json",
+          "link",
+          "options",
+          "quarantine",
+          "radius",
+          "reason",
+          "risk",
+          "sbom",
+          "sort",
+          "suggest",
+          "tool",
+          "unique",
+          "verdicts"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "only": {
+                    "type": "string",
+                    "description": "which verdict",
+                    "enum": [
+                      "upheld",
+                      "violated",
+                      "indeterminate",
+                      "inapplicable"
+                    ],
+                    "default": "violated"
                   },
                   "upstream": {
                     "$ref": "#/components/schemas/Flow",
@@ -3153,6 +5610,7 @@
               "solution",
               "findings",
               "gaps",
+              "guidance",
               "judgements",
               "plan",
               "report",
@@ -3270,19 +5728,25 @@
       "kind": "elements",
       "produced_by": [
         "attach",
-        "declare"
+        "declare",
+        "simulate"
       ],
       "consumed_by": []
     },
     {
       "kind": "observations",
       "produced_by": [
+        "capture",
         "discover",
         "scan"
       ],
       "consumed_by": [
+        "c4",
+        "enterprise",
+        "govern",
         "link",
-        "reason"
+        "reason",
+        "sbom"
       ]
     },
     {
@@ -3299,7 +5763,11 @@
       "produced_by": [
         "reason"
       ],
-      "consumed_by": []
+      "consumed_by": [
+        "ask",
+        "options",
+        "radius"
+      ]
     },
     {
       "kind": "nodes",
@@ -3324,7 +5792,8 @@
     {
       "kind": "impact",
       "produced_by": [
-        "impact"
+        "impact",
+        "radius"
       ],
       "consumed_by": []
     },
@@ -3344,9 +5813,12 @@
       "kind": "findings",
       "produced_by": [
         "findings",
+        "govern",
         "reconcile"
       ],
-      "consumed_by": []
+      "consumed_by": [
+        "risk"
+      ]
     },
     {
       "kind": "gaps",
@@ -3356,9 +5828,20 @@
       "consumed_by": []
     },
     {
-      "kind": "judgements",
-      "produced_by": [],
+      "kind": "guidance",
+      "produced_by": [
+        "ask"
+      ],
       "consumed_by": []
+    },
+    {
+      "kind": "judgements",
+      "produced_by": [
+        "audit"
+      ],
+      "consumed_by": [
+        "verdicts"
+      ]
     },
     {
       "kind": "plan",
@@ -3368,7 +5851,20 @@
     {
       "kind": "report",
       "produced_by": [
+        "agent-tools",
+        "c4",
+        "chain",
+        "changed",
+        "enterprise",
+        "fire",
         "history",
+        "options",
+        "quarantine",
+        "risk",
+        "rivals",
+        "routine",
+        "rules",
+        "sbom",
         "status",
         "target",
         "tools"
@@ -3384,13 +5880,17 @@
     }
   ],
   "x-slpie-polymorphic": [
+    "accept",
     "count",
+    "dismiss",
     "explain",
     "filter",
     "findings",
     "head",
     "json",
+    "quarantine",
     "sort",
+    "suggest",
     "tool",
     "unique"
   ]

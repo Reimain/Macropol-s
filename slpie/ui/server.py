@@ -39,6 +39,14 @@ CONTENT_TYPES = {
 MAX_BODY_BYTES = 1024 * 1024
 
 
+def _sequence(raw: Any) -> int:
+    """A resume point, or zero. A malformed one means "start from the top"."""
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        return 0
+
+
 class Handler(BaseHTTPRequestHandler):
     """Routes to assets, the API, or the event stream."""
 
@@ -65,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler's contract
         parsed = urlparse(self.path)
         if parsed.path == "/api/stream":
-            self._serve_stream()
+            self._serve_stream(parsed)
         elif parsed.path.startswith("/api/"):
             self._serve_api("GET", parsed)
         else:
@@ -95,17 +103,33 @@ class Handler(BaseHTTPRequestHandler):
                     return
 
         query = {k: v[0] for k, v in parse_qs(parsed.query).items()}
+        # Headers go through as well as query and body. Without them the gateway
+        # cannot see `Authorization`, and no amount of work further in makes an
+        # unauthenticated request authenticable.
         response = self.api.handle(Request(
             method=method, path=parsed.path, query=query, body=body,
+            headers={name.lower(): value for name, value in self.headers.items()},
         ))
         self._send_bytes(
-            response.encode(), "application/json", status=response.status
+            response.encode(), "application/json", status=response.status,
+            headers=response.headers,
         )
 
-    def _serve_stream(self) -> None:
-        """Hold the connection open and push events as they arrive."""
+    def _serve_stream(self, parsed: Any) -> None:
+        """Hold the connection open and push events as they arrive.
+
+        `Last-Event-ID` is what the browser sends back on its own after a drop;
+        `?since=` is the explicit form, for a client resuming deliberately — a
+        phone waking up, say, where the page closed the source itself rather
+        than losing it. Either one means "everything after this", and without
+        them a reconnect silently lost whatever happened while it was away.
+        """
         client_id = f"{self.client_address[0]}:{self.client_address[1]}"
-        client = self.stream.connect(client_id)
+        query = {k: v[0] for k, v in parse_qs(parsed.query).items()}
+        client = self.stream.connect(
+            client_id,
+            since=_sequence(self.headers.get("Last-Event-ID")) or _sequence(query.get("since")),
+        )
 
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
@@ -148,7 +172,14 @@ class Handler(BaseHTTPRequestHandler):
             json.dumps(body, default=str).encode("utf-8"), "application/json", status=status
         )
 
-    def _send_bytes(self, body: bytes, content_type: str, *, status: int = 200) -> None:
+    def _send_bytes(
+        self,
+        body: bytes,
+        content_type: str,
+        *,
+        status: int = 200,
+        headers: Any = (),
+    ) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
@@ -157,6 +188,8 @@ class Handler(BaseHTTPRequestHandler):
             "Content-Security-Policy",
             "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'",
         )
+        for name, value in headers:
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
 
@@ -177,10 +210,19 @@ class UiServer:
 
         self.engine = engine
         self.stream = EventStream()
-        # The UI is a subscriber like any other. It needs no special support
-        # anywhere else in the platform.
-        engine.commands.events.subscribe(self.stream.name, self.stream.handle)
-        engine.stream = self.stream
+        # `engine=None` is a supported way to run. Without it the interface
+        # could only be opened from a directory that already has a manifest,
+        # which is the wrong way round: the verb catalogue, the manual, the
+        # contract and the composition type-checker are all answerable with no
+        # environment at all, and those are exactly what somebody opening the
+        # tool for the first time wants to see. `Makefile`'s `ui` target passed
+        # `engine=None` and raised `AttributeError` on this line every time,
+        # which is how a target nobody ran stayed broken.
+        if engine is not None:
+            # The UI is a subscriber like any other. It needs no special support
+            # anywhere else in the platform.
+            engine.commands.events.subscribe(self.stream.name, self.stream.handle)
+            engine.stream = self.stream
 
         self._server = ThreadingHTTPServer((host, port), Handler)
         self._server.api = Api(engine)          # type: ignore[attr-defined]

@@ -19,6 +19,7 @@ export type Kind =
   | "solution"
   | "findings"
   | "gaps"
+  | "guidance"
   | "judgements"
   | "plan"
   | "report"
@@ -52,31 +53,54 @@ export interface Flow<T = unknown> {
 /** What each verb consumes and produces, so a client can type-check a
   * composition before sending it. Mirrors the server's type graph. */
 export const VERB_TYPES = {
+  "accept": { consumes: "any", produces: "same", mutates: false },
+  "agent-tools": { consumes: "nothing", produces: "report", mutates: false },
+  "ask": { consumes: "enrichments", produces: "guidance", mutates: false },
   "attach": { consumes: "nothing", produces: "elements", mutates: false },
+  "audit": { consumes: "nothing", produces: "judgements", mutates: false },
+  "c4": { consumes: "observations", produces: "report", mutates: false },
+  "capture": { consumes: "nothing", produces: "observations", mutates: false },
+  "chain": { consumes: "nothing", produces: "report", mutates: false },
+  "changed": { consumes: "nothing", produces: "report", mutates: false },
   "constraints": { consumes: "resolution", produces: "solution", mutates: false },
   "count": { consumes: "any", produces: "same", mutates: false },
   "declare": { consumes: "nothing", produces: "elements", mutates: false },
   "discover": { consumes: "nothing", produces: "observations", mutates: false },
+  "dismiss": { consumes: "any", produces: "same", mutates: false },
+  "enterprise": { consumes: "observations", produces: "report", mutates: false },
   "explain": { consumes: "any", produces: "same", mutates: false },
   "filter": { consumes: "any", produces: "same", mutates: false },
   "findings": { consumes: "any", produces: "findings", mutates: false },
+  "fire": { consumes: "nothing", produces: "report", mutates: true },
   "gaps": { consumes: "nothing", produces: "gaps", mutates: false },
+  "govern": { consumes: "observations", produces: "findings", mutates: false },
   "graph": { consumes: "nothing", produces: "nodes", mutates: false },
   "head": { consumes: "any", produces: "same", mutates: false },
   "history": { consumes: "nothing", produces: "report", mutates: false },
   "impact": { consumes: "nodes", produces: "impact", mutates: false },
   "json": { consumes: "any", produces: "same", mutates: false },
   "link": { consumes: "observations", produces: "resolution", mutates: false },
+  "options": { consumes: "enrichments", produces: "report", mutates: false },
+  "quarantine": { consumes: "any", produces: "report", mutates: false },
+  "radius": { consumes: "enrichments", produces: "impact", mutates: false },
   "reason": { consumes: "observations", produces: "enrichments", mutates: false },
   "reconcile": { consumes: "nothing", produces: "findings", mutates: false },
+  "risk": { consumes: "findings", produces: "report", mutates: false },
+  "rivals": { consumes: "nothing", produces: "report", mutates: false },
+  "routine": { consumes: "nothing", produces: "report", mutates: false },
+  "rules": { consumes: "nothing", produces: "report", mutates: false },
+  "sbom": { consumes: "observations", produces: "report", mutates: false },
   "scan": { consumes: "nothing", produces: "observations", mutates: false },
   "search": { consumes: "nothing", produces: "nodes", mutates: false },
+  "simulate": { consumes: "nothing", produces: "elements", mutates: true },
   "sort": { consumes: "any", produces: "same", mutates: false },
   "status": { consumes: "nothing", produces: "report", mutates: false },
+  "suggest": { consumes: "any", produces: "same", mutates: false },
   "target": { consumes: "nothing", produces: "report", mutates: true },
   "tool": { consumes: "any", produces: "text", mutates: false },
   "tools": { consumes: "nothing", produces: "report", mutates: false },
   "unique": { consumes: "any", produces: "same", mutates: false },
+  "verdicts": { consumes: "judgements", produces: "same", mutates: false },
 } as const satisfies Record<string, {
   consumes: Kind; produces: Kind; mutates: boolean;
 }>;
@@ -142,9 +166,49 @@ export class SlpieClient {
     return this.get(`/api/manual`);
   }
 
+  /** record that a suggested path was worth taking */
+  async accept(params: { key: string; about?: string; upstream?: Flow }): Promise<Flow> {
+    return this.post(`/api/v/accept`, params);
+  }
+
+  /** the capabilities an agent can call, as JSON schemas */
+  async agentTools(params: { name?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/agent-tools`, params);
+  }
+
+  /** the answer, its reasoning, its gaps, and what to ask next */
+  async ask(params: { question?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/ask`, params);
+  }
+
   /** register every declared element and negotiate capabilities */
   async attach(params: { capabilities?: string[]; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/attach`, params);
+  }
+
+  /** judge a tree against its stated architecture */
+  async audit(params: { path?: string; checks?: "auto" | "self"; rule?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/audit`, params);
+  }
+
+  /** C4 views of the system, as Mermaid */
+  async c4(params: { level?: "context" | "container" | "component" | "code"; container?: string; component?: string; out?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/c4`, params);
+  }
+
+  /** identify files by content and run them past the firewall */
+  async capture(params: { path?: string; depth?: "probe" | "structure" | "model" | "semantic"; limit?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/capture`, params);
+  }
+
+  /** the firewall's rules, in the order they are evaluated */
+  async chain(params: { upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/chain`, params);
+  }
+
+  /** what has moved since the last scan, and what it would cost */
+  async changed(params: { path?: string; baseline?: string; commit?: boolean; strict?: boolean; lenient?: boolean; limit?: number; max-bytes?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/changed`, params);
   }
 
   /** solve the version constraints, naming any conflict */
@@ -167,6 +231,16 @@ export class SlpieClient {
     return this.post(`/api/v/discover`, params);
   }
 
+  /** record that a suggested path was not useful here */
+  async dismiss(params: { key: string; reason?: string; about?: string; upstream?: Flow }): Promise<Flow> {
+    return this.post(`/api/v/dismiss`, params);
+  }
+
+  /** TOGAF views and the deployment topology */
+  async enterprise(params: { view?: "application" | "data" | "technology" | "standards" | "topology"; write?: boolean; out?: string; policy?: "raise" | "mark" | "local" | "generated"; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/enterprise`, params);
+  }
+
   /** render the reasoning, the sources and the gaps behind this */
   async explain(params: { remediation?: boolean; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/explain`, params);
@@ -182,9 +256,19 @@ export class SlpieClient {
     return this.post(`/api/v/findings`, params);
   }
 
+  /** fire a scripted condition at the simulated world */
+  async fire(params: { scenario: "boundary-breach" | "capability-refused" | "contract-broken" | "cve" | "declaration-drift" | "duplicate-versions" | "license-change" | "major-bump" | "partial-scan" | "service-dies" | "shadow-dependency" | "unmaintained"; package?: string; version?: string; upstream?: Flow; confirmed?: boolean }): Promise<Flow> {
+    return this.post(`/api/v/fire`, params);
+  }
+
   /** everything the platform currently cannot see */
   async gaps(params: { upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/gaps`, params);
+  }
+
+  /** run every governance rule over what was scanned */
+  async govern(params: { path?: string; severity?: "critical" | "high" | "medium" | "low" | "info"; family?: string; advisories?: string; popular?: string; distribution?: "internal_only" | "network_service" | "distributed_binary" | "distributed_source" | "embedded"; linkage?: "dynamic" | "static" | "separate_process" | "unmodified"; project_license?: string; no_sources?: boolean; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/govern`, params);
   }
 
   /** read nodes from the graph */
@@ -217,6 +301,21 @@ export class SlpieClient {
     return this.post(`/api/v/link`, params);
   }
 
+  /** every upgrade available, with the cost of each */
+  async options(params: { kind?: "safe_upgrade" | "upgrade_option" | "duplicate_versions" | "unconstrained_range"; safe?: boolean; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/options`, params);
+  }
+
+  /** what was held rather than admitted, and why */
+  async quarantine(params: { upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/quarantine`, params);
+  }
+
+  /** what depends on what, without needing a database */
+  async radius(params: { package?: string; min_size?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/radius`, params);
+  }
+
   /** run the reasoning layers over what was observed */
   async reason(params: { element?: string; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/reason`, params);
@@ -225,6 +324,31 @@ export class SlpieClient {
   /** compare what was declared against what was observed */
   async reconcile(params: { upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/reconcile`, params);
+  }
+
+  /** findings aggregated into a ranked risk register */
+  async risk(params: { limit?: number; markdown?: boolean; out?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/risk`, params);
+  }
+
+  /** what else is on the market, and where nobody serves the buyer */
+  async rivals(params: { gaps?: boolean; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/rivals`, params);
+  }
+
+  /** claim what you did as a short key, or list what you claimed */
+  async routine(params: { action?: "list" | "claim" | "forget"; name?: string; pipeline?: string; key?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/routine`, params);
+  }
+
+  /** what this build checks, and each rule's fingerprint */
+  async rules(params: { tag?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/rules`, params);
+  }
+
+  /** a bill of materials, in CycloneDX or SPDX */
+  async sbom(params: { format?: "cyclonedx" | "spdx"; out?: string; subject?: string; subject_version?: string; timestamp?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/sbom`, params);
   }
 
   /** read every attached element and record what is found */
@@ -237,6 +361,11 @@ export class SlpieClient {
     return this.post(`/api/v/search`, params);
   }
 
+  /** materialise the declared world as real files on disk */
+  async simulate(params: { at?: string; upstream?: Flow; confirmed?: boolean } = {}): Promise<Flow> {
+    return this.post(`/api/v/simulate`, params);
+  }
+
   /** order by a field */
   async sort(params: { field?: string; desc?: boolean; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/sort`, params);
@@ -245,6 +374,11 @@ export class SlpieClient {
   /** the environment's current state */
   async status(params: { upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/status`, params);
+  }
+
+  /** what to look at next, and why */
+  async suggest(params: { about?: string; kind?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/suggest`, params);
   }
 
   /** bind the environment to simulated or live */
@@ -265,6 +399,11 @@ export class SlpieClient {
   /** drop duplicates */
   async unique(params: { field?: string; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/unique`, params);
+  }
+
+  /** keep only judgements with one verdict */
+  async verdicts(params: { only?: "upheld" | "violated" | "indeterminate" | "inapplicable"; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/verdicts`, params);
   }
 
   private async get(path: string): Promise<any> {

@@ -268,7 +268,11 @@ def test_events_reach_a_connected_client(server):
             with urllib.request.urlopen(
                 server.url.rstrip("/") + "/api/stream", timeout=8
             ) as response:
-                for _ in range(4):
+                # Two lines per event now — `id:` then `data:` — so the count is
+                # generous rather than exact. A fixed small budget would make
+                # this test depend on how many frames precede the interesting
+                # one, which is not what it is about.
+                for _ in range(24):
                     line = response.readline()
                     if line.strip():
                         frames.append(line.decode("utf-8").strip())
@@ -286,6 +290,16 @@ def test_events_reach_a_connected_client(server):
     assert any(frame.startswith("data:") for frame in frames)
     payloads = [json.loads(f[5:]) for f in frames if f.startswith("data:")]
     assert any(p["kind"] == "scenario_fired" for p in payloads)
+
+    # The two fields that make a reconnect lossless. Without `id:` the browser
+    # has nothing to put in `Last-Event-ID`, so every drop silently loses
+    # whatever happened while the socket was down.
+    assert any(frame.startswith("retry:") for frame in frames), (
+        "the stream never told the client how long to wait before reconnecting"
+    )
+    identifiers = [int(f.split(":", 1)[1]) for f in frames if f.startswith("id:")]
+    assert identifiers, "no data frame carried an id, so a resume point cannot exist"
+    assert identifiers == sorted(identifiers), "ids went backwards"
 
 
 def test_a_client_is_primed_with_recent_history_so_it_is_never_blank():
@@ -333,7 +347,11 @@ def test_a_feed_line_carries_a_summary_not_a_whole_payload():
         {"kind": "package", "properties": {"x": "y" * 5000}, "title": "t"},
     ).sequenced(1))
 
-    payload = json.loads(client.events.get_nowait())
+    # `(stream sequence, payload)`. The sequence rides alongside the payload
+    # rather than inside it, because it is the stream's own counter and not the
+    # ledger's — operational events never reach the ledger and would all be 0.
+    _sequence, raw = client.events.get_nowait()
+    payload = json.loads(raw)
     assert payload["payload"]["kind"] == "package"
     # Sending every property bag to every browser would make the feed the most
     # expensive thing in the platform.
@@ -421,12 +439,52 @@ def test_every_asset_the_worker_precaches_actually_exists(server):
 
 
 def test_the_worker_never_caches_the_event_stream(server):
-    """A cached SSE response would replay history as though it were happening now."""
-    _status, _headers, body = _raw(server, "/sw.js")
-    source = body.decode("utf-8")
+    """A cached SSE response would replay history as though it were happening now.
 
-    assert "/events" in source
+    The path is read out of the client's own `EventSource(...)` call rather than
+    written here. The previous version of this test looked for the literal
+    `"/events"` in `sw.js` and passed for three phases while the worker excluded
+    a path the server has never served and cached `/api/stream` — an open,
+    unbounded response — on every connect.
+
+    A test that names the value it is checking can only ever confirm that
+    somebody typed it twice. Deriving it from the source of truth is what makes
+    the assertion mean something.
+    """
+    _status, _headers, worker = _raw(server, "/sw.js")
+    _status, _headers, client = _raw(server, "/app.js")
+
+    opened = re.search(r'new EventSource\(\s*"([^"]+)"', client.decode("utf-8"))
+    assert opened, "the app no longer opens an EventSource; this test is checking nothing"
+    path = opened.group(1)
+
+    source = worker.decode("utf-8")
+    assert f'"{path}"' in source, (
+        f"the app streams from {path} and the worker never mentions it, so the "
+        f"stream falls through to the caching branch"
+    )
+    # And the second line of defence, which catches the next streaming route
+    # without anybody remembering to add it to a list.
+    assert "text/event-stream" in source
     assert "must never be cached" in source or "not a document" in source
+
+
+def test_the_stream_path_the_worker_excludes_is_a_route_that_exists(server):
+    """The other half of the same defect: the excluded path must be real.
+
+    `/events` was excluded and was never served. Checking that the worker and
+    the client agree is not enough on its own — they could agree on a path the
+    server does not have.
+    """
+    _status, _headers, client = _raw(server, "/app.js")
+    opened = re.search(r'new EventSource\(\s*"([^"]+)"', client.decode("utf-8"))
+    path = opened.group(1)
+
+    _status, body = call(server, "/api/routes")
+    assert f"GET {path}" in body["routes"], (
+        f"{path} is not in the route table, so no generated client can find the "
+        f"live feed even though the interface depends on it"
+    )
 
 
 def test_a_cached_api_answer_is_marked_stale_rather_than_served_as_live(server):

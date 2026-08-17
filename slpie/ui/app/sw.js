@@ -22,6 +22,10 @@ const SHELL = [
   "/manifest.webmanifest", "/icon.svg",
 ];
 
+/* The live feed's path, which must never be cached. Named once here and
+ * asserted against the client's `EventSource(...)` call by the suite. */
+const STREAM = "/api/stream";
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(VERSION)
@@ -52,7 +56,15 @@ self.addEventListener("fetch", (event) => {
   // The event stream must never be cached: it is an open connection, not a
   // document, and a cached SSE response would replay history as though it were
   // happening now.
-  if (url.pathname === "/events") return;
+  //
+  // This guard named `/events` for three phases — a path the server has never
+  // served. The real endpoint is `/api/stream`, which therefore fell straight
+  // through to `networkFirst` below and had `cache.put` applied to an infinite
+  // response. The test that was meant to catch this searched `sw.js` for the
+  // string "/events" and so passed on the dead path, which is why nothing said
+  // anything. `tests/test_slpie_ui.py` now parses the URL out of the client's
+  // own `EventSource(...)` call instead, so the two cannot drift again.
+  if (url.pathname === STREAM) return;
 
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(networkFirst(request));
@@ -78,10 +90,18 @@ async function cacheFirst(request) {
   }
 }
 
+function cacheable(response) {
+  // A path check is the first line and a content-type check is the second. A
+  // route added later that streams — and there will be one — is caught here
+  // without anybody remembering to add it to a list.
+  const type = response.headers.get("content-type") || "";
+  return response.ok && !type.includes("text/event-stream");
+}
+
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (cacheable(response)) {
       const cache = await caches.open(VERSION);
       cache.put(request, response.clone());
     }

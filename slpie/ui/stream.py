@@ -29,6 +29,12 @@ CLIENT_BUFFER = 512
 #: Sent when nothing has happened, so proxies do not close an idle connection.
 KEEPALIVE_SECONDS = 20.0
 
+#: What the browser is told to wait before reconnecting, in milliseconds. Sent
+#: once per connection as an SSE `retry:` field, which `EventSource` honours
+#: natively — so the reconnect delay is the server's decision rather than each
+#: client's guess.
+RETRY_MILLISECONDS = 3000
+
 
 @dataclass(slots=True)
 class Client:
@@ -38,16 +44,20 @@ class Client:
     events: queue.Queue = field(default_factory=lambda: queue.Queue(maxsize=CLIENT_BUFFER))
     dropped: int = 0
     connected_at: float = field(default_factory=time.time)
+    #: The last stream sequence this client was sent, so a reconnect can say
+    #: where to resume from rather than guessing at a fixed backlog.
+    last_sent: int = 0
 
-    def offer(self, payload: str) -> None:
+    def offer(self, sequence: int, payload: str) -> None:
         """Enqueue, discarding the oldest first if this client is behind."""
+        item = (sequence, payload)
         try:
-            self.events.put_nowait(payload)
+            self.events.put_nowait(item)
         except queue.Full:
             try:
                 self.events.get_nowait()
                 self.dropped += 1
-                self.events.put_nowait(payload)
+                self.events.put_nowait(item)
             except (queue.Empty, queue.Full):  # pragma: no cover - racing readers
                 self.dropped += 1
 
@@ -64,7 +74,11 @@ class EventStream:
         self._clients: dict[str, Client] = {}
         self._lock = threading.RLock()
         self._sequence = 0
-        self._history: list[str] = []
+        #: `(stream sequence, payload)`, newest last. The sequence is the
+        #: stream's own counter rather than the ledger's: operational events
+        #: never reach the ledger and would all carry sequence 0, which makes a
+        #: ledger sequence useless as a resume point.
+        self._history: list[tuple[int, str]] = []
 
     # -- bus side --------------------------------------------------------
 
@@ -73,11 +87,11 @@ class EventStream:
         payload = self._encode(event)
         with self._lock:
             self._sequence += 1
-            self._history.append(payload)
+            self._history.append((self._sequence, payload))
             if len(self._history) > CLIENT_BUFFER:
                 del self._history[: len(self._history) - CLIENT_BUFFER]
             for client in list(self._clients.values()):
-                client.offer(payload)
+                client.offer(self._sequence, payload)
 
     def _encode(self, event: DomainEvent) -> str:
         body = {
@@ -95,16 +109,35 @@ class EventStream:
 
     # -- client side -----------------------------------------------------
 
-    def connect(self, client_id: str, *, backlog: int = 20) -> Client:
-        """Register a client, priming it with recent history.
+    def connect(self, client_id: str, *, since: int = 0, backlog: int = 20) -> Client:
+        """Register a client, priming it with the history it has not seen.
 
-        The backlog matters: a tab opened mid-scan should show what just
-        happened rather than an empty feed until the next event arrives.
+        Two cases, and conflating them is what made a reconnect lose events
+        silently. A *new* tab wants the last few lines so the feed is not blank
+        until something next happens — that is `backlog`. A *reconnecting* tab
+        knows exactly where it stopped and wants everything after that, which is
+        `since`, carried by the browser as `Last-Event-ID` at no cost.
+
+        Where `since` predates what is still retained the client is told how many
+        events it missed rather than being handed a partial replay it cannot
+        distinguish from a complete one. A view that quietly diverges from the
+        platform is worse than one that says it needs to refetch.
         """
         client = Client(id=client_id)
         with self._lock:
-            for payload in self._history[-backlog:]:
-                client.offer(payload)
+            if since > 0:
+                oldest = self._history[0][0] if self._history else self._sequence + 1
+                if oldest > since + 1:
+                    # The gap is real: events between `since` and `oldest` have
+                    # already been evicted from the retained window.
+                    client.dropped += oldest - since - 1
+                replay = [item for item in self._history if item[0] > since]
+            else:
+                replay = self._history[-backlog:]
+
+            for sequence, payload in replay:
+                client.offer(sequence, payload)
+            client.last_sent = since
             self._clients[client_id] = client
         return client
 
@@ -113,12 +146,18 @@ class EventStream:
             self._clients.pop(client_id, None)
 
     def follow(self, client: Client) -> Iterator[bytes]:
-        """Yield SSE frames for one client until it goes away."""
+        """Yield SSE frames for one client until it goes away.
+
+        Every data frame carries an `id:`, which is the whole reconnect story:
+        `EventSource` remembers the last id it saw and sends it back as
+        `Last-Event-ID` without the page having to track anything.
+        """
+        yield f"retry: {RETRY_MILLISECONDS}\n\n".encode("utf-8")
         yield b": connected\n\n"
         last_activity = time.monotonic()
         while True:
             try:
-                payload = client.events.get(timeout=1.0)
+                sequence, payload = client.events.get(timeout=1.0)
             except queue.Empty:
                 if time.monotonic() - last_activity > KEEPALIVE_SECONDS:
                     last_activity = time.monotonic()
@@ -127,10 +166,12 @@ class EventStream:
             last_activity = time.monotonic()
             if client.dropped:
                 # Tell the client it missed events rather than letting its view
-                # quietly diverge from the platform's.
+                # quietly diverge from the platform's. The count is the client's
+                # cue to refetch rather than to patch.
                 yield f"event: dropped\ndata: {client.dropped}\n\n".encode("utf-8")
                 client.dropped = 0
-            yield f"data: {payload}\n\n".encode("utf-8")
+            client.last_sent = sequence
+            yield f"id: {sequence}\ndata: {payload}\n\n".encode("utf-8")
 
     @property
     def clients(self) -> int:
@@ -143,6 +184,11 @@ class EventStream:
                 "delivered": self._sequence,
                 "buffered": len(self._history),
                 "dropped": sum(client.dropped for client in self._clients.values()),
+                # The oldest sequence still replayable. A client whose
+                # `Last-Event-ID` is below this cannot be resumed exactly and
+                # has to refetch, so it is worth being able to ask.
+                "oldest": self._history[0][0] if self._history else self._sequence,
+                "retry_ms": RETRY_MILLISECONDS,
             }
 
 

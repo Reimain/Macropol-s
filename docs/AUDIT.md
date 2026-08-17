@@ -117,12 +117,22 @@ Twelve scenarios — `cve`, `major-bump`, `unmaintained`, `duplicate-versions`,
 `boundary-breach`, `shadow-dependency`, `declaration-drift`, `partial-scan` — each carrying
 its own `expect_findings`/`expect_gaps` as data, and none reachable from any surface.
 
-Commands the plan's §21 advertises that do not exist: `init`, `ui`, `simulate`, `snapshot`,
-`deploy`, `scale`, `cost`, `region`. Two of those are named in user-facing text:
+Commands the plan's §21 advertises that do not exist: `init`, ~~`ui`~~, ~~`simulate`~~,
+`snapshot`, `deploy`, `scale`, `cost`, `region`. Two of those are named in user-facing text:
 
 * `slpie/compose/verb.py:190` tells the user to run `slpie init` when no environment is
-  declared. There is no `init`.
-* `slpie/demo/runner.py:107` prints `slpie ui` in its "Next:" footer. There is no `ui`.
+  declared. There is no `init`. **Still open.**
+* `slpie/demo/runner.py:107` prints `slpie ui` in its "Next:" footer. **Closed by §30 step 0**
+  — `slpie ui [--port N] [--host H] [--root DIR] [--once]` is a CLI command, not a verb,
+  because a server that blocks until interrupted neither consumes nor produces a `Flow`.
+  `tests/test_slpie_ui_command.py` asserts both halves: that the command works, and that
+  `"ui" not in registry()`.
+
+`simulate` and `fire` were closed by §29 stage 4. What generalises the fix is
+`test_the_overview_advertises_only_commands_that_exist`, which walks the generated usage
+block and fails on any `slpie <word>` that resolves to neither a command nor a verb — so
+the *next* advertised-and-absent command fails the suite instead of being found by a
+reader four phases later.
 
 ### 1.5 `--root` is ignored when opening an environment
 
@@ -315,13 +325,43 @@ a lazy-import mechanism.
 
 ---
 
+## Part 3 — the interface, audited before §30 rebuilt it
+
+Seven more, all measured, all found by reading rather than by a failing test. Each is now
+pinned by an assertion in `tests/test_slpie_api_defects.py` or
+`tests/test_slpie_ui_command.py`.
+
+| # | Defect | Why nothing caught it |
+|---|---|---|
+| 3.1 | **`slpie ui` did not exist.** Advertised in `pyproject.toml:49` and printed by `slpie/demo/runner.py:107`. | Nothing asserted an advertised command runs. Now generalised: `test_the_overview_advertises_only_commands_that_exist` walks the whole usage block. |
+| 3.2 | **`make ui` raised every time.** `UiServer(engine=None, …)` hit `engine.commands` on line 182 of `server.py`. | The target was never run. `engine=None` is now a supported way to start. |
+| 3.3 | **The service worker cached the event stream.** `sw.js:55` excluded `/events`, a path the server has never served; the real path `/api/stream` fell through to `cache.put` on an unbounded response. | The test grepped `sw.js` for the literal `"/events"` and so passed on the dead path. It now parses the URL out of the client's own `EventSource(…)` call. |
+| 3.4 | **`/api/stream` was in none of the 75 routes.** Intercepted before the route table, so absent from the OpenAPI document and undiscoverable by any generated client. | Nothing asserted the table covered what the interface actually uses. |
+| 3.5 | **`QueryResult.version` never left the process.** `api.py:190,197,214,218` took `.value` and dropped `version`, `projection`, `stale` on all six query-backed routes. | The read model's whole reason for carrying a version is client-side ordering, and no client existed yet to need it. |
+| 3.6 | **`GET /api/node` returned 200 with an error body** for a node that is not there. | A client cannot tell "absent" from "present but empty", so a retired node rendered as a blank panel. Now 404. |
+| 3.7 | **`workspace:create` could not be granted by any wildcard.** `matches_action` (`rbac/model.py:102`) has only ever understood dotted prefixes, and `plane.py:45-46` used a colon — so `allow workspace.* on "*"` matched nothing and said nothing. | Every test spelled the action out in full, which is the case that worked. |
+
+3.7 is the one worth dwelling on: it is a **silent authorisation failure**, the direction that
+denies rather than grants, which is why it survived. The actions are now dotted, and
+`matches_action` normalises a colon in the action position so existing policy files keep
+working. It cannot be a `DeprecationWarning` — `pyproject.toml` turns those into errors for
+`slpie.*`, so warning would convert a legacy policy file into a crash.
+
+And one that is not a defect but a standing hazard, now closed: `clients/` held a TypeScript
+client covering 25 of 48 verbs and an OpenAPI document with 52 of 77 paths, because **no test
+read those files**. Regenerating them fixes today; `tools/clients.py --check`, wired into the
+suite, fixes every day after it.
+
+---
+
 ## What this becomes
 
 Remediation is §29 of the master plan, in five stages: harden the suite first (so the rename
 has a net that fails loudly), then apply one stated naming rule, then build a corpus of real
 artifacts to replace the hand-rolled fixtures, then make `simulate` and `fire` reachable, then
 `acceptance.py` — one root script that runs the platform end to end and proves four things
-about the run.
+about the run. Part 3 is §30, which makes the interface operational and builds the API
+manager it is the first consumer of.
 
 The rule this audit is written to serve: **a capability the platform has and no surface can
 reach is drift, and a test that passes without checking anything is worse than no test.**

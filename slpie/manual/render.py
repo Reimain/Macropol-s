@@ -35,6 +35,7 @@ def overview(*, verbs: VerbRegistry | None = None, width: int = 78) -> str:
         "    slpie plan \"<question>\"            let it write the composition for you",
         "    slpie manual                       the whole manual, as markdown",
         "    slpie contract --openapi|--typescript   the generated API contract",
+        "    slpie ui [--port N] [--root DIR]   open the interface in a browser",
         "    slpie demo                         the end-to-end run, narrated",
         "",
     ]
