@@ -1,0 +1,196 @@
+/* Panels, pills, chips, controls, states.
+ *
+ * No raw size appears below — every dimension is a token, and
+ * `test_no_component_declares_a_raw_size` is what keeps that true. The two
+ * exceptions are hairlines (`1px`) and fully-rounded pills (`999px`), neither
+ * of which is a size that should change with the register.
+ */
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--card-pad);
+}
+.card h2 {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.metric {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.metric small {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: var(--sp-3);
+}
+
+/* --- pills and chips ---------------------------------------------------- */
+
+.pill {
+  display: inline-block;
+  padding: var(--sp-1) var(--sp-4);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  border: 1px solid var(--line);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pill.simulated { color: var(--sim); border-color: var(--sim); }
+.pill.live { color: var(--bad); border-color: var(--bad); }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+
+/* Colour is never the only channel. Every state carries a glyph too, so the
+ * palette is legible to a colour-blind reader and survives a screenshot. */
+.pill::before { margin-right: var(--sp-2); }
+.pill.ok::before { content: "\2713"; }
+.pill.warn::before { content: "\26A0"; }
+.pill.bad::before { content: "\2715"; }
+.pill.live::before { content: "\25CF"; }
+.pill.simulated::before { content: "\25CB"; }
+
+.chip {
+  display: inline-block;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 999px;
+  padding: var(--sp-2) var(--sp-4);
+  margin: var(--sp-1) var(--sp-2) var(--sp-1) 0;
+  cursor: pointer;
+  font-size: var(--fs-md);
+  font-family: var(--mono);
+  min-height: var(--control-h);
+}
+.chip.usable:hover { border-color: var(--accent); color: var(--accent); }
+/* Disabled rather than hidden: hiding an unusable verb hides the type graph,
+   and the shape of what can follow what is the thing worth learning. */
+.chip.blocked { opacity: 0.35; cursor: not-allowed; }
+.chip.danger { border-color: var(--bad); }
+.chip.danger.usable:hover { color: var(--bad); border-color: var(--bad); }
+
+/* --- controls ----------------------------------------------------------- */
+
+button.go {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-weight: 600;
+  min-height: var(--control-h);
+}
+button.go:hover { filter: brightness(1.1); }
+button.go.danger { background: var(--bad); }
+button.go[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+.ask { display: flex; gap: var(--sp-3); margin-bottom: var(--gap); }
+.ask input {
+  flex: 1;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-lg);
+  min-height: var(--control-h);
+}
+.ask input:focus { outline: none; border-color: var(--accent); }
+
+.param { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-md);
+         color: var(--muted); }
+.param input[type="text"], .param input:not([type]), .param select {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-md);
+  min-height: var(--control-h);
+  min-width: var(--field-w);
+}
+
+/* --- panel states ------------------------------------------------------- */
+
+.empty { color: var(--muted); font-style: italic; padding: var(--sp-5) 0; }
+
+/* A skeleton row rather than a spinner. A spinner says "something is
+ * happening"; a skeleton says "a table of this shape is arriving", which is
+ * the difference between waiting and knowing what you are waiting for. And it
+ * does not move, which matters under `prefers-reduced-motion`. */
+.skeleton { display: grid; gap: var(--sp-2); }
+.skeleton > i {
+  display: block;
+  height: var(--row-h);
+  background: var(--panel-2);
+  border-radius: var(--radius);
+}
+
+/* A refusal is an answer, not a fault. It uses the accent, never the danger
+ * colour: rendering a 403 in red teaches people that policy is a bug, and then
+ * they file tickets about it. */
+.refusal {
+  border-left: 3px solid var(--accent);
+  background: var(--panel-2);
+  padding: var(--sp-4);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.refusal h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-md); }
+.refusal .obligation { color: var(--muted); font-size: var(--fs-sm); margin-top: var(--sp-3); }
+
+.fault {
+  border-left: 3px solid var(--bad);
+  background: var(--panel-2);
+  padding: var(--sp-4);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.stale {
+  border-left: 3px solid var(--warn);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--panel-2);
+  font-size: var(--fs-sm);
+}
+
+/* --- evidence and findings ---------------------------------------------- */
+
+.gap {
+  border-left: 3px solid var(--warn);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--panel-2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: var(--sp-3);
+}
+.gap .what { font-weight: 600; font-size: var(--fs-md); }
+.gap .fix { color: var(--muted); font-size: var(--fs-sm); margin-top: var(--sp-1); }
+
+.finding { border-left-width: 3px; border-left-style: solid; }
+.finding.critical { border-left-color: var(--crit); }
+.finding.high { border-left-color: var(--bad); }
+.finding.medium { border-left-color: var(--warn); }
+.finding.low, .finding.info { border-left-color: var(--muted); }
+
+.step {
+  padding: var(--sp-2) 0 var(--sp-2) var(--sp-5);
+  border-left: 2px solid var(--line);
+  font-size: var(--fs-md);
+}
+.step .cite { color: var(--muted); font-family: var(--mono); font-size: var(--fs-xs); }
+
+.bar { height: var(--sp-3); background: var(--panel-2); border-radius: var(--radius); overflow: hidden; }
+.bar > div { height: 100%; background: var(--accent); }
+
+.facts { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: var(--sp-3) 0; }
+.facts .fact { font-size: var(--fs-md); }
+.facts .k { color: var(--muted); }
+.facts .v { font-family: var(--mono); margin-left: var(--sp-3); }

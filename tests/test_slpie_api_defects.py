@@ -232,8 +232,17 @@ def test_the_stream_is_in_the_route_table():
     assert ("GET", "/api/stream/status") in api.routes
 
 
-def test_fetching_the_stream_says_to_use_the_right_transport():
-    """Better than a 404, which would imply the feed does not exist."""
+def test_reaching_the_stream_through_the_route_table_says_use_the_right_transport():
+    """For a caller that goes through `Api.handle` — not the stdlib server.
+
+    `server.py` intercepts `/api/stream` before the route table and opens a real
+    `text/event-stream`, which is the correct behaviour and is asserted in
+    `test_slpie_ui.py`. This route exists for the two callers that reach the
+    table directly: the contract emitter, so the feed is discoverable, and any
+    adapter that dispatches by table rather than by path — where a bare 404
+    would say the feed does not exist rather than that it needs a different
+    transport.
+    """
     api = Api(engine=None)
     response = api.handle(Request(method="GET", path="/api/stream", query={}, body={}))
 

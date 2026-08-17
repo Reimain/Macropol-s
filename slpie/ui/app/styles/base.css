@@ -1,0 +1,81 @@
+/* Elements. Everything here reads tokens and declares no size of its own. */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: var(--fs-md);
+  line-height: var(--lh);
+}
+
+h1, h2, h3 { font-weight: 600; }
+
+a { color: var(--accent); }
+a:not(:hover) { text-decoration: none; }
+
+/* Every interactive element shows where focus is. A console this size without
+ * a visible ring is unusable from a keyboard, and keyboard use is not a niche:
+ * it is how anybody working a list all day actually works it. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-md);
+  font-variant-numeric: var(--numerals);
+}
+
+th, td {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  height: var(--row-h);
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 1;
+}
+
+tbody tr:hover { background: var(--panel-2); }
+
+.mono, td.mono { font-family: var(--mono); font-size: var(--fs-sm); }
+.muted { color: var(--muted); }
+.right { text-align: right; }
+
+/* An operations surface people leave open all day should not animate at them,
+ * and a reduced-motion preference is a statement about health rather than
+ * taste. Transitions are capped rather than banned: 150ms is below the
+ * threshold at which motion reads as motion. */
+* { transition-duration: 150ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

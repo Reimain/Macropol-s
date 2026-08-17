@@ -510,13 +510,93 @@ def test_nothing_in_the_interface_reaches_an_external_origin(server):
         assert not external, f"{path} reaches {external}"
 
 
-def test_the_stylesheet_collapses_the_layout_for_a_phone(server):
-    _status, _headers, body = _raw(server, "/styles.css")
+def _stylesheet(server, entry="/styles.css", seen=None):
+    """The whole stylesheet as the browser assembles it, following `@import`.
+
+    `styles.css` is an import root now, split by axis — palette in one file,
+    geometry in another, so two visual registers cost forty declarations rather
+    than a second copy of every screen. A test that reads only the root would
+    have gone green over six lines of `@import` and checked nothing.
+    """
+    seen = seen if seen is not None else set()
+    if entry in seen:
+        return ""
+    seen.add(entry)
+
+    _status, _headers, body = _raw(server, entry)
     css = body.decode("utf-8")
+
+    base = entry.rsplit("/", 1)[0]
+    for target in re.findall(r'@import\s+(?:url\()?"([^"]+)"', css):
+        css += _stylesheet(server, f"{base}/{target}", seen)
+    return css
+
+
+def test_the_stylesheet_collapses_the_layout_for_a_phone(server):
+    css = _stylesheet(server)
 
     assert "@media (max-width: 720px)" in css, "no phone breakpoint"
     assert "grid-template-columns: 1fr" in css, "the grid never collapses"
     assert "prefers-reduced-motion" in css
+
+
+def test_every_imported_stylesheet_is_actually_served(server):
+    """The hole `@import` opens, closed.
+
+    The HTML asset test follows `src=` and `href=` and does not follow
+    `@import`, so a stylesheet that failed to install would leave a page that
+    loads, renders unstyled, and passes every existing assertion.
+    """
+    imported = re.findall(
+        r'@import\s+(?:url\()?"([^"]+)"',
+        _raw(server, "/styles.css")[2].decode("utf-8"),
+    )
+    assert imported, "styles.css imports nothing; this test is checking nothing"
+
+    for target in imported:
+        status, _headers, body = _raw(server, f"/{target}")
+        assert status == 200, f"styles.css imports {target}, which is not served"
+        assert body, f"{target} is served and empty"
+
+
+def test_the_two_registers_are_independent_axes(server):
+    """Density changes geometry; theme changes palette. Neither touches the other.
+
+    This is the property that makes a second register cheap, and it is exactly
+    the property that erodes first — one `--bg` in the density block and the two
+    axes are entangled for good.
+    """
+    palette = _raw(server, "/styles/tokens.css")[2].decode("utf-8")
+    geometry = _raw(server, "/styles/density.css")[2].decode("utf-8")
+
+    for token in ("--row-h", "--fs-md", "--sp-1"):
+        assert token not in palette, f"{token} is geometry and is declared in the palette"
+    for token in ("--bg", "--text", "--accent"):
+        assert token not in geometry, f"{token} is a colour and is declared in the geometry"
+
+    assert '[data-density="reading"]' in geometry, "there is only one register"
+    assert '[data-theme="light"]' in palette, "there is only one theme"
+
+
+def test_no_component_declares_a_raw_size(server):
+    """The single rule that keeps the density axis real rather than aspirational.
+
+    One hardcoded `padding: 16px` in a component and that component stops
+    responding to the register, which is how a token axis quietly becomes
+    decoration. Hairlines and fully-rounded pills are exempt: neither is a size
+    that should change with the register.
+    """
+    allowed = {"1px", "2px", "3px", "999px"}
+
+    for sheet in ("/styles/components.css", "/styles/screens.css"):
+        css = _raw(server, sheet)[2].decode("utf-8")
+        # Ignore media queries: a breakpoint is a device fact, not a token.
+        body = re.sub(r"@media[^{]+\{", "{", css)
+        sizes = {
+            size for size in re.findall(r"(?<![\w-])(\d+px)", body)
+            if size not in allowed
+        }
+        assert not sizes, f"{sheet} hardcodes {sorted(sizes)} instead of using a token"
 
 
 def test_the_compose_view_is_reachable_from_the_navigation(server):

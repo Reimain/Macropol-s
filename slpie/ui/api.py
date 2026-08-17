@@ -238,6 +238,20 @@ class Api:
                 "transport": "sse",
             }, status=400)
 
+        @self.route("GET", "/api/screens")
+        def screens(_request: Request) -> Any:
+            """The screen manifest, so the shell does not restate the routing.
+
+            Generated from the same registry the routes are, which is what makes
+            "every capability has a screen" a test rather than a hope.
+            """
+            from .contract import screens as manifest
+
+            return {"screens": [
+                screen.to_dict()
+                for screen in manifest(verbs=self.verbs, routes=self.routes)
+            ]}
+
         @self.route("GET", "/api/stream/status")
         def stream_status(_request: Request) -> Any:
             """How far behind the feed is, and how far back it can replay."""

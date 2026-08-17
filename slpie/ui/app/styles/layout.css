@@ -1,0 +1,89 @@
+/* The shell: header, navigation, outlet.
+ *
+ * The same stdlib server is the desktop window and the phone screen, so the
+ * layout has to hold at 360px. No framework: a grid that collapses and a nav
+ * that scrolls is the whole mechanism.
+ */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  padding: var(--sp-3) var(--sp-6);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+
+.brand { font-weight: 700; letter-spacing: 0.02em; font-size: var(--fs-lg); }
+.brand span {
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+nav { display: flex; gap: var(--sp-1); flex: 1; flex-wrap: wrap; }
+
+nav a, nav button {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--muted);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: var(--fs-md);
+  min-height: var(--control-h);
+  display: inline-flex;
+  align-items: center;
+}
+nav a:hover, nav button:hover { color: var(--text); background: var(--panel-2); }
+nav a.active, nav button.active {
+  color: var(--text);
+  background: var(--panel-2);
+  border-color: var(--line);
+}
+
+main {
+  padding: var(--sp-6);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.grid {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.row { display: flex; gap: var(--sp-4); align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.scroll { overflow-x: auto; }
+.stack { display: grid; gap: var(--gap); }
+
+/* The measure cap applies to prose, never to tables — a table wants the width
+ * it can get, and capping it would reintroduce the horizontal scroll the cap
+ * exists to avoid. */
+.reading { max-width: var(--measure); }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  header { gap: var(--sp-2); padding: var(--sp-2) var(--sp-4); }
+  header nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+  header nav::-webkit-scrollbar { height: 0; }
+  header nav a, header nav button { white-space: nowrap; }
+  main { padding: var(--sp-4); }
+  .scroll { max-height: 50vh; }
+}

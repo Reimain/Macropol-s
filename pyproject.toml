@@ -49,10 +49,21 @@ include = ["gratimos*", "slpie*", "slpie_enterprise*"]
 # assets and `slpie ui` serves a 404 from a working server. The webmanifest and
 # the icon are listed too: omitting them installs a page that looks fine and
 # silently cannot be installed as an app, which is the worst kind of missing.
+#
+# Both the flat and the recursive form are listed. `**` needs at least one
+# directory segment, so it does not match a top-level file, and the flat globs
+# are not redundant with it. `setuptools>=68` is already required by the build
+# system, and it passes these through `glob(recursive=True)`.
+#
+# `tests/test_slpie_ui_assets.py` runs these patterns and asserts the result
+# equals every file under `app/`, because an editable install never exercises
+# them — a missing glob is only discovered by somebody installing the wheel and
+# finding the browser 404 on a module no Python test can see.
 [tool.setuptools.package-data]
 "slpie.ui" = [
     "app/*.html", "app/*.js", "app/*.css",
     "app/*.webmanifest", "app/*.svg",
+    "app/**/*.js", "app/**/*.css", "app/**/*.svg",
 ]
 
 # --- tooling ---------------------------------------------------------------

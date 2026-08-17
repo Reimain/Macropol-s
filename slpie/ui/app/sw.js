@@ -16,10 +16,31 @@
  * laptop on a plane.
  */
 
-const VERSION = "slpie-v1";
+/* Bumped when the shell's file set changes. An `activate` handler deletes every
+ * cache that is not this one, so the bump is what evicts a stale shell — a
+ * version left alone across a restructure serves yesterday's modules from
+ * cache and the page dies on an import that no longer exists. */
+const VERSION = "slpie-v2";
+
+/* Every file the app needs to open with the network unplugged. Listed rather
+ * than discovered, because discovery needs a request and the whole point is to
+ * work without one.
+ *
+ * `tests/test_slpie_ui_assets.py` checks this list in *both* directions. The
+ * forward check — everything listed is served — has always been here. The
+ * reverse check is the one that matters after a restructure: a new module that
+ * nobody added to this list installs fine, works online, and breaks offline,
+ * which is the failure nobody reproduces until a plane. */
 const SHELL = [
-  "/", "/index.html", "/styles.css", "/app.js", "/compose.js",
-  "/manifest.webmanifest", "/icon.svg",
+  "/", "/index.html", "/manifest.webmanifest", "/icon.svg",
+  "/styles.css",
+  "/styles/tokens.css", "/styles/density.css", "/styles/base.css",
+  "/styles/layout.css", "/styles/components.css", "/styles/screens.css",
+  "/boot.js", "/shell.js", "/app.js", "/compose.js",
+  "/core/dom.js", "/core/store.js", "/core/bus.js", "/core/router.js",
+  "/core/result.js", "/core/format.js",
+  "/data/client.js", "/data/http.js", "/data/live.js", "/data/queries.js",
+  "/ui/panel.js", "/ui/table.js", "/ui/pill.js", "/ui/nav.js", "/ui/density.js",
 ];
 
 /* The live feed's path, which must never be cached. Named once here and

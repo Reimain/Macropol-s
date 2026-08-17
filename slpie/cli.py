@@ -173,16 +173,17 @@ class Cli:
         return OK
 
     def _contract(self, arguments: Sequence[str]) -> int:
-        """`slpie contract --openapi | --typescript` — the generated contract.
+        """The generated contract, in whichever projection was asked for.
+
+            slpie contract --openapi      the OpenAPI 3.1 document (the default)
+            slpie contract --typescript   the typed client the shells consume
+            slpie contract --javascript   the ES module the interface consumes
+            slpie contract --screens      the screen manifest
 
         Emitted rather than maintained, so the stdlib server, the FastAPI adapter
         and every client build from one source and cannot drift.
         """
-        from .ui.contract import openapi, typescript
-
-        if "--typescript" in arguments or "--ts" in arguments:
-            self._out(typescript(verbs=self.verbs))
-            return OK
+        from .ui.contract import javascript, openapi, screens, typescript
 
         try:
             from .ui.api import Api
@@ -190,6 +191,21 @@ class Cli:
             routes = Api(engine=None).routes
         except Exception:  # noqa: BLE001 - the document is still useful without them
             routes = ()
+
+        if "--typescript" in arguments or "--ts" in arguments:
+            self._out(typescript(verbs=self.verbs))
+            return OK
+        if "--javascript" in arguments or "--js" in arguments:
+            self._out(javascript(verbs=self.verbs, routes=routes))
+            return OK
+        if "--screens" in arguments:
+            self._out(json.dumps(
+                [screen.to_dict() for screen in
+                 screens(verbs=self.verbs, routes=routes)],
+                indent=2,
+            ))
+            return OK
+
         self._out(json.dumps(
             openapi(verbs=self.verbs, routes=routes), indent=2,
         ))

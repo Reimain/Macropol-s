@@ -1,5 +1,9 @@
 <!doctype html>
-<html lang="en">
+<!-- The defaults are on the element rather than applied by script, so the
+     common case paints correctly on the very first frame. `boot.js` changes
+     them only when a stored choice differs — `script-src 'self'` forbids an
+     inline bootstrap and there is no build step to inline one for us. -->
+<html lang="en" data-theme="dark" data-density="bench">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,6 +29,7 @@
     </nav>
     <span id="target" class="pill simulated">simulated</span>
     <span id="connection" class="pill" title="live event stream">offline</span>
+    <div id="appearance"></div>
   </header>
 
   <main>
@@ -211,6 +216,12 @@
     </section>
   </main>
 
+  <!-- `boot.js` is a module and therefore deferred by definition, which is why
+       it can sit here and still run before anything paints that depends on it.
+       The two classic scripts below are the pre-§30 views; they are replaced
+       screen by screen as each is authored on the framework. -->
+  <script type="module" src="/boot.js"></script>
+  <script type="module" src="/shell.js"></script>
   <script src="/app.js"></script>
   <script src="/compose.js"></script>
 </body>

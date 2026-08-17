@@ -30,20 +30,25 @@ CLIENTS = ROOT / "clients"
 SHELLS = ("web", "desktop", "mobile")
 
 
-def _contract() -> tuple[str, str]:
-    """The TypeScript client and the OpenAPI document, as text."""
+def targets() -> dict[Path, str]:
+    """Every committed artifact, mapped to what the generator says it should be."""
     from slpie.compose import registry
     from slpie.ui.api import Api
-    from slpie.ui.contract import openapi, typescript
+    from slpie.ui.contract import javascript, openapi, typescript
+    from slpie.ui.server import APP_ROOT
 
     verbs = registry()
-    document = openapi(verbs=verbs, routes=Api(engine=None).routes)
-    return typescript(verbs=verbs), json.dumps(document, indent=2) + "\n"
+    routes = Api(engine=None).routes
 
-
-def targets() -> dict[Path, str]:
-    client, document = _contract()
-    wanted = {CLIENTS / "openapi.json": document}
+    wanted = {
+        CLIENTS / "openapi.json":
+            json.dumps(openapi(verbs=verbs, routes=routes), indent=2) + "\n",
+        # The interface's own client. Committed rather than served from a route
+        # because the service worker precaches the shell, and a module generated
+        # at request time cannot boot with the network unplugged.
+        APP_ROOT / "data" / "client.js": javascript(verbs=verbs, routes=routes),
+    }
+    client = typescript(verbs=verbs)
     for shell in SHELLS:
         wanted[CLIENTS / shell / "src" / "slpie-client.ts"] = client
     return wanted

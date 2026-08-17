@@ -1,0 +1,73 @@
+/* The palette. One axis, and it carries no sizes.
+ *
+ * The split between this file and `density.css` is what makes two visual
+ * registers cost forty declarations instead of a second stylesheet. Palette
+ * tokens never mention geometry; geometry tokens never mention colour. The two
+ * axes are then genuinely independent: switching density cannot change a colour
+ * and switching theme cannot change a size, and both facts are asserted rather
+ * than hoped for.
+ *
+ * Neither register uses pure black on pure white. Contrast is targeted around
+ * 7:1 rather than the 21:1 that maximum contrast would give, because this is a
+ * surface people leave open all day and 21:1 is where eye strain lives.
+ */
+
+:root,
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --panel-2: #1c2128;
+  --line: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --accent-ink: #04101f;
+  --ok: #3fb950;
+  --warn: #d29922;
+  --bad: #f85149;
+  --crit: #ff7b72;
+  --sim: #a371f7;
+}
+
+[data-theme="light"] {
+  --bg: #ffffff;
+  --panel: #f6f8fa;
+  --panel-2: #eaeef2;
+  --line: #d0d7de;
+  --text: #1f2328;
+  --muted: #656d76;
+  --accent: #0969da;
+  --accent-ink: #ffffff;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --bad: #cf222e;
+  --crit: #a40e26;
+  --sim: #8250df;
+}
+
+/* The system preference, honoured only when nobody has chosen. Scoped with
+ * `:not([data-theme])` so an explicit choice always wins — without that guard a
+ * user on a light desktop who picked dark would get their choice overridden by
+ * their operating system, which is the opposite of what picking means. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg: #ffffff;
+    --panel: #f6f8fa;
+    --panel-2: #eaeef2;
+    --line: #d0d7de;
+    --text: #1f2328;
+    --muted: #656d76;
+    --accent: #0969da;
+    --accent-ink: #ffffff;
+    --ok: #1a7f37;
+    --warn: #9a6700;
+    --bad: #cf222e;
+    --crit: #a40e26;
+    --sim: #8250df;
+  }
+}
+
+:root {
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
