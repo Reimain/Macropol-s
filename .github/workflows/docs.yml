@@ -90,13 +90,25 @@ jobs:
       # would render without stylesheets or source links.
       - run: touch docs/_build/html/.nojekyll
 
-      # `enablement: true` turns Pages on for the repository if it is off,
-      # using this workflow's own `pages: write` token. That is the only way to
-      # do it from here — the Pages REST path is not reachable from a Claude
-      # Code session, so the alternative was a settings toggle somebody had to
-      # remember to click before the first deploy could ever succeed.
+      # `enablement: true` asks GitHub to turn Pages on if it is off. **It is
+      # not sufficient on its own**, and the comment here used to claim it was.
+      # Observed on run 32174982148:
       #
-      # It requires a public repository or a paid plan; this one is public.
+      #     Get Pages site failed.    Error: Not Found
+      #     Create Pages site failed. Error: Resource not accessible by integration
+      #
+      # The first line means Pages is not configured for the repository; the
+      # second means this workflow's token may not configure it. Enablement by
+      # token needs the repository's Actions permissions to allow it, and where
+      # they do not, no amount of workflow YAML substitutes for the one-time
+      # setting:
+      #
+      #     Settings → Pages → Build and deployment → Source: GitHub Actions
+      #
+      # It is left in because it *does* work once permissions allow, and it
+      # costs nothing when Pages is already on. What it must not do is imply
+      # the deploy is self-configuring, because a build that goes green while
+      # publishing nothing is worse than one that fails.
       - uses: actions/configure-pages@v5
         with:
           enablement: true
