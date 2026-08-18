@@ -41,6 +41,7 @@ COMPETITIVE
 :caption: How it is built
 :maxdepth: 2
 
+UI
 ARCHITECTURE
 AUDIT
 README

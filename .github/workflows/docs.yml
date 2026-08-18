@@ -22,6 +22,11 @@ on:
       # to the public URL, review or no review — and a "temporary" exception
       # nobody deletes is just the rule changing without anyone deciding to.
       - "claude/interactive-notebooks"
+      # TEMPORARY, for the same reason and with the same expiry as the entry
+      # above: the interface documentation and the interactive demo are on this
+      # branch, and there is no way to see either published until it deploys.
+      # Delete both entries when this merges.
+      - "claude/gratimos-agent-meta-pc9xnt"
   workflow_dispatch:
 
 # Least privilege. `contents: read` to check out, `pages`/`id-token` for the
@@ -68,6 +73,18 @@ jobs:
       # to leave the published site stale.
       - name: Build the site
         run: python -m sphinx -b html --keep-going docs docs/_build/html
+
+      # The interactive console, baked into one self-contained page and
+      # published at /demo/. It needs no browser and no bundler: the API
+      # recording is captured in Python through `Api.handle`, and the interface
+      # modules are plain text — so this runs on the same kernel-only install
+      # the documentation builds from, and adds no dependency to the job.
+      #
+      # It is built rather than committed because it embeds a scan: a
+      # 600KB generated artefact in git would be re-diffed on every commit that
+      # touched a single interface module.
+      - name: Bake the interactive demo
+        run: python -m tools.ui.demo --out docs/_build/html/demo/index.html
 
       # Jekyll would otherwise skip `_static/` and `_modules/`, and the site
       # would render without stylesheets or source links.

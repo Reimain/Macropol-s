@@ -140,3 +140,14 @@ clean:  ## remove caches and build artifacts
 	find . -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
 	find . -name '*.pyc' -delete
 	rm -rf .pytest_cache .coverage htmlcov build dist *.egg-info
+
+ui-screenshots:  ## regenerate docs/_static/ui/*.png from a real scan (needs .[e2e])
+	python -m tools.ui.screenshots
+
+ui-demo:  ## bake the console into one self-contained page for GitHub Pages
+	python -m tools.ui.demo
+
+docs:  ## build the Sphinx site, demo page included
+	python -m sphinx -b html --keep-going docs docs/_build/html
+	python -m tools.ui.demo --out docs/_build/html/demo/index.html
+	@echo "open docs/_build/html/index.html"

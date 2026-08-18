@@ -445,3 +445,61 @@ def test_no_screen_calls_fetch_directly():
         f"these bypass the request chain and will silently lose the trace id "
         f"and the version headers: {offenders}"
     )
+
+
+def test_every_screenshot_the_documentation_embeds_exists():
+    """A docs page referencing a missing image renders a broken-image icon.
+
+    Sphinx does warn, but the publish job runs without `-W` on purpose — a
+    documentation warning is not a reason to leave the site stale — so nothing
+    would *fail*. This is the check that does, and it is the reverse direction
+    too: an orphan in `_static/ui/` is a screenshot nobody looks at, which is
+    how a folder of stale images accumulates.
+    """
+    import re
+
+    docs = Path(__file__).resolve().parent.parent / "docs"
+    page = docs / "UI.md"
+    assert page.is_file(), "docs/UI.md is missing"
+
+    referenced = set(re.findall(r"_static/ui/([\w.-]+\.png)", page.read_text()))
+    assert referenced, "docs/UI.md embeds no screenshots — did the paths move?"
+
+    folder = docs / "_static" / "ui"
+    present = {path.name for path in folder.glob("*.png")} if folder.is_dir() else set()
+
+    missing = sorted(referenced - present)
+    assert not missing, (
+        f"docs/UI.md embeds images that are not committed: {missing}. "
+        f"Run `make ui-screenshots`."
+    )
+    orphans = sorted(present - referenced)
+    assert not orphans, (
+        f"these screenshots are committed but nothing embeds them: {orphans}"
+    )
+
+
+def test_the_documentation_links_to_the_demo_with_a_raw_anchor():
+    """The demo page does not exist when Sphinx runs, so it cannot be a xref.
+
+    `[text](demo/index.html)` resolves against the *document tree*. The demo is
+    built into `_build/html/demo/` by the publish job, after Sphinx has
+    finished, so there is no such document — and MyST renders the link as an
+    inert `<span class="xref myst">` rather than failing. The page looked right
+    in source and shipped with a dead link.
+
+    A raw `<a href>` is passed through untouched, which is why this asserts the
+    anchor form rather than merely that the string "demo" appears.
+    """
+    import re
+
+    page = (Path(__file__).resolve().parent.parent / "docs" / "UI.md").read_text()
+
+    assert re.search(r'<a href="demo/index\.html">', page), (
+        "docs/UI.md must link to the demo with a raw anchor — a Markdown link "
+        "renders as a dead cross-reference"
+    )
+    assert not re.search(r"\]\(demo/index\.html\)", page), (
+        "docs/UI.md uses a Markdown link to the demo, which Sphinx renders as "
+        "an inert span"
+    )
