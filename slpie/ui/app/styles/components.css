@@ -528,3 +528,15 @@ table.datagrid tbody tr:last-child td { border-bottom: none; }
 [data-density="reading"] .grid-wrap { border-color: var(--line); }
 [data-density="reading"] table.datagrid td { white-space: normal; max-width: none; }
 [data-density="reading"] .grid-status { background: var(--panel); }
+
+/* An icon-only control. Square, so it does not read as a truncated label, and
+   sized from the same control token as everything else in the bar. */
+.chip.icon {
+  padding: 0;
+  width: var(--control-h);
+  min-width: var(--control-h);
+  justify-content: center;
+  color: var(--muted);
+}
+.chip.icon:hover { color: var(--accent); }
+.chip.icon svg { display: block; }

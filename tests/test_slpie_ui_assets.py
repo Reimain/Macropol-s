@@ -459,18 +459,32 @@ def test_every_screenshot_the_documentation_embeds_exists():
     import re
 
     docs = Path(__file__).resolve().parent.parent / "docs"
-    page = docs / "UI.md"
-    assert page.is_file(), "docs/UI.md is missing"
 
-    referenced = set(re.findall(r"_static/ui/([\w.-]+\.png)", page.read_text()))
-    assert referenced, "docs/UI.md embeds no screenshots — did the paths move?"
+    # Two referrers, not one. The documentation page embeds them by their
+    # `_static/ui/` path; the front page refers to the same canonical files
+    # through `assets/`, which `tools/ui/landing.py` resolves from that folder
+    # at render time. Counting only the first would report every image the front
+    # page uses as an orphan and invite somebody to delete it.
+    pages = {
+        "docs/UI.md": docs / "UI.md",
+        "docs/_landing/index.html": docs / "_landing" / "index.html",
+    }
+    for name, path in pages.items():
+        assert path.is_file(), f"{name} is missing"
+
+    referenced: set[str] = set()
+    for path in pages.values():
+        body = path.read_text()
+        referenced |= set(re.findall(r"_static/ui/([\w.-]+\.png)", body))
+        referenced |= set(re.findall(r'src="assets/([\w.-]+\.png)"', body))
+    assert referenced, "neither page embeds a screenshot — did the paths move?"
 
     folder = docs / "_static" / "ui"
     present = {path.name for path in folder.glob("*.png")} if folder.is_dir() else set()
 
     missing = sorted(referenced - present)
     assert not missing, (
-        f"docs/UI.md embeds images that are not committed: {missing}. "
+        f"the documentation embeds images that are not committed: {missing}. "
         f"Run `make ui-screenshots`."
     )
     orphans = sorted(present - referenced)

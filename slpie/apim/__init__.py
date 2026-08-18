@@ -51,9 +51,9 @@ from .chain import Chain, Rule, Situation, Verdict
 from .credential import Credential, CredentialStore
 from .errors import ApimError, LifecycleRefused, SubscriptionRefused, ThrottleRefused
 from .gateway import Admission, Gateway
-from .lifecycle import ApiState, TRANSITIONS, advance
+from .lifecycle import TRANSITIONS, ApiState, advance
 from .subscription import Subscription, SubscriptionLedger
-from .throttle import ThrottleDecision, ThrottlePolicy, Throttler, TIERS
+from .throttle import TIERS, ThrottleDecision, ThrottlePolicy, Throttler
 
 __all__ = [
     "ActionMap", "action_for",

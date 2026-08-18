@@ -33,16 +33,23 @@ CHROMIUM = Path("/opt/pw-browsers")
 
 #: Each shot names what it is *for*. A folder of `screen-1.png` is a folder
 #: nobody can maintain, because deciding whether one is stale means opening it.
+#:
+#: Three of these are captured in **both themes**, because the front page shows
+#: them and the front page itself is themed. A dark screenshot on a light page
+#: is as wrong as a light one on a dark page — so the page carries both and
+#: swaps them with its own tokens, which means both have to exist.
 SHOTS = [
-    ("console", "#/", "The console with nothing open — the way in, and the "
-                      "composition it will run, shown before it runs."),
-    ("graph", "#/graph", "The estate, with the evidence in the stroke."),
-    ("graph-selected", "#/graph", "A node picked: everything it does not touch dims."),
-    ("verbs-dense", "#/verbs", "The dense register — a rich-client grid."),
-    ("verbs-calm", "#/verbs", "The same screen in the calm register."),
-    ("compose", "#/compose", "The verb palette, generated from the registry."),
-    ("graph-dark", "#/graph", "The dark theme, selected for its ground rather "
-                              "than flipped."),
+    ("console", "The console with nothing open — the way in, and the "
+                "composition it will run, shown before it runs."),
+    ("compose", "The verb palette, generated from the registry."),
+    ("graph", "The estate, with the evidence in the stroke."),
+    ("graph-selected", "A node picked: everything it does not touch dims."),
+    ("graph-dark", "The dark theme, selected for its ground rather than flipped."),
+    ("verbs-dense", "The dense register — a rich-client grid."),
+    ("verbs-calm", "The same screen in the calm register."),
+    ("graph-selected-dark", "The selected node, in the dark theme."),
+    ("verbs-dense-dark", "The dense grid, in the dark theme."),
+    ("verbs-calm-dark", "The calm register, in the dark theme."),
 ]
 
 
@@ -80,6 +87,37 @@ def capture(out: Path) -> list[str]:
                 and problems.append(message.text),
             )
 
+            # Switching is done by *pressing the control*, never by setting the
+            # attribute. Poking `dataset.theme` applies the tokens but skips
+            # `setTheme()`, so no event fires, nothing redraws, and the button
+            # keeps the label it had — producing a captured frame where the
+            # toggle reads "Dark" on a page that is already dark. That state is
+            # unreachable in the running app, and publishing a picture of it
+            # would document a control defect that does not exist.
+            def press(index: int) -> None:
+                page.eval_on_selector_all(
+                    "#appearance button",
+                    f"els => els[{index}].dispatchEvent("
+                    f"new MouseEvent('click', {{bubbles: true}}))",
+                )
+                page.wait_for_timeout(320)
+
+            def want(theme: str = "", density: str = "") -> None:
+                for _ in range(2):
+                    if theme and page.evaluate(
+                        "document.documentElement.dataset.theme") != theme:
+                        press(1)
+                    if density and page.evaluate(
+                        "document.documentElement.dataset.density") != density:
+                        press(0)
+                applied = page.evaluate(
+                    "[document.documentElement.dataset.theme,"
+                    " document.documentElement.dataset.density]")
+                if theme and applied[0] != theme:
+                    raise SystemExit(f"could not reach theme {theme}: {applied}")
+                if density and applied[1] != density:
+                    raise SystemExit(f"could not reach density {density}: {applied}")
+
             def shoot(name: str, fragment: str, *, full: bool = True) -> None:
                 page.goto(server.url + fragment, wait_until="networkidle")
                 page.wait_for_timeout(900)
@@ -101,11 +139,10 @@ def capture(out: Path) -> list[str]:
             page.screenshot(path=str(out / "graph-selected.png"), full_page=True)
             written.append("graph-selected.png")
 
-            page.evaluate("document.documentElement.dataset.theme = 'dark'")
-            page.wait_for_timeout(300)
+            want(theme="dark")
             page.screenshot(path=str(out / "graph-dark.png"), full_page=True)
             written.append("graph-dark.png")
-            page.evaluate("document.documentElement.dataset.theme = 'light'")
+            want(theme="light")
 
             # The registers, on the screen built to show the difference. Sorted
             # and with a row selected, because an unsorted grid with no cursor
@@ -124,13 +161,43 @@ def capture(out: Path) -> list[str]:
             page.screenshot(path=str(out / "verbs-dense.png"))
             written.append("verbs-dense.png")
 
-            page.eval_on_selector_all(
-                "#appearance button",
-                "els => els[0].dispatchEvent(new MouseEvent('click', {bubbles: true}))",
-            )
-            page.wait_for_timeout(400)
+            want(density="reading")
             page.screenshot(path=str(out / "verbs-calm.png"))
             written.append("verbs-calm.png")
+
+            # The dark counterparts of everything the front page embeds. The
+            # register is switched back to dense first: `verbs-calm-dark` has to
+            # differ from `verbs-dense-dark` by the *register*, and capturing
+            # both from whatever state the previous shot left behind is how two
+            # images end up identical and nobody notices for a release.
+            def dark(name: str, fragment: str, prepare=None) -> None:
+                page.goto(server.url + fragment, wait_until="networkidle")
+                page.wait_for_timeout(400)
+                want(theme="dark", density="bench")
+                if prepare:
+                    prepare()
+                    page.wait_for_timeout(350)
+                page.screenshot(path=str(out / f"{name}.png"), full_page=name.startswith("graph"))
+                written.append(f"{name}.png")
+
+            dark("graph-selected-dark", "#/graph", lambda: page.eval_on_selector(
+                ".node .hit",
+                "e => e.dispatchEvent(new MouseEvent('click', {bubbles: true}))",
+            ))
+
+            def sorted_and_picked() -> None:
+                page.eval_on_selector_all(
+                    "table.datagrid th.sortable",
+                    "els => els[1].dispatchEvent(new MouseEvent('click', {bubbles: true}))",
+                )
+                page.eval_on_selector_all(
+                    "table.datagrid tbody tr",
+                    "els => els[3].dispatchEvent(new MouseEvent('click', {bubbles: true}))",
+                )
+
+            dark("verbs-dense-dark", "#/verbs", sorted_and_picked)
+
+            dark("verbs-calm-dark", "#/verbs", lambda: want(density="reading"))
 
             browser.close()
     finally:

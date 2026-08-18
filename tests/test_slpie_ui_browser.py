@@ -248,28 +248,55 @@ def test_switching_theme_changes_palette_and_only_palette(page, served):
 
 
 def test_the_appearance_controls_name_what_they_switch_to(page, served):
-    """A button is a verb.
+    """A button is a verb: each control names its destination, not its state.
 
-    Both controls used to be labelled with the state already applied, so the
-    theme button read "light" on a page that was already light — a control that
-    looks like it was pressed and ignored. The label must name the destination,
-    and it must flip when pressed.
+    Both used to be labelled with the state already applied, so the theme button
+    read "light" on a page that was already light — a control that looks like it
+    was pressed and ignored.
+
+    The theme control is now an icon, which is why this asserts the **accessible
+    name and the drawn glyph** rather than the text. Comparing `textContent`
+    kept passing after the icon landed, because an empty string is never equal
+    to "light" — the assertion had quietly stopped testing anything.
     """
     _open(page, served)
     buttons = page.query_selector_all("#appearance button")
     assert len(buttons) == 2, "the appearance controls did not render"
 
-    theme_button = buttons[1]
-    applied = page.evaluate("document.documentElement.dataset.theme") or "light"
-    assert theme_button.text_content().strip().lower() != applied, (
-        "the theme button names the theme already applied"
-    )
+    register, theme = buttons
 
-    theme_button.click()
+    # The register keeps its word: dense and calm are not iconographic.
+    applied_density = page.evaluate("document.documentElement.dataset.density")
+    assert register.text_content().strip().lower() != (
+        "dense" if applied_density == "bench" else "calm"
+    ), "the register button names the register already applied"
+
+    # The theme control carries a sun or a moon and no text at all. An icon
+    # button with no accessible name is silent to a screen reader, so the name
+    # is what must say where pressing it goes.
+    assert not theme.text_content().strip(), "the theme control should be icon-only"
+
+    def drawn() -> str:
+        return page.eval_on_selector_all(
+            "#appearance button",
+            "els => els[1].querySelector('circle') ? 'sun' : 'moon'",
+        )
+
+    applied = page.evaluate("document.documentElement.dataset.theme") or "light"
+    name = theme.get_attribute("aria-label") or ""
+    assert applied not in name, f"the theme control names the applied theme: {name!r}"
+    assert drawn() == ("sun" if applied == "dark" else "moon")
+
+    theme.click()
+    page.wait_for_timeout(300)
+
     switched = page.evaluate("document.documentElement.dataset.theme")
-    assert switched != applied, "pressing the theme button changed nothing"
-    assert theme_button.text_content().strip().lower() != switched, (
-        "the label did not follow the switch"
+    assert switched != applied, "pressing the theme control changed nothing"
+    assert drawn() == ("sun" if switched == "dark" else "moon"), (
+        "the icon did not follow the switch"
+    )
+    assert switched not in (theme.get_attribute("aria-label") or ""), (
+        "the accessible name did not follow the switch"
     )
 
 

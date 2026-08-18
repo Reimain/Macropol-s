@@ -109,8 +109,8 @@ def transform(path: str, source: str) -> str:
 
 def capture() -> dict:
     """A real scan, recorded route by route."""
-    from tools.ui.world import build
     from slpie.ui.api import Api, Request
+    from tools.ui.world import build
 
     engine = build(tempfile.mkdtemp())
     api = Api(engine=engine)

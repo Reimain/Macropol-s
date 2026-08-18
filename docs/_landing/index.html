@@ -233,6 +233,26 @@ h1 .hold  { color: var(--hold); }
    happened: below the fold, the fetch never started at all. Intrinsic width and
    height are declared instead, so the space is reserved and nothing shifts. */
 .shot img { display: block; width: 100%; height: auto; }
+
+/* Each screenshot ships in both themes and follows the page's own.
+   A dark screenshot on a light page is as wrong as a light one on a dark page,
+   and the front page is themed three ways — an explicit choice either way, plus
+   the un-stamped system default. So the swap uses exactly the token pattern the
+   palette above uses, rather than a `<picture>` media query, which would honour
+   the operating system and ignore the toggle. */
+/* Specificity matters here and it bit once: `.shot img` is (0,1,1) and a bare
+   `.dim` is (0,1,0), so `display: block` won and *both* images rendered in the
+   light theme. Every rule below is written at `.shot img.…` so the four states
+   are decided by order and theme, never by an accidental weight difference. */
+.shot img.dim { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shot img.lit { display: none; }
+  :root:not([data-theme="light"]) .shot img.dim { display: block; }
+}
+:root[data-theme="dark"] .shot img.lit { display: none; }
+:root[data-theme="dark"] .shot img.dim { display: block; }
+:root[data-theme="light"] .shot img.lit { display: block; }
+:root[data-theme="light"] .shot img.dim { display: none; }
 .shot figcaption {
   padding: 13px 18px; border-top: 1px solid var(--line);
   color: var(--mute); font-size: 0.88rem; background: var(--raised);
@@ -382,7 +402,8 @@ footer a:hover { text-decoration: underline; }
   </p>
 
   <figure class="shot">
-    <img src="assets/graph-selected.png" width="2726" height="1618" alt="The graph screen: a hero figure reading Read directly 100 percent, a certainty split, and the estate drawn as a node-link diagram with one node selected and the rest dimmed">
+    <img class="lit" src="assets/graph-selected.png" width="2726" height="1618" alt="The graph screen: a hero figure reading Read directly 100 percent, a certainty split, and the estate drawn as a node-link diagram with one node selected and the rest dimmed">
+      <img class="dim" src="assets/graph-selected-dark.png" width="2726" height="1618" alt="The graph screen: a hero figure reading Read directly 100 percent, a certainty split, and the estate drawn as a node-link diagram with one node selected and the rest dimmed — dark theme">
     <figcaption>
       Every rival draws a topology in which every edge is equally true. Here the
       <strong>stroke carries the evidence</strong> — solid for read directly,
@@ -393,12 +414,14 @@ footer a:hover { text-decoration: underline; }
 
   <div class="shots" style="margin-top:22px">
     <figure class="shot">
-      <img src="assets/verbs-dense.png" width="1500" height="950" alt="The dense register: a rich-client data grid with ruled columns, zebra rows, a sorted header and a status bar">
+      <img class="lit" src="assets/verbs-dense.png" width="1500" height="950" alt="The dense register: a rich-client data grid with ruled columns, zebra rows, a sorted header and a status bar">
+      <img class="dim" src="assets/verbs-dense-dark.png" width="1500" height="950" alt="The dense register: a rich-client data grid with ruled columns, zebra rows, a sorted header and a status bar — dark theme">
       <figcaption><strong>Dense.</strong> For working a list all day: ruled columns, a
       header you sort by, a row you are on, and a status bar saying where.</figcaption>
     </figure>
     <figure class="shot">
-      <img src="assets/verbs-calm.png" width="1500" height="950" alt="The same screen in the calm register, without rules or stripes and with more space">
+      <img class="lit" src="assets/verbs-calm.png" width="1500" height="950" alt="The same screen in the calm register, without rules or stripes and with more space">
+      <img class="dim" src="assets/verbs-calm-dark.png" width="1500" height="950" alt="The same screen in the calm register, without rules or stripes and with more space — dark theme">
       <figcaption><strong>Calm.</strong> The same data, the same column spec — a
       document rather than an instrument.</figcaption>
     </figure>

@@ -22,6 +22,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "docs" / "_landing"
+#: The screenshots live in one place — where the capture tool writes them.
+#: `docs/_landing/` used to hold its own copies, which meant regenerating
+#: the screenshots left the front page quietly showing the old ones.
+SHOTS = ROOT / "docs" / "_static" / "ui"
 DEFAULT_OUT = ROOT / "docs" / "_build" / "html" / "start" / "index.html"
 
 
@@ -32,7 +36,8 @@ def inline(html: str, base: Path) -> str:
         src = match.group(1)
         if src.startswith(("http://", "https://", "data:")):
             return match.group(0)
-        path = (base / src).resolve()
+        path = (SHOTS / Path(src).name).resolve() if src.startswith("assets/") \
+            else (base / src).resolve()
         if not path.is_file():
             raise SystemExit(f"the page references {src}, which is not there")
         kind = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
@@ -56,10 +61,15 @@ def main(argv: list[str] | None = None) -> None:
         args.out.write_text(inline(html, SOURCE), encoding="utf-8")
     else:
         args.out.write_text(html, encoding="utf-8")
+        # Copy only what the page actually references, from the canonical
+        # store. Copying the whole folder would ship every screenshot the
+        # documentation uses, including the ones this page does not.
         target = args.out.parent / "assets"
         if target.exists():
             shutil.rmtree(target)
-        shutil.copytree(SOURCE / "assets", target)
+        target.mkdir(parents=True)
+        for name in sorted(set(re.findall(r'src="assets/([^"]+)"', html))):
+            shutil.copy2(SHOTS / name, target / name)
 
     print(f"wrote {args.out}  ({args.out.stat().st_size / 1024:.0f} KB)")
 

@@ -11,7 +11,7 @@
  */
 
 import { emit } from "../core/bus.js";
-import { h } from "../core/dom.js";
+import { h, svg } from "../core/dom.js";
 
 export const REGISTERS = ["bench", "reading"];
 export const THEMES = ["light", "dark"];
@@ -87,6 +87,38 @@ export function apply(search = window.location.search) {
   if (THEMES.includes(wanted)) document.documentElement.dataset.theme = wanted;
 }
 
+/* Sun and moon, drawn inline.
+ *
+ * An icon font or an SVG sprite would be an external origin, which the whole
+ * interface forbids — so these are paths, and they are the only two glyphs the
+ * console needs that the system faces do not already carry.
+ *
+ * The theme takes an icon and the register keeps its words on purpose. Light
+ * versus dark is the one control everyone already reads as a picture; dense
+ * versus calm is not, and an icon for it would be a rebus the reader has to
+ * decode on every visit. */
+function moon() {
+  return svg("svg", {
+    width: 15, height: 15, viewBox: "0 0 16 16", "aria-hidden": "true",
+    fill: "none", stroke: "currentColor", "stroke-width": "1.4",
+    "stroke-linecap": "round", "stroke-linejoin": "round",
+  }, svg("path", { d: "M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5 5.8 5.8 0 1 0 13.5 9.6Z" }));
+}
+
+function sun() {
+  return svg("svg", {
+    width: 15, height: 15, viewBox: "0 0 16 16", "aria-hidden": "true",
+    fill: "none", stroke: "currentColor", "stroke-width": "1.4",
+    "stroke-linecap": "round",
+  },
+  svg("circle", { cx: 8, cy: 8, r: 3.1 }),
+  svg("path", {
+    d: "M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6"
+       + "M3.2 3.2l1.15 1.15M11.65 11.65l1.15 1.15"
+       + "M12.8 3.2l-1.15 1.15M4.35 11.65L3.2 12.8",
+  }));
+}
+
 /**
  * The control, for the top bar. Two buttons, each **naming what it switches
  * to** rather than what is currently on.
@@ -107,7 +139,7 @@ export function control() {
   });
   const themeButton = h("button", {
     type: "button",
-    class: "chip usable",
+    class: "chip usable icon",
     onclick: () => {
       setTheme(theme() === "dark" ? "light" : "dark");
       label();
@@ -122,8 +154,13 @@ export function control() {
       : "switch to the calm register, for reading an answer";
 
     const dark = theme() === "dark";
-    themeButton.textContent = dark ? "Light" : "Dark";
+    // The icon shows the destination, exactly as the density label does: a sun
+    // to go light, a moon to go dark. It carries no text, so the accessible
+    // name has to say what pressing it does — an unlabelled icon button is
+    // silent to a screen reader.
+    themeButton.replaceChildren(dark ? sun() : moon());
     themeButton.title = `switch to the ${dark ? "light" : "dark"} theme`;
+    themeButton.setAttribute("aria-label", themeButton.title);
   }
   label();
 

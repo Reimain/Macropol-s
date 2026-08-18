@@ -669,9 +669,9 @@ def _api(**settings):
 
 
 def _call(api, method="GET", path="/api/graph", headers=None, body=None):
-    from slpie.ui.api import Request
-
     import json as _json
+
+    from slpie.ui.api import Request
 
     response = api.handle(Request(
         method=method, path=path, query={}, body=body or {},
