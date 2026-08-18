@@ -71,8 +71,19 @@ jobs:
       # push and every pull request, where a warning should block a merge. Here
       # the job is to get the site up; a documentation warning is not a reason
       # to leave the published site stale.
+      # The published tree, laid out so nothing displaces anything:
+      #
+      #   /          the marketing page that is on `main` today — visitors who
+      #              already have the link keep landing where they landed
+      #   /docs/     the Sphinx reference
+      #   /start/    the front page
+      #   /demo/     the console, playable
+      #
+      # `main` is not touched to achieve this. Every one of these files is
+      # already on this branch, so the site is assembled here rather than by
+      # moving anything on the default branch.
       - name: Build the site
-        run: python -m sphinx -b html --keep-going docs docs/_build/html
+        run: python -m sphinx -b html --keep-going docs _site/docs
 
       # The interactive console, baked into one self-contained page and
       # published at /demo/. It needs no browser and no bundler: the API
@@ -84,18 +95,34 @@ jobs:
       # 600KB generated artefact in git would be re-diffed on every commit that
       # touched a single interface module.
       - name: Bake the interactive demo
-        run: python -m tools.ui.demo --out docs/_build/html/demo/index.html
+        run: python -m tools.ui.demo --out _site/demo/index.html
 
       # The front page, published at /start/. It lives in `docs/_landing/` as
       # ordinary HTML rather than as a Sphinx document because it is a designed
       # page rather than a chapter: putting it through the theme would give it
       # the reference site's furniture, which is the opposite of the point.
       - name: Render the front page
-        run: python -m tools.ui.landing --out docs/_build/html/start/index.html
+        run: python -m tools.ui.landing --out _site/start/index.html
+
+      # The existing landing page, kept exactly where visitors expect it. It is
+      # copied rather than regenerated: it is hand-authored marketing, not
+      # something this repository builds.
+      - name: Keep the marketing page at the root
+        run: |
+          cp index.html _site/index.html
+          # `[ -s CNAME ]` is not the right test: the file holds a single
+          # newline, so it is one byte and "non-empty" by that measure — which
+          # would publish a *blank* custom domain and take the site down. Only
+          # copy it when it names something.
+          if [ -n "$(tr -d '[:space:]' < CNAME 2>/dev/null)" ]; then
+            cp CNAME _site/CNAME
+          else
+            echo "CNAME holds no domain; not published"
+          fi
 
       # Jekyll would otherwise skip `_static/` and `_modules/`, and the site
       # would render without stylesheets or source links.
-      - run: touch docs/_build/html/.nojekyll
+      - run: touch _site/.nojekyll
 
       # `actions/configure-pages` used to sit here and was the only thing
       # failing. It is **not needed by this workflow**, which is why it is gone
@@ -117,7 +144,7 @@ jobs:
       # directly instead of a step we do not need failing first and hiding it.
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/_build/html
+          path: _site
 
   deploy:
     name: publish

@@ -12,14 +12,14 @@ slpie ui --port 9000     # somewhere else
 slpie ui --once          # start, print the URL, return — for scripts
 ```
 
-<p><strong><a href="demo/index.html">Try it in the browser →</a></strong> — the
+<p><strong><a href="../demo/index.html">Try it in the browser →</a></strong> — the
 shipping modules, running against a recording of a real scan. Only the transport
 is replaced.</p>
 
 ```{note}
 That link is a raw anchor rather than Markdown on purpose. The demo page is
-generated *after* Sphinx runs — it is built into `_build/html/demo/` by the
-publish job — so a Markdown link resolves against the document tree, finds no
+generated *after* Sphinx runs — the publish job writes it to `/demo/`,
+a sibling of this reference rather than a page inside it — so a Markdown link resolves against the document tree, finds no
 such document, and silently renders as an inert `<span class="xref myst">`
 instead of a link. An anchor is passed through untouched.
 ```

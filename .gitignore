@@ -36,3 +36,8 @@ acceptance-baseline.json
 # diff in front of a reviewer who changed one docstring.
 docs/_build/
 docs/reference/generated/
+
+# The assembled Pages site. Built by `.github/workflows/docs.yml`, never
+# committed: it is 340 generated pages plus a 600KB baked console, and a
+# generated tree in git is re-diffed on every commit that touches a source file.
+_site/

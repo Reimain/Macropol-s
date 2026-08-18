@@ -509,11 +509,15 @@ def test_the_documentation_links_to_the_demo_with_a_raw_anchor():
 
     page = (Path(__file__).resolve().parent.parent / "docs" / "UI.md").read_text()
 
-    assert re.search(r'<a href="demo/index\.html">', page), (
-        "docs/UI.md must link to the demo with a raw anchor — a Markdown link "
-        "renders as a dead cross-reference"
+    # `../demo/` rather than `demo/`: the reference is published under /docs/
+    # and the console is its sibling at /demo/, so a same-level link would
+    # resolve to /docs/demo/ and 404.
+    assert re.search(r'<a href="\.\./demo/index\.html">', page), (
+        "docs/UI.md must link to the demo with a raw anchor one level up — a "
+        "Markdown link renders as a dead cross-reference, and `demo/` without "
+        "the `../` points inside the reference"
     )
-    assert not re.search(r"\]\(demo/index\.html\)", page), (
+    assert not re.search(r"\]\(\.?\.?/?demo/index\.html\)", page), (
         "docs/UI.md uses a Markdown link to the demo, which Sphinx renders as "
         "an inert span"
     )
