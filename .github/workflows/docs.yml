@@ -97,29 +97,24 @@ jobs:
       # would render without stylesheets or source links.
       - run: touch docs/_build/html/.nojekyll
 
-      # `enablement: true` asks GitHub to turn Pages on if it is off. **It is
-      # not sufficient on its own**, and the comment here used to claim it was.
-      # Observed on run 32174982148:
+      # `actions/configure-pages` used to sit here and was the only thing
+      # failing. It is **not needed by this workflow**, which is why it is gone
+      # rather than worked around:
       #
-      #     Get Pages site failed.    Error: Not Found
-      #     Create Pages site failed. Error: Resource not accessible by integration
+      #   * nothing consumes its outputs. It exists to hand `base_url` and
+      #     `base_path` to generators that must bake an absolute prefix into
+      #     their output; Sphinx builds with relative URLs, and the step carried
+      #     no `id:`, so those outputs were unreachable anyway.
+      #   * with `enablement: true` it is the one step that asks GitHub to
+      #     *create* the Pages site, which needs a permission this token does
+      #     not have — observed across four runs:
       #
-      # The first line means Pages is not configured for the repository; the
-      # second means this workflow's token may not configure it. Enablement by
-      # token needs the repository's Actions permissions to allow it, and where
-      # they do not, no amount of workflow YAML substitutes for the one-time
-      # setting:
+      #         Get Pages site failed.    Error: Not Found
+      #         Create Pages site failed. Error: Resource not accessible by integration
       #
-      #     Settings → Pages → Build and deployment → Source: GitHub Actions
-      #
-      # It is left in because it *does* work once permissions allow, and it
-      # costs nothing when Pages is already on. What it must not do is imply
-      # the deploy is self-configuring, because a build that goes green while
-      # publishing nothing is worse than one that fails.
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
+      # Upload and deploy do not require it. If Pages is enabled with source
+      # "GitHub Actions", they now succeed; if it is not, `deploy-pages` says so
+      # directly instead of a step we do not need failing first and hiding it.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/_build/html
