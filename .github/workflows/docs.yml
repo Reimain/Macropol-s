@@ -86,6 +86,13 @@ jobs:
       - name: Bake the interactive demo
         run: python -m tools.ui.demo --out docs/_build/html/demo/index.html
 
+      # The front page, published at /start/. It lives in `docs/_landing/` as
+      # ordinary HTML rather than as a Sphinx document because it is a designed
+      # page rather than a chapter: putting it through the theme would give it
+      # the reference site's furniture, which is the opposite of the point.
+      - name: Render the front page
+        run: python -m tools.ui.landing --out docs/_build/html/start/index.html
+
       # Jekyll would otherwise skip `_static/` and `_modules/`, and the site
       # would render without stylesheets or source links.
       - run: touch docs/_build/html/.nojekyll

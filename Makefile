@@ -147,7 +147,11 @@ ui-screenshots:  ## regenerate docs/_static/ui/*.png from a real scan (needs .[e
 ui-demo:  ## bake the console into one self-contained page for GitHub Pages
 	python -m tools.ui.demo
 
+landing:  ## render the front page (--inline for a single travelling file)
+	python -m tools.ui.landing --out docs/_build/html/start/index.html
+
 docs:  ## build the Sphinx site, demo page included
 	python -m sphinx -b html --keep-going docs docs/_build/html
 	python -m tools.ui.demo --out docs/_build/html/demo/index.html
+	python -m tools.ui.landing --out docs/_build/html/start/index.html
 	@echo "open docs/_build/html/index.html"
