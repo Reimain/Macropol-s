@@ -53,6 +53,9 @@
   --hero-w: 240px;
   --stat-w: 110px;
   --chart-w: 720px;
+  --grid-h: 560px;
+  --head-h: 28px;
+  --cell-max: 320px;
 
   /* Named widths for fields that must line up column-to-column. */
   --field-w: 100px;
@@ -98,6 +101,9 @@
   --hero-w: 280px;
   --stat-w: 130px;
   --chart-w: 640px;
+  --grid-h: 640px;
+  --head-h: 40px;
+  --cell-max: 460px;
 
   --field-w: 150px;
   --label-w: 124px;

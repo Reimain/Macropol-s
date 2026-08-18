@@ -303,3 +303,13 @@
   .ask input, .ask button { width: 100%; }
   .row > .go { flex: 1 1 auto; }
 }
+
+/* --- the grid's toolbar ------------------------------------------------- */
+
+/* Filter, count, and the way out — above the grid rather than beside it, which
+   is where a rich client puts them and therefore where a reader looks. */
+.toolbar { margin-bottom: var(--sp-4); gap: var(--sp-4); }
+.toolbar input[type="search"] { min-width: var(--chart-w); max-width: 100%; flex: 0 1 auto; }
+@media (max-width: 720px) {
+  .toolbar input[type="search"] { min-width: 0; width: 100%; }
+}

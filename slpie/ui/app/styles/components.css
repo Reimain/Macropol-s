@@ -436,3 +436,95 @@ input::placeholder { color: var(--muted); }
 .facts .fact { display: grid; gap: var(--sp-1); }
 .facts .k { color: var(--muted); font-size: var(--fs-xs); }
 .facts .v { font-family: var(--face-fact); font-size: var(--fs-sm); }
+
+/* --- the data grid ------------------------------------------------------ */
+
+/* The dense register's instrument. The difference from `.card table` is not a
+   size: it is ruled columns, zebra rows, a sortable sticky header, a selected
+   row and a status bar — the working surface of a rich desktop client, because
+   that is what somebody who lives in a list all day is used to driving.
+
+   `calm` gets the same grid with the rules and stripes removed and room around
+   it, which turns the same data back into a document. */
+
+.grid-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--panel);
+}
+.grid-scroll { overflow: auto; max-height: var(--grid-h); }
+
+table.datagrid { border-collapse: separate; border-spacing: 0; width: 100%; }
+
+table.datagrid th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line-strong);
+  padding: var(--sp-2) var(--sp-4);
+  height: var(--head-h);
+  white-space: nowrap;
+  user-select: none;
+}
+table.datagrid th.sortable { cursor: pointer; }
+table.datagrid th.sortable:hover { background: var(--accent-soft); color: var(--accent); }
+table.datagrid th .sort {
+  display: inline-block;
+  width: var(--glyph-w);
+  color: var(--accent);
+  font-size: var(--fs-xs);
+}
+
+table.datagrid td {
+  padding: var(--sp-2) var(--sp-4);
+  height: var(--row-h);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: var(--cell-max);
+}
+
+/* Vertical rules and zebra striping — dense only.
+   `base.css` drops vertical rules from an ordinary table on purpose: the eye
+   then reads *rows*, which is what somebody scanning wants. This grid is worked
+   rather than scanned, and the task is comparing one field down a column, so
+   the rule is what keeps the eye inside it. Both are right; the register is
+   what decides which applies. */
+[data-density="bench"] table.datagrid th + th,
+[data-density="bench"] table.datagrid td + td {
+  border-left: 1px solid var(--line);
+}
+[data-density="bench"] table.datagrid tbody tr:nth-child(even) { background: var(--panel-2); }
+
+table.datagrid tbody tr { cursor: default; }
+table.datagrid tbody tr:hover { background: var(--accent-soft); }
+table.datagrid tbody tr.picked,
+[data-density="bench"] table.datagrid tbody tr.picked:nth-child(even) {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+table.datagrid tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+table.datagrid tbody tr:last-child td { border-bottom: none; }
+
+/* The status bar. A grid that does not say how much it is showing, what it is
+   ordered by, or where the cursor sits leaves the reader counting rows. */
+.grid-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  padding: var(--sp-2) var(--sp-4);
+  border-top: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.grid-status .spacer { flex: 1; }
+
+/* Calm: the same grid, unruled and unstriped, with air around it. */
+[data-density="reading"] .grid-wrap { border-color: var(--line); }
+[data-density="reading"] table.datagrid td { white-space: normal; max-width: none; }
+[data-density="reading"] .grid-status { background: var(--panel); }

@@ -108,6 +108,16 @@ on("event", (event) => {
   }
 });
 
+/* Switching register re-renders the current screen, it does not merely restyle
+ * it. Most of the difference between `calm` and `dense` is tokens and needs no
+ * JavaScript — but not all of it: which *columns* a grid shows is decided in
+ * `ui/grid.js` at render time, because column count is the one thing a token
+ * cannot express. Without this the register switched, the geometry changed, and
+ * the dense-only columns stayed exactly as they were until the reader happened
+ * to navigate — a control that half worked, which is worse than one that does
+ * not, because the reader concludes the columns are simply missing. */
+on("density", () => draw(parse(window.location.hash)));
+
 on("connection", (state) => {
   const existing = el("connection");
   if (existing) existing.replaceWith(connection(state));

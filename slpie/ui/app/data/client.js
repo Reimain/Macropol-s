@@ -1753,7 +1753,7 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Every capability this build has, as a typed verb. Each one is reachable from the CLI, the API and a pipeline.",
-    "authored": false
+    "authored": true
   },
   {
     "key": "group-analysis",

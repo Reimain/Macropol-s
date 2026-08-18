@@ -454,3 +454,122 @@ def test_an_edge_never_swallows_a_click_meant_for_a_node(page, populated):
     )
     assert events, "no wires drawn"
     assert set(events) == {"none"}, f"wires are hit-testable: {set(events)}"
+
+
+# --- the dense register is an instrument, not a zoom level --------------------
+
+
+def test_the_grid_head_and_body_share_one_column_geometry(page, served):
+    """The regression test for a cascade collision, not a styling preference.
+
+    `layout.css` defines `.grid` as a CSS *grid container*. A `<table
+    class="grid">` therefore became `display: grid` with auto-fit columns, and
+    the header row detached from the body — seven headers laid out in one track
+    row and seven cells in the next, six hundred pixels to the right. It renders
+    as a table with no headers over data with no labels.
+
+    Comparing the x of each header against the x of its cell is the assertion
+    that catches it; nothing about the DOM is wrong, so only geometry can.
+    """
+    _open(page, served, "#/verbs")
+
+    measured = page.evaluate("""() => {
+      const t = document.querySelector('table.datagrid');
+      if (!t) return null;
+      const x = (el) => Math.round(el.getBoundingClientRect().x);
+      return {
+        heads: [...t.querySelectorAll('thead th')].map(x),
+        cells: [...t.querySelectorAll('tbody tr:first-child td')].map(x),
+        display: getComputedStyle(t).display,
+      };
+    }""")
+    assert measured, "the grid did not render"
+    assert measured["display"] in ("table", "inline-table"), (
+        f"the grid is laid out as {measured['display']}, not a table"
+    )
+    assert len(measured["heads"]) == len(measured["cells"])
+    for index, (head, cell) in enumerate(zip(measured["heads"], measured["cells"])):
+        assert abs(head - cell) <= 2, (
+            f"column {index}: header at {head}px, cell at {cell}px — "
+            f"the head and body are not sharing column tracks"
+        )
+
+
+def test_sorting_reorders_and_says_so(page, served):
+    """A sortable header that does not report what it sorted by leaves the
+    reader re-reading the column to work out which way it went."""
+    _open(page, served, "#/verbs")
+
+    first = page.eval_on_selector("table.datagrid tbody tr td", "e => e.innerText.trim()")
+    page.eval_on_selector_all(
+        "table.datagrid th.sortable",
+        "els => els[0].dispatchEvent(new MouseEvent('click', {bubbles: true}))",
+    )
+    page.wait_for_timeout(200)
+
+    status = page.eval_on_selector(".grid-status", "e => e.innerText")
+    assert "sorted by" in status, f"the status bar did not report the sort: {status!r}"
+    assert page.eval_on_selector(
+        "table.datagrid th[aria-sort]:not([aria-sort='none'])", "e => !!e",
+    ), "no header reported aria-sort, so the order is visual-only"
+
+    reversed_once = page.eval_on_selector("table.datagrid tbody tr td", "e => e.innerText.trim()")
+    page.eval_on_selector_all(
+        "table.datagrid th.sortable",
+        "els => els[0].dispatchEvent(new MouseEvent('click', {bubbles: true}))",
+    )
+    page.wait_for_timeout(200)
+    reversed_twice = page.eval_on_selector("table.datagrid tbody tr td", "e => e.innerText.trim()")
+    assert reversed_once != reversed_twice, "clicking twice did not reverse the order"
+
+
+def test_arrow_keys_move_the_selection(page, served):
+    """A grid somebody works all day is driven from the keyboard or it is not
+    worked all day. One tab stop for the grid, then arrows within it."""
+    _open(page, served, "#/verbs")
+
+    page.eval_on_selector(
+        "table.datagrid tbody tr",
+        "e => e.dispatchEvent(new MouseEvent('click', {bubbles: true}))",
+    )
+    page.eval_on_selector("table.datagrid tbody tr.picked", "e => e.focus()")
+    page.keyboard.press("ArrowDown")
+    page.wait_for_timeout(150)
+
+    index = page.evaluate("""() => {
+      const rows = [...document.querySelectorAll('table.datagrid tbody tr')];
+      return rows.findIndex((r) => r.classList.contains('picked'));
+    }""")
+    assert index == 1, f"ArrowDown left the selection at row {index}"
+
+    # Exactly one tab stop: thirty rows each taking one is how a keyboard user
+    # ends up unable to reach the thing after the table.
+    stops = page.eval_on_selector_all(
+        "table.datagrid tbody tr", "els => els.filter(e => e.tabIndex === 0).length",
+    )
+    assert stops == 1, f"{stops} rows are tab stops; a grid is one"
+
+
+def test_switching_register_redraws_the_columns(page, served):
+    """Column count is the one thing a token cannot express.
+
+    Most of the register is tokens and needs no JavaScript. Which columns a grid
+    shows is decided at render time, so without a redraw on the switch the
+    geometry changed and the dense-only columns stayed — a control that half
+    worked, which reads as columns being missing rather than as a bug.
+    """
+    _open(page, served, "#/verbs")
+
+    dense = page.eval_on_selector_all("table.datagrid thead th", "els => els.length")
+    page.eval_on_selector_all(
+        "#appearance button",
+        "els => els[0].dispatchEvent(new MouseEvent('click', {bubbles: true}))",
+    )
+    page.wait_for_timeout(300)
+    calm = page.eval_on_selector_all("table.datagrid thead th", "els => els.length")
+
+    assert page.evaluate("document.documentElement.dataset.density") == "reading"
+    assert calm < dense, (
+        f"calm shows {calm} columns and dense {dense} — the register did not "
+        f"redraw the grid"
+    )

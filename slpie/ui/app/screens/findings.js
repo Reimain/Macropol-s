@@ -13,7 +13,7 @@ import { cite, count } from "../core/format.js";
 import { findings as loadFindings } from "../data/queries.js";
 import { card, claim, key, panel, unsurveyed } from "../ui/panel.js";
 import { severity } from "../ui/pill.js";
-import { scrolling, table } from "../ui/table.js";
+import { grid } from "../ui/grid.js";
 
 const SEVERITIES = ["", "critical", "high", "medium", "low", "info"];
 
@@ -69,11 +69,17 @@ function detail(item) {
       : null);
 }
 
-function list(items, chosen) {
+function list(items, chosen, open) {
+  const RANK = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
   const columns = [
     {
       key: "severity",
       label: "Severity",
+      width: "var(--label-w)",
+      // Sorted by *rank*, not alphabetically: "critical" before "high" is the
+      // order that matters, and `c` before `h` agreeing with it is a
+      // coincidence that stops holding at "info" and "low".
+      sortValue: (row) => RANK[String(row.severity).toLowerCase()] ?? 9,
       render: (row) => severity(row.severity),
     },
     {
@@ -84,20 +90,33 @@ function list(items, chosen) {
         {}, row.title || row.id,
       ),
     },
-    { key: "kind", label: "Kind", className: "mono", density: "bench" },
+    { key: "kind", label: "Kind", className: "mono", density: "dense" },
     {
       key: "subject",
       label: "Subject",
       className: "mono",
-      density: "bench",
-      render: (row) => row.subject || "—",
+      density: "dense",
+      render: (row) => row.subject || "\u2014",
+    },
+    {
+      key: "evidence",
+      label: "Evidence",
+      align: "right",
+      density: "dense",
+      sortValue: (row) => (row.evidence || []).length,
+      render: (row) => String((row.evidence || []).length),
     },
   ];
-  return scrolling(table(columns, items, {
+
+  return grid(columns, items, {
     empty: chosen
       ? `Nothing at ${chosen} severity.`
-      : "No findings — nothing wrong is known yet.",
-  }));
+      : "No findings \u2014 nothing wrong is known yet.",
+    onOpen: (row) => {
+      window.location.hash =
+        `#/findings${chosen ? `/${chosen}` : ""}?open=${encodeURIComponent(row.id || "")}`;
+    },
+  });
 }
 
 export function mount(outlet, params, query) {
@@ -113,7 +132,7 @@ export function mount(outlet, params, query) {
       return h("div", { class: "stack" },
         h("p", { class: "muted" },
           `${count(items.length)} finding${items.length === 1 ? "" : "s"}`),
-        list(items, chosen),
+        list(items, chosen, open),
         open ? detail(open) : null,
         open ? key() : null);
     }, { sentence: "No findings.", rows: 6 });
