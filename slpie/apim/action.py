@@ -31,6 +31,13 @@ from ..compose.registry import VerbRegistry, registry as default_registry
 OPEN = frozenset({
     "/api/routes", "/api/contract", "/api/verbs", "/api/manual", "/api/screens",
     "/api/stream/status",
+    # The words the interface renders with (§31). Open for the same reason the
+    # rest are, plus one of its own: a console refused its lexicon has no
+    # labels, which is a broken product rather than a guarded one. It discloses
+    # nothing about an environment — only what this platform calls its own
+    # nouns — and an unrecognised profile yields the defaults rather than
+    # confirming which profiles exist.
+    "/api/lexicon",
 })
 
 DISCOVER = "platform.discover"

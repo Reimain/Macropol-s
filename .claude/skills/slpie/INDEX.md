@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `18b76286f31712b69d202159364e172af906dc896a20717f104bb7874577ea2d`
-- **facets** 674 — 49 component, 21 kind, 291 module, 68 package, 87 route, 30 screen, 12 section, 67 test, 49 verb
-- **anchored** 98.7% resolve to a file and a line
+- **digest** `08cccaa9d13deee614220e2658180ea08043cb7b1f505595f7ac4893cda51b47`
+- **facets** 682 — 49 component, 21 kind, 293 module, 68 package, 89 route, 31 screen, 13 section, 68 test, 50 verb
+- **anchored** 98.5% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -38,7 +38,7 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `chain` | capture | nothing → report | `slpie/compose/verbs/capture.py:223` | group-capture |
 | `changed` | incremental | nothing → report | `slpie/compose/verbs/incremental.py:149` | catalog |
 | `constraints` | analysis | resolution → solution | `slpie/compose/verbs/analysis.py:459` | group-analysis |
-| `context` | context | nothing → report | `slpie/context/verbs.py:73` | group-context |
+| `context` | context | nothing → report | `slpie/context/verbs.py:123` | group-context |
 | `count` | shaping | any → same | `slpie/compose/verbs/shaping.py:210` | group-shaping |
 | `declare` | environment | nothing → elements | `slpie/compose/verbs/environment.py:269` | reconcile |
 | `discover` | analysis | nothing → observations | `slpie/compose/verbs/analysis.py:424` | group-analysis |
@@ -55,6 +55,7 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `history` | dispatch | nothing → report | `slpie/compose/verbs/dispatch.py:225` | history |
 | `impact` | environment | nodes → impact | `slpie/compose/verbs/environment.py:359` | impact |
 | `json` | shaping | any → same | `slpie/compose/verbs/shaping.py:257` | group-shaping |
+| `lexicon` | context | nothing → report | `slpie/context/verbs.py:150` | group-context |
 | `link` | analysis | observations → resolution | `slpie/compose/verbs/analysis.py:449` | group-analysis |
 | `options` | intelligence | enrichments → report | `slpie/compose/verbs/intelligence.py:286` | console |
 | `quarantine` | capture | any → report | `slpie/compose/verbs/capture.py:212` | group-capture |
@@ -95,6 +96,7 @@ Derived from the `§NN` references modules write in their own docstrings — nev
 |---|---|---|
 | §12 | 2 | `slpie.context`, `slpie.reasoning` |
 | §15 | 2 | `slpie.compose`, `slpie.dispatch` |
+| §16 | 1 | `slpie.context` |
 | §18 | 1 | `slpie.context` |
 | §19 | 1 | `slpie.demo` |
 | §2 | 1 | `slpie.workspace` |
@@ -123,7 +125,7 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 | `portal` | api | generated | — | 3 |
 | `simulator` | operate | generated | — | 1 |
 | `station` | operate | generated | reconcile | 1 |
-| `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-dispatch, group-incremental, group-rivals, group-shaping, route-screens | 1 |
+| `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-dispatch, group-incremental, group-rivals, group-shaping, route-lexicon, route-screens | 1 |
 | `workspaces` | admin | authored | — | 2 |
 
 ## The browser vocabulary
@@ -151,6 +153,7 @@ Kept and counted, never dropped. An index that silently omitted what it could no
 |---|---|
 | `section:12` | section |
 | `section:15` | section |
+| `section:16` | section |
 | `section:18` | section |
 | `section:19` | section |
 | `section:25` | section |

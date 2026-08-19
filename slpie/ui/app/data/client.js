@@ -877,6 +877,28 @@ export const VERBS = Object.freeze({
       "scan | link | json"
     ]
   },
+  "lexicon": {
+    "group": "context",
+    "summary": "the words this context uses for the platform's nouns",
+    "consumes": "nothing",
+    "produces": "report",
+    "mutates": false,
+    "source": true,
+    "params": [
+      {
+        "name": "profile",
+        "type": "str",
+        "help": "a profile under .slpie/lexicon/; omit for the default",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "lexicon",
+      "lexicon --profile platform-engineering",
+      "lexicon | count"
+    ]
+  },
   "link": {
     "group": "analysis",
     "summary": "merge observations onto identities and join across files",
@@ -1444,7 +1466,8 @@ export const GROUPS = Object.freeze({
     "quarantine"
   ],
   "context": [
-    "context"
+    "context",
+    "lexicon"
   ],
   "dispatch": [
     "history",
@@ -1879,7 +1902,8 @@ export const SCREENS = Object.freeze([
     "section": "build",
     "reads": [],
     "verbs": [
-      "context"
+      "context",
+      "lexicon"
     ],
     "events": [],
     "action": "context.*",
@@ -1966,6 +1990,25 @@ export const SCREENS = Object.freeze([
     ],
     "events": [],
     "action": "shaping.*",
+    "resource": "*",
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
+    "authored": false
+  },
+  {
+    "key": "route-lexicon",
+    "path": "/inspect/lexicon",
+    "title": "Lexicon",
+    "section": "build",
+    "reads": [
+      "GET /api/lexicon"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "platform.discover",
     "resource": "*",
     "crumbs": [
       "verbs"
@@ -2212,6 +2255,11 @@ export const ROUTES = Object.freeze([
   },
   {
     "method": "GET",
+    "path": "/api/lexicon",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
     "path": "/api/manifest",
     "transport": "json"
   },
@@ -2453,6 +2501,11 @@ export const ROUTES = Object.freeze([
   {
     "method": "POST",
     "path": "/api/v/json",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/lexicon",
     "transport": "json"
   },
   {

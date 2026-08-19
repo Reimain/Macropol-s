@@ -80,6 +80,7 @@ export const VERB_TYPES = {
   "history": { consumes: "nothing", produces: "report", mutates: false },
   "impact": { consumes: "nodes", produces: "impact", mutates: false },
   "json": { consumes: "any", produces: "same", mutates: false },
+  "lexicon": { consumes: "nothing", produces: "report", mutates: false },
   "link": { consumes: "observations", produces: "resolution", mutates: false },
   "options": { consumes: "enrichments", produces: "report", mutates: false },
   "quarantine": { consumes: "any", produces: "report", mutates: false },
@@ -300,6 +301,11 @@ export class SlpieClient {
   /** serialise the flow, provenance included */
   async json(params: { limit?: number; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/json`, params);
+  }
+
+  /** the words this context uses for the platform's nouns */
+  async lexicon(params: { profile?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/lexicon`, params);
   }
 
   /** merge observations onto identities and join across files */

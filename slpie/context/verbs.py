@@ -19,9 +19,12 @@ from typing import Any, Mapping
 
 from ..compose.flow import Flow, Kind
 from ..compose.verb import Context, Param, Verb
+from ..domain.finding import Gap, GapKind
 from ..domain.reasoning import ReasoningStep
 from .facet import FacetKind
 from .index import build
+from .lexicon import LexiconError, default
+from .profile import load_profiles, resolve
 
 GROUP = "context"
 
@@ -67,6 +70,53 @@ def _context(flow: Flow, arguments: Mapping[str, Any], _context: Context) -> Flo
     )
 
 
+def _lexicon(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
+    """The words a context uses, and where each one came from."""
+    profile = str(arguments.get("profile") or "").strip()
+    root = str(getattr(context, "root", "") or ".")
+
+    gaps: list[Gap] = []
+    try:
+        words = resolve({"profile": profile} if profile else {}, root=root)
+    except LexiconError as failure:
+        # An authored profile that names a term nobody defines is a mistake
+        # worth reporting, not worth failing on: the platform's own words are a
+        # correct console, and the gap says exactly what was ignored.
+        words = default()
+        gaps.append(Gap(
+            kind=GapKind.NOT_DECLARED, subject=f"lexicon:{profile}",
+            detail=str(failure),
+            remediation="fix the profile under .slpie/lexicon/, then re-run",
+        ))
+
+    loaded = load_profiles(root)
+    for message in loaded.errors:
+        gaps.append(Gap(
+            kind=GapKind.PARSE_FAILURE, subject="lexicon",
+            detail=message,
+            remediation="a malformed profile costs that profile, not the console",
+        ))
+
+    return flow.then(
+        Kind.REPORT, tuple(term.to_dict() for term in words), stage="lexicon",
+        steps=[ReasoningStep(
+            claim=(
+                f"{len(words)} term(s) under profile {words.name!r}: "
+                f"{len(words.renameable)} a context may rename, "
+                f"{len(words.protected)} carrying a decision and therefore fixed"
+            ),
+            layer="context", operation="resolve",
+        )],
+        gaps=gaps,
+        facts={
+            "profile": words.name,
+            "digest": words.digest,
+            "available": [item.name for item in loaded.profiles],
+            "protected": [term.key for term in words.protected],
+        },
+    )
+
+
 def verbs() -> tuple[Verb, ...]:
     return (
         Verb(
@@ -95,6 +145,31 @@ def verbs() -> tuple[Verb, ...]:
                 "context | count",
             ),
             run=_context,
+        ),
+        Verb(
+            name="lexicon", group=GROUP, produces=Kind.REPORT,
+            summary="the words this context uses for the platform's nouns",
+            detail=(
+                "The default is derived from the code — `slpie/domain/*.py` and "
+                "the package names under `slpie/`, each glossed by its own "
+                "docstring — so the platform cannot offer a word it does not "
+                "use.\n\n"
+                "A profile under `.slpie/lexicon/` may rename the product. It "
+                "may never rename a control: every severity, gap kind, verdict "
+                "and target state is protected, derived from the enums "
+                "themselves, because a tenant renaming `refused` to `pending` "
+                "is how a control becomes invisible."
+            ),
+            params=(
+                Param("profile", "str",
+                      "a profile under .slpie/lexicon/; omit for the default"),
+            ),
+            examples=(
+                "lexicon",
+                "lexicon --profile platform-engineering",
+                "lexicon | count",
+            ),
+            run=_lexicon,
         ),
     )
 

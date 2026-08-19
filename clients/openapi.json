@@ -662,6 +662,47 @@
         ]
       }
     },
+    "/api/lexicon": {
+      "get": {
+        "summary": "GET /api/lexicon",
+        "operationId": "get_api_lexicon",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
     "/api/manifest": {
       "get": {
         "summary": "GET /api/manifest",
@@ -4100,6 +4141,87 @@
         }
       }
     },
+    "/api/v/lexicon": {
+      "post": {
+        "summary": "the words this context uses for the platform's nouns",
+        "description": "The default is derived from the code \u2014 `slpie/domain/*.py` and the package names under `slpie/`, each glossed by its own docstring \u2014 so the platform cannot offer a word it does not use.\n\nA profile under `.slpie/lexicon/` may rename the product. It may never rename a control: every severity, gap kind, verdict and target state is protected, derived from the enums themselves, because a tenant renaming `refused` to `pending` is how a control becomes invisible.",
+        "operationId": "verb_lexicon",
+        "tags": [
+          "context"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "profile": {
+                    "type": "string",
+                    "description": "a profile under .slpie/lexicon/; omit for the default"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/link": {
       "post": {
         "summary": "merge observations onto identities and join across files",
@@ -6314,6 +6436,7 @@
         "enterprise",
         "fire",
         "history",
+        "lexicon",
         "options",
         "quarantine",
         "risk",

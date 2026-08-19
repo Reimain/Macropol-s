@@ -1,24 +1,25 @@
 {
   "generator": "slpie context --skill",
-  "digest": "18b76286f31712b69d202159364e172af906dc896a20717f104bb7874577ea2d",
+  "digest": "08cccaa9d13deee614220e2658180ea08043cb7b1f505595f7ac4893cda51b47",
   "summary": {
-    "digest": "18b76286f31712b69d202159364e172af906dc896a20717f104bb7874577ea2d",
-    "facets": 674,
+    "digest": "08cccaa9d13deee614220e2658180ea08043cb7b1f505595f7ac4893cda51b47",
+    "facets": 682,
     "counts": {
       "component": 49,
       "kind": 21,
-      "module": 291,
+      "module": 293,
       "package": 68,
-      "route": 87,
-      "screen": 30,
-      "section": 12,
-      "test": 67,
-      "verb": 49
+      "route": 89,
+      "screen": 31,
+      "section": 13,
+      "test": 68,
+      "verb": 50
     },
-    "coverage": 0.9866,
+    "coverage": 0.9853,
     "unanchored": [
       "section:12",
       "section:15",
+      "section:16",
       "section:18",
       "section:19",
       "section:25",
@@ -4266,6 +4267,64 @@
       "tags": []
     },
     {
+      "id": "module:slpie.context.lexicon",
+      "kind": "module",
+      "name": "slpie.context.lexicon",
+      "title": "lexicon",
+      "summary": "The same platform, in the reader's words.",
+      "source": "slpie/context/lexicon.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.errors"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.audit.judge"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.binding.target"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.finding"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.context.index"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.context.profile",
+      "kind": "module",
+      "name": "slpie.context.profile",
+      "title": "profile",
+      "summary": "Which words a given reader gets, and where the choice comes from.",
+      "source": "slpie/context/profile.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.errors"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.context.lexicon"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.environment.schema"
+        },
+        {
+          "relation": "claims",
+          "target": "section:16"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "module:slpie.context.skill",
       "kind": "module",
       "name": "slpie.context.skill",
@@ -4310,6 +4369,10 @@
         },
         {
           "relation": "imports",
+          "target": "module:slpie.domain.finding"
+        },
+        {
+          "relation": "imports",
           "target": "module:slpie.domain.reasoning"
         },
         {
@@ -4319,6 +4382,14 @@
         {
           "relation": "imports",
           "target": "module:slpie.context.index"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.context.lexicon"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.context.profile"
         },
         {
           "relation": "claims",
@@ -7956,6 +8027,14 @@
         },
         {
           "relation": "imports",
+          "target": "module:slpie.context.lexicon"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.context.profile"
+        },
+        {
+          "relation": "imports",
           "target": "module:slpie.core.commands"
         },
         {
@@ -9916,6 +9995,14 @@
         },
         {
           "relation": "owns",
+          "target": "module:slpie.context.lexicon"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.context.profile"
+        },
+        {
+          "relation": "owns",
           "target": "module:slpie.context.skill"
         },
         {
@@ -11478,7 +11565,7 @@
       "name": "GET /api/causation",
       "title": "GET /api/causation",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:517",
+      "source": "slpie/ui/api.py:554",
       "links": [],
       "tags": [
         "declared"
@@ -11490,7 +11577,7 @@
       "name": "GET /api/contract",
       "title": "GET /api/contract",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:609",
+      "source": "slpie/ui/api.py:646",
       "links": [],
       "tags": [
         "declared"
@@ -11502,7 +11589,7 @@
       "name": "GET /api/cycles",
       "title": "GET /api/cycles",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:493",
+      "source": "slpie/ui/api.py:530",
       "links": [],
       "tags": [
         "declared"
@@ -11514,7 +11601,7 @@
       "name": "GET /api/findings",
       "title": "GET /api/findings",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:503",
+      "source": "slpie/ui/api.py:540",
       "links": [],
       "tags": [
         "declared"
@@ -11526,7 +11613,7 @@
       "name": "GET /api/graph",
       "title": "GET /api/graph",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:440",
+      "source": "slpie/ui/api.py:477",
       "links": [],
       "tags": [
         "declared"
@@ -11538,7 +11625,7 @@
       "name": "GET /api/history",
       "title": "GET /api/history",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:508",
+      "source": "slpie/ui/api.py:545",
       "links": [],
       "tags": [
         "declared"
@@ -11550,7 +11637,7 @@
       "name": "GET /api/impact",
       "title": "GET /api/impact",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:482",
+      "source": "slpie/ui/api.py:519",
       "links": [],
       "tags": [
         "declared"
@@ -11562,7 +11649,19 @@
       "name": "GET /api/integrity",
       "title": "GET /api/integrity",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:522",
+      "source": "slpie/ui/api.py:559",
+      "links": [],
+      "tags": [
+        "declared"
+      ]
+    },
+    {
+      "id": "route:GET /api/lexicon",
+      "kind": "route",
+      "name": "GET /api/lexicon",
+      "title": "GET /api/lexicon",
+      "summary": "Declared on the API route table.",
+      "source": "slpie/ui/api.py:421",
       "links": [],
       "tags": [
         "declared"
@@ -11574,7 +11673,7 @@
       "name": "GET /api/manifest",
       "title": "GET /api/manifest",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:430",
+      "source": "slpie/ui/api.py:467",
       "links": [],
       "tags": [
         "declared"
@@ -11586,7 +11685,7 @@
       "name": "GET /api/manual",
       "title": "GET /api/manual",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:603",
+      "source": "slpie/ui/api.py:640",
       "links": [],
       "tags": [
         "declared"
@@ -11598,7 +11697,7 @@
       "name": "GET /api/node",
       "title": "GET /api/node",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:452",
+      "source": "slpie/ui/api.py:489",
       "links": [],
       "tags": [
         "declared"
@@ -11610,7 +11709,7 @@
       "name": "GET /api/projections",
       "title": "GET /api/projections",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:526",
+      "source": "slpie/ui/api.py:563",
       "links": [],
       "tags": [
         "declared"
@@ -11622,7 +11721,7 @@
       "name": "GET /api/reconcile",
       "title": "GET /api/reconcile",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:499",
+      "source": "slpie/ui/api.py:536",
       "links": [],
       "tags": [
         "declared"
@@ -11646,7 +11745,7 @@
       "name": "GET /api/scenarios",
       "title": "GET /api/scenarios",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:530",
+      "source": "slpie/ui/api.py:567",
       "links": [],
       "tags": [
         "declared"
@@ -11670,7 +11769,7 @@
       "name": "GET /api/search",
       "title": "GET /api/search",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:477",
+      "source": "slpie/ui/api.py:514",
       "links": [],
       "tags": [
         "declared"
@@ -11682,7 +11781,7 @@
       "name": "GET /api/station",
       "title": "GET /api/station",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:434",
+      "source": "slpie/ui/api.py:471",
       "links": [],
       "tags": [
         "declared"
@@ -11718,7 +11817,7 @@
       "name": "GET /api/stream/status",
       "title": "GET /api/stream/status",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:421",
+      "source": "slpie/ui/api.py:458",
       "links": [],
       "tags": [
         "declared"
@@ -11730,7 +11829,7 @@
       "name": "GET /api/verbs",
       "title": "GET /api/verbs",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:599",
+      "source": "slpie/ui/api.py:636",
       "links": [],
       "tags": [
         "declared"
@@ -11742,7 +11841,7 @@
       "name": "POST /api/ask",
       "title": "POST /api/ask",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:536",
+      "source": "slpie/ui/api.py:573",
       "links": [],
       "tags": [
         "declared"
@@ -11754,7 +11853,7 @@
       "name": "POST /api/compose/validate",
       "title": "POST /api/compose/validate",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:615",
+      "source": "slpie/ui/api.py:652",
       "links": [],
       "tags": [
         "declared"
@@ -11766,7 +11865,7 @@
       "name": "POST /api/plan",
       "title": "POST /api/plan",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:647",
+      "source": "slpie/ui/api.py:684",
       "links": [],
       "tags": [
         "declared"
@@ -11778,7 +11877,7 @@
       "name": "POST /api/run",
       "title": "POST /api/run",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:628",
+      "source": "slpie/ui/api.py:665",
       "links": [],
       "tags": [
         "declared"
@@ -11790,7 +11889,7 @@
       "name": "POST /api/scan",
       "title": "POST /api/scan",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:572",
+      "source": "slpie/ui/api.py:609",
       "links": [],
       "tags": [
         "declared"
@@ -11802,7 +11901,7 @@
       "name": "POST /api/scenario",
       "title": "POST /api/scenario",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:542",
+      "source": "slpie/ui/api.py:579",
       "links": [],
       "tags": [
         "declared"
@@ -11814,7 +11913,7 @@
       "name": "POST /api/snapshot",
       "title": "POST /api/snapshot",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:565",
+      "source": "slpie/ui/api.py:602",
       "links": [],
       "tags": [
         "declared"
@@ -11826,7 +11925,7 @@
       "name": "POST /api/target",
       "title": "POST /api/target",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:552",
+      "source": "slpie/ui/api.py:589",
       "links": [],
       "tags": [
         "declared"
@@ -11958,7 +12057,7 @@
       "name": "POST /api/v/context",
       "title": "POST /api/v/context",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/context/verbs.py:73",
+      "source": "slpie/context/verbs.py:123",
       "links": [],
       "tags": [
         "generated"
@@ -12151,6 +12250,18 @@
       "title": "POST /api/v/json",
       "summary": "Generated from the verb registry.",
       "source": "slpie/compose/verbs/shaping.py:257",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/lexicon",
+      "kind": "route",
+      "name": "POST /api/v/lexicon",
+      "title": "POST /api/v/lexicon",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/context/verbs.py:150",
       "links": [],
       "tags": [
         "generated"
@@ -12809,6 +12920,10 @@
           "target": "verb:context"
         },
         {
+          "relation": "runs",
+          "target": "verb:lexicon"
+        },
+        {
           "relation": "parent",
           "target": "screen:verbs"
         }
@@ -13129,6 +13244,29 @@
       ]
     },
     {
+      "id": "screen:route-lexicon",
+      "kind": "screen",
+      "name": "route-lexicon",
+      "title": "Lexicon",
+      "summary": "",
+      "source": "slpie/ui/contract.py:696",
+      "links": [
+        {
+          "relation": "reads",
+          "target": "route:GET /api/lexicon"
+        },
+        {
+          "relation": "parent",
+          "target": "screen:verbs"
+        }
+      ],
+      "tags": [
+        "build",
+        "generated",
+        "view"
+      ]
+    },
+    {
       "id": "screen:route-screens",
       "kind": "screen",
       "name": "route-screens",
@@ -13301,6 +13439,16 @@
       "kind": "section",
       "name": "15",
       "title": "\u00a715",
+      "summary": "A plan section claimed by at least one module.",
+      "source": "",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "section:16",
+      "kind": "section",
+      "name": "16",
+      "title": "\u00a716",
       "summary": "A plan section claimed by at least one module.",
       "source": "",
       "links": [],
@@ -14769,6 +14917,49 @@
       "tags": []
     },
     {
+      "id": "test:test_slpie_lexicon",
+      "kind": "test",
+      "name": "test_slpie_lexicon",
+      "title": "slpie lexicon",
+      "summary": "\u00a731 \u2014 terminology adapted per context, and the words that may never move.",
+      "source": "tests/test_slpie_lexicon.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.audit.judge"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.binding.target"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.pipeline"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.context.lexicon"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.context.profile"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.domain.finding"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.api"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.context"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "test:test_slpie_linking",
       "kind": "test",
       "name": "test_slpie_linking",
@@ -15789,7 +15980,7 @@
       "name": "context",
       "title": "context",
       "summary": "the product's own map: what exists, and what connects it",
-      "source": "slpie/context/verbs.py:73",
+      "source": "slpie/context/verbs.py:123",
       "links": [
         {
           "relation": "consumes",
@@ -16214,6 +16405,32 @@
       ],
       "tags": [
         "shaping"
+      ]
+    },
+    {
+      "id": "verb:lexicon",
+      "kind": "verb",
+      "name": "lexicon",
+      "title": "lexicon",
+      "summary": "the words this context uses for the platform's nouns",
+      "source": "slpie/context/verbs.py:150",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:nothing"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/lexicon"
+        }
+      ],
+      "tags": [
+        "context",
+        "source"
       ]
     },
     {

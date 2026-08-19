@@ -418,6 +418,43 @@ class Api:
                 for screen in manifest(verbs=self.verbs, routes=self.routes)
             ]}
 
+        @self.route("GET", "/api/lexicon")
+        def lexicon(request: Request) -> Any:
+            """The words this caller's context uses for the platform's nouns.
+
+            `request.context` is written by the gateway before any route runs,
+            so this reads an identity that has already been established rather
+            than establishing a second one — the same reason the live guard is
+            not reimplemented behind FastAPI.
+
+            A profile naming a term the platform does not define, or trying to
+            rename a control, is an authored mistake and is reported as one. The
+            console still renders: it falls back to the platform's own words,
+            because a reader seeing `finding` where they expected `risk` has a
+            cosmetic problem and a reader seeing a blank screen has an outage.
+            """
+            from ..context.lexicon import LexiconError, default
+            from ..context.profile import resolve
+
+            asked = request.param("profile")
+            context = dict(request.context or {})
+            if asked:
+                context["profile"] = asked
+
+            root = getattr(engine, "root", None) or "."
+            try:
+                words = resolve(context, root=root)
+                error = ""
+            except LexiconError as failure:
+                words = default()
+                error = str(failure)
+
+            body = words.to_dict()
+            body["requested"] = str(context.get("profile") or "")
+            if error:
+                body["error"] = error
+            return body
+
         @self.route("GET", "/api/stream/status")
         def stream_status(_request: Request) -> Any:
             """How far behind the feed is, and how far back it can replay."""
