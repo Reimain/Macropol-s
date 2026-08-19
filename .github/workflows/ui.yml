@@ -26,11 +26,14 @@ jobs:
           python-version: "3.11"
       - run: pip install -e '.[dev]'
 
-      - name: The declared globs equal the shipped files
+      # `--co -q` counts first, because `pytest` exits 4 on a path that does
+      # not exist and the message scrolls past in a long log. This job's first
+      # run failed exactly that way — a filename taken from a plan rather than
+      # from the tree — and counting makes the next one say so in one line.
+      - name: The declared globs, the import graph and the tier rule
         run: |
-          python -m pytest -q \
-            tests/test_slpie_ui_assets.py \
-            tests/test_slpie_ui_modules.py
+          python -m pytest -q --co tests/test_slpie_ui_assets.py > /dev/null
+          python -m pytest -q tests/test_slpie_ui_assets.py
 
       - name: Screens name components that exist, in both directions
         run: python -m pytest -q tests/test_slpie_ui_blocks.py
