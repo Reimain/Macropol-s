@@ -23,6 +23,7 @@ from ..core.commands import RecordObservation
 from ..domain.edge import Edge, EdgeKind
 from ..domain.evidence import Evidence
 from ..domain.identity import Identity, parse_identity
+from ..core.tasks import default_runner
 from ..domain.node import Node, NodeKind
 from ..errors import BindingError, IdentityError
 from ..plugins.manifest import ExtensionPoint
@@ -163,9 +164,23 @@ class ScanReport:
 class Scanner:
     """Runs discovery across attached elements and records what it finds."""
 
-    def __init__(self, registry: Registry, *, commands: Any = None) -> None:
+    def __init__(
+        self,
+        registry: Registry,
+        *,
+        commands: Any = None,
+        runner: Any = None,
+        meter: Any = None,
+    ) -> None:
         self.registry = registry
         self.commands = commands
+        #: Where units of work go (§14). The default runs them here, in order,
+        #: so behaviour is byte-identical to before this seam existed — which is
+        #: what lets the whole existing suite stand as the proof that it is
+        #: inert until something is plugged in.
+        self.runner = runner if runner is not None else default_runner()
+        #: Optional. Absent, nothing is measured and nothing costs anything.
+        self.meter = meter
 
     def scan_element(
         self, element: str, connector: Connector, *, root: str = ""
@@ -215,15 +230,37 @@ class Scanner:
         elements: list[str] = []
         seen = read = 0
 
+        # One unit per bound element. The elements are independent, they are
+        # already enumerated, and the plugin sandbox makes each unit retryable
+        # on its own because it is per-subprocess — so this is the natural grain
+        # for a worker pool, and the only thing that changes under one is where
+        # the units run.
+        units: list[tuple[str, Any]] = []
         for binding in bindings:
             if not binding.available:
                 continue
             elements.append(binding.element)
-            found, element_errors, element_seen, element_read = self.scan_element(
-                binding.element,
-                binding.connector,
-                root=binding.declaration.location if binding.declaration else "",
-            )
+            units.append((binding.element, _unit(self, binding)))
+
+        stage = self.meter.measure("scan") if self.meter is not None else None
+        if stage is not None:
+            stage.__enter__()
+            stage.units = len(units)
+        try:
+            outcomes = self.runner.run(units)
+        finally:
+            if stage is not None:
+                stage.failures = 0
+                stage.__exit__(None, None, None)
+
+        for outcome in outcomes:
+            if not outcome.ok:
+                # A unit that failed is a named gap, not a shorter scan. Left
+                # silent, a worker that died mid-run would look exactly like an
+                # estate with fewer elements in it.
+                errors.append(f"{outcome.unit}: {outcome.error}")
+                continue
+            found, element_errors, element_seen, element_read = outcome.value
             observations.extend(found)
             errors.extend(element_errors)
             seen += element_seen
@@ -247,6 +284,23 @@ class Scanner:
             elements=tuple(elements), duration_ns=time.time_ns() - started,
             captured=tuple(observations),
         )
+
+
+def _unit(scanner: "Scanner", binding: Any) -> Any:
+    """One element's scan, as a callable a runner can place anywhere.
+
+    A closure rather than a method reference so the binding travels with it —
+    which is the shape a serialising runner needs, and getting it wrong here
+    would mean the seam looks right and cannot actually be used.
+    """
+    def work() -> tuple[tuple[Observation, ...], list[str], int, int]:
+        return scanner.scan_element(
+            binding.element,
+            binding.connector,
+            root=binding.declaration.location if binding.declaration else "",
+        )
+
+    return work
 
 
 def materialise(

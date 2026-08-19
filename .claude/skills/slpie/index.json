@@ -1,27 +1,29 @@
 {
   "generator": "slpie context --skill",
-  "digest": "f113efd35b093a5f3cd90013db3b4af99ed3738437506e889482126021afe6c3",
+  "digest": "932d1d957075bf02548556c913788e37ed71c2c5fbd207873f457eb903e4f5db",
   "summary": {
-    "digest": "f113efd35b093a5f3cd90013db3b4af99ed3738437506e889482126021afe6c3",
-    "facets": 687,
+    "digest": "932d1d957075bf02548556c913788e37ed71c2c5fbd207873f457eb903e4f5db",
+    "facets": 692,
     "counts": {
       "component": 52,
       "kind": 21,
-      "module": 293,
+      "module": 295,
       "package": 68,
       "route": 89,
       "screen": 31,
-      "section": 13,
-      "test": 70,
+      "section": 15,
+      "test": 71,
       "verb": 50
     },
-    "coverage": 0.9854,
+    "coverage": 0.9827,
     "unanchored": [
       "section:12",
+      "section:14",
       "section:15",
       "section:16",
       "section:18",
       "section:19",
+      "section:23",
       "section:25",
       "section:26",
       "section:27",
@@ -4539,6 +4541,25 @@
       "tags": []
     },
     {
+      "id": "module:slpie.core.meter",
+      "kind": "module",
+      "name": "slpie.core.meter",
+      "title": "meter",
+      "summary": "Resource measurements, as evidence rather than as a shrug.",
+      "source": "slpie/core/meter.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.evidence"
+        },
+        {
+          "relation": "claims",
+          "target": "section:23"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "module:slpie.core.queries",
       "kind": "module",
       "name": "slpie.core.queries",
@@ -4557,6 +4578,33 @@
         {
           "relation": "imports",
           "target": "module:slpie.errors"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.core.tasks",
+      "kind": "module",
+      "name": "slpie.core.tasks",
+      "title": "tasks",
+      "summary": "The seam a worker pool implements, and the default that needs none.",
+      "source": "slpie/core/tasks.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.errors"
+        },
+        {
+          "relation": "claims",
+          "target": "section:14"
+        },
+        {
+          "relation": "claims",
+          "target": "section:23"
+        },
+        {
+          "relation": "claims",
+          "target": "section:30"
         }
       ],
       "tags": []
@@ -5299,6 +5347,10 @@
         {
           "relation": "imports",
           "target": "module:slpie.core.commands"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.core.tasks"
         },
         {
           "relation": "imports",
@@ -10098,7 +10150,15 @@
         },
         {
           "relation": "owns",
+          "target": "module:slpie.core.meter"
+        },
+        {
+          "relation": "owns",
           "target": "module:slpie.core.queries"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.core.tasks"
         }
       ],
       "tags": []
@@ -13475,6 +13535,16 @@
       "tags": []
     },
     {
+      "id": "section:14",
+      "kind": "section",
+      "name": "14",
+      "title": "\u00a714",
+      "summary": "A plan section claimed by at least one module.",
+      "source": "",
+      "links": [],
+      "tags": []
+    },
+    {
       "id": "section:15",
       "kind": "section",
       "name": "15",
@@ -13521,6 +13591,16 @@
       "title": "\u00a72",
       "summary": "A plan section claimed by at least one module.",
       "source": "docs/AUDIT.md:100",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "section:23",
+      "kind": "section",
+      "name": "23",
+      "title": "\u00a723",
+      "summary": "A plan section claimed by at least one module.",
+      "source": "",
       "links": [],
       "tags": []
     },
@@ -15384,6 +15464,53 @@
         {
           "relation": "covers",
           "target": "package:slpie.manual"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_seams",
+      "kind": "test",
+      "name": "test_slpie_seams",
+      "title": "slpie seams",
+      "summary": "\u00a731 step 7 \u2014 the two \u00a714 seams that did not exist.",
+      "source": "tests/test_slpie_seams.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.binding.resolver"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.binding.target"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.core.meter"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.core.tasks"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.discovery.registry"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.domain.evidence"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.plugins.registry"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.core"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.discovery"
         }
       ],
       "tags": []

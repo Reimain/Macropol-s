@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `f113efd35b093a5f3cd90013db3b4af99ed3738437506e889482126021afe6c3`
-- **facets** 687 — 52 component, 21 kind, 293 module, 68 package, 89 route, 31 screen, 13 section, 70 test, 50 verb
-- **anchored** 98.5% resolve to a file and a line
+- **digest** `932d1d957075bf02548556c913788e37ed71c2c5fbd207873f457eb903e4f5db`
+- **facets** 692 — 52 component, 21 kind, 295 module, 68 package, 89 route, 31 screen, 15 section, 71 test, 50 verb
+- **anchored** 98.3% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -95,16 +95,18 @@ Derived from the `§NN` references modules write in their own docstrings — nev
 | section | modules | packages |
 |---|---|---|
 | §12 | 2 | `slpie.context`, `slpie.reasoning` |
+| §14 | 1 | `slpie.core` |
 | §15 | 2 | `slpie.compose`, `slpie.dispatch` |
 | §16 | 1 | `slpie.context` |
 | §18 | 1 | `slpie.context` |
 | §19 | 1 | `slpie.demo` |
 | §2 | 1 | `slpie.workspace` |
+| §23 | 2 | `slpie.core` |
 | §24 | 7 | `slpie.compose`, `slpie.compose.verbs`, `slpie.dispatch`, `slpie.ui` |
 | §25 | 4 | `slpie.compose.verbs`, `slpie.context` |
 | §26 | 2 | `slpie.apim`, `slpie.compose.verbs` |
 | §27 | 2 | `slpie.compose.verbs`, `slpie.dispatch` |
-| §30 | 1 | `slpie.context` |
+| §30 | 2 | `slpie.context`, `slpie.core` |
 | §31 | 4 | `slpie.compose.verbs`, `slpie.context` |
 | §6 | 1 | `slpie.compose` |
 
@@ -153,10 +155,12 @@ Kept and counted, never dropped. An index that silently omitted what it could no
 | facet | kind |
 |---|---|
 | `section:12` | section |
+| `section:14` | section |
 | `section:15` | section |
 | `section:16` | section |
 | `section:18` | section |
 | `section:19` | section |
+| `section:23` | section |
 | `section:25` | section |
 | `section:26` | section |
 | `section:27` | section |
