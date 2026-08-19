@@ -19,6 +19,7 @@ Eleven families, split by what they need rather than by what they are about:
 * `capture` — identify by content, then the firewall (§26).
 * `audit` — the judge: deterministic verdicts over an AST projection (§25).
 * `guidance` — suggestion and routines: what to look at next, and keeping it.
+* `context` — the product's own map, so its metadata composes too (§31).
 """
 
 from __future__ import annotations
@@ -31,6 +32,7 @@ from . import (
     artifacts,
     audit,
     capture,
+    context,
     dispatch,
     environment,
     governance,
@@ -57,7 +59,7 @@ FAMILIES = (
     _Family(analysis), _Family(intelligence), _Family(governance),
     _Family(artifacts), _Family(capture), _Family(audit), _Family(shaping),
     _Family(guidance), _Family(incremental), _Family(dispatch),
-    _Family(environment), _Family(rivals),
+    _Family(environment), _Family(rivals), _Family(context),
 )
 
 

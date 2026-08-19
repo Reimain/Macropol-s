@@ -110,6 +110,8 @@ class Cli:
             return OK
         if head == "contract":
             return self._contract(arguments[1:])
+        if head == "context":
+            return self._context(arguments[1:])
         if head == "ui":
             return self._ui(arguments[1:])
         if head == "demo":
@@ -209,6 +211,85 @@ class Cli:
         self._out(json.dumps(
             openapi(verbs=self.verbs, routes=routes), indent=2,
         ))
+        return OK
+
+    def _context(self, arguments: Sequence[str]) -> int:
+        """The product's own map (§31), in whichever projection was asked for.
+
+            slpie context                 counts, coverage and the digest
+            slpie context --json          every facet, with its links
+            slpie context --digest        the one comparable value, for CI
+            slpie context --skill         write .claude/skills/slpie/
+            slpie context query <text>    a facet and what connects to it
+
+        A command as well as a verb, for the same reason `contract` is one: the
+        verb answers inside a composition, and the command writes files. Neither
+        is a second implementation — both call `slpie.context.build()`.
+        """
+        from .context.index import build
+
+        index = build()
+
+        if "--digest" in arguments:
+            self._out(index.digest)
+            return OK
+        if "--skill" in arguments:
+            from .context.skill import write
+
+            written = write(index, check="--check" in arguments)
+            for line in written:
+                self._err(line)
+            return OK if not written or "--check" not in arguments else USAGE
+        if "--json" in arguments:
+            self._out(json.dumps(
+                [facet.to_dict() for facet in index], indent=2,
+            ))
+            return OK
+
+        rest = [item for item in arguments if not item.startswith("-")]
+        if rest and rest[0] == "query":
+            return self._context_query(index, " ".join(rest[1:]))
+        if rest:
+            return self._context_query(index, " ".join(rest))
+
+        self._out(json.dumps(index.to_dict(), indent=2))
+        return OK
+
+    def _context_query(self, index: Any, query: str) -> int:
+        """One facet and what connects to it, or the search that found nothing.
+
+        Rendered rather than dumped: the whole reason the index exists is that a
+        reader orienting themselves should not have to parse JSON, and `--json`
+        is right there for the case where a machine is asking.
+        """
+        if not query:
+            self._err("usage: slpie context query <facet-id or text>")
+            return USAGE
+
+        hit = index.get(query)
+        if hit is None:
+            found = index.search(query)
+            if not found:
+                self._err(f"nothing in the index matches {query!r}")
+                return USAGE
+            for facet in found:
+                self._out(f"{facet.id:52} {facet.source}")
+            return OK
+
+        self._out(f"{hit.id}")
+        self._out(f"  {hit.title} — {hit.summary}" if hit.summary else f"  {hit.title}")
+        self._out(f"  {hit.source or 'unanchored'}")
+        if hit.tags:
+            self._out(f"  tags: {', '.join(hit.tags)}")
+        for link in hit.links:
+            self._out(f"  {link.relation.value:>9} → {link.target}")
+        inbound = index.into(hit.id)
+        for facet in inbound:
+            relation = next(
+                (link.relation.value for link in facet.links if link.target == hit.id),
+                "",
+            )
+            self._out(f"  {relation:>9} ← {facet.id}")
         return OK
 
     # -- the interface ---------------------------------------------------

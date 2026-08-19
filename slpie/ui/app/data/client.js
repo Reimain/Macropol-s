@@ -347,6 +347,35 @@ export const VERBS = Object.freeze({
       "discover . | link | constraints"
     ]
   },
+  "context": {
+    "group": "context",
+    "summary": "the product's own map: what exists, and what connects it",
+    "consumes": "nothing",
+    "produces": "report",
+    "mutates": false,
+    "source": true,
+    "params": [
+      {
+        "name": "query",
+        "type": "str",
+        "help": "a facet id like `verb:findings`, or text to search for",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "depth",
+        "type": "int",
+        "help": "how many hops to follow",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "context",
+      "context --query verb:findings",
+      "context | count"
+    ]
+  },
   "count": {
     "group": "shaping",
     "summary": "count what is flowing, without changing it",
@@ -1414,6 +1443,9 @@ export const GROUPS = Object.freeze({
     "chain",
     "quarantine"
   ],
+  "context": [
+    "context"
+  ],
   "dispatch": [
     "history",
     "tool",
@@ -1832,6 +1864,25 @@ export const SCREENS = Object.freeze([
     ],
     "events": [],
     "action": "capture.*",
+    "resource": "*",
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
+    "authored": false
+  },
+  {
+    "key": "group-context",
+    "path": "/inspect/context",
+    "title": "Context",
+    "section": "build",
+    "reads": [],
+    "verbs": [
+      "context"
+    ],
+    "events": [],
+    "action": "context.*",
     "resource": "*",
     "crumbs": [
       "verbs"
@@ -2317,6 +2368,11 @@ export const ROUTES = Object.freeze([
   {
     "method": "POST",
     "path": "/api/v/constraints",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/context",
     "transport": "json"
   },
   {

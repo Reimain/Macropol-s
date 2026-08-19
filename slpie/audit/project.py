@@ -108,6 +108,12 @@ class Module:
     error: str = ""
     lines: int = 0
     dynamic: tuple[int, ...] = ()   # lines with importlib/__import__/getattr
+    #: The module docstring, verbatim. Carried because the AST is already in
+    #: hand here and re-parsing 340 files to read a docstring would be the same
+    #: work done twice — `slpie/context/index.py` reads it for a module's
+    #: summary and for the plan section the module claims to implement.
+    #: Additive with a default, so nothing that constructs a `Module` changes.
+    doc: str = ""
 
     @property
     def ring(self) -> str:
@@ -338,6 +344,7 @@ def _module(path: Path, base: Path) -> Module:
         package=name.rsplit(".", 1)[0] if "." in name else "",
         imports=tuple(imports), definitions=tuple(definitions),
         lines=len(source.splitlines()), dynamic=tuple(sorted(set(dynamic))),
+        doc=ast.get_docstring(tree) or "",
     )
 
 

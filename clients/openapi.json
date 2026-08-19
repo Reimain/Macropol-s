@@ -2482,6 +2482,92 @@
         }
       }
     },
+    "/api/v/context": {
+      "post": {
+        "summary": "the product's own map: what exists, and what connects it",
+        "description": "Every facet is read from a source that already exists \u2014 verbs from the registry, routes from the server, screens from the contract, modules and imports from the AST projection, plan sections from the \u00a7NN references modules write in their own docstrings. Nothing is restated here, so the index is wrong only if the code is.\n\nWith no query it summarises. With one it answers *what is connected to this* \u2014 both directions, because 'what does this screen read' and 'who reads this route' are the same question asked from opposite ends.",
+        "operationId": "verb_context",
+        "tags": [
+          "context"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "a facet id like `verb:findings`, or text to search for"
+                  },
+                  "depth": {
+                    "type": "integer",
+                    "description": "how many hops to follow",
+                    "default": 1
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/count": {
       "post": {
         "summary": "count what is flowing, without changing it",
@@ -6224,6 +6310,7 @@
         "c4",
         "chain",
         "changed",
+        "context",
         "enterprise",
         "fire",
         "history",

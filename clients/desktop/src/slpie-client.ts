@@ -63,6 +63,7 @@ export const VERB_TYPES = {
   "chain": { consumes: "nothing", produces: "report", mutates: false },
   "changed": { consumes: "nothing", produces: "report", mutates: false },
   "constraints": { consumes: "resolution", produces: "solution", mutates: false },
+  "context": { consumes: "nothing", produces: "report", mutates: false },
   "count": { consumes: "any", produces: "same", mutates: false },
   "declare": { consumes: "nothing", produces: "elements", mutates: false },
   "discover": { consumes: "nothing", produces: "observations", mutates: false },
@@ -214,6 +215,11 @@ export class SlpieClient {
   /** solve the version constraints, naming any conflict */
   async constraints(params: { ecosystem?: string; max_steps?: number; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/constraints`, params);
+  }
+
+  /** the product's own map: what exists, and what connects it */
+  async context(params: { query?: string; depth?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/context`, params);
   }
 
   /** count what is flowing, without changing it */
