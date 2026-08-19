@@ -50,6 +50,10 @@ function position(response) {
     // Set by the service worker when it serves a cached answer offline. The
     // honesty rule does not weaken because the client is a laptop on a plane.
     stale: response.headers.get("x-slpie-stale") === "1",
+    // Whether a device may hold this answer. Decided by the contract and
+    // stamped by the API, so the browser's device tier, the service worker and
+    // any edge cache read one statement rather than three.
+    keep: response.headers.get("X-Slpie-Cacheable") === "1",
   };
 }
 

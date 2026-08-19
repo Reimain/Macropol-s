@@ -147,6 +147,9 @@ class Api:
         #: by the whole pre-existing suite passing untouched.
         self.gateway = gateway
         self._routes: dict[tuple[str, str], Handler] = {}
+        #: Filled on first use by `cacheable()` — the route table does not
+        #: change after registration, so asking the contract once is enough.
+        self._cacheable: frozenset[str] | None = None
         self._register()
 
     def route(self, method: str, path: str) -> Callable[[Handler], Handler]:
@@ -171,7 +174,14 @@ class Api:
         admitted = self._admit(request)
         if admitted is not None:
             return admitted
-        return self._dispatch(request).with_headers(*self._position())
+        answered = self._dispatch(request).with_headers(*self._position())
+        # Whether a client may keep this. Stamped only on answers that worked:
+        # a refusal or a fault is never something to hold on a device, and a
+        # 409 "no environment open" cached past the moment one is opened is a
+        # console insisting the platform is empty.
+        if answered.status == 200 and self.cacheable(request.method, request.path):
+            answered = answered.with_headers(("X-Slpie-Cacheable", "1"))
+        return answered
 
     def _admit(self, request: Request) -> Response | None:
         """The gateway's refusal, or nothing. Absent gateway, always nothing."""
@@ -205,6 +215,24 @@ class Api:
             return (("X-Slpie-Ledger-Version", str(self.engine.ledger.version)),)
         except Exception:  # noqa: BLE001 - no engine, or a ledger not yet open
             return ()
+
+    def cacheable(self, method: str, path: str) -> bool:
+        """Whether an answer to this route may be held on a client's device.
+
+        Read from the contract rather than decided here. `openapi()` already
+        marks each operation `x-slpie-cacheable`, the service worker already
+        uses that idea, and §26 is explicit that a fourth policy vocabulary must
+        not be invented — so the browser's device tier reads the same flag.
+
+        A read that needs an environment is cacheable; a mutation never is, and
+        neither is the stream. Computed once and held, because it is a fact
+        about the route table rather than about a request.
+        """
+        if self._cacheable is None:
+            from .contract import cacheable_routes
+
+            self._cacheable = cacheable_routes(verbs=self.verbs, routes=self.routes)
+        return f"{method} {path}" in self._cacheable
 
     def _dispatch(self, request: Request) -> Response:
         handler = self._routes.get((request.method, request.path))

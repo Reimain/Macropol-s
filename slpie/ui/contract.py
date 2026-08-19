@@ -472,6 +472,37 @@ def _ts_type(param: Param) -> str:
     }.get(param.type, "string")
 
 
+def cacheable_routes(
+    *,
+    verbs: VerbRegistry | None = None,
+    routes: Sequence[tuple[str, str]] = (),
+) -> frozenset[str]:
+    """Every route whose answer a client may hold on a device.
+
+    Derived from the document the contract already emits, so there is one
+    statement of what may be cached and three consumers of it: the service
+    worker, the browser's device tier (§31), and any edge cache in front of the
+    API. A second list would be a second answer.
+
+    A hand-declared read route is cacheable when it needs no confirmation and
+    changes nothing — which for a GET is all of them. The interesting judgements
+    are on the verb routes, where `POST /api/v/discover` is a read despite the
+    method, and those already carry `x-slpie-cacheable` per operation.
+    """
+    document = openapi(verbs=verbs, routes=routes)
+    found: set[str] = set()
+    for path, operations in document["paths"].items():
+        for method, operation in operations.items():
+            marked = operation.get("x-slpie-cacheable")
+            if marked is True or (marked is None and method.lower() == "get"):
+                found.add(f"{method.upper()} {path}")
+    # The live feed is a connection, not a document. It is registered as a route
+    # so a generated client can discover it, which means it would otherwise be
+    # swept up here as an ordinary GET — and a cached SSE response replays
+    # history as though it were happening now.
+    return frozenset(found - {"GET /api/stream"})
+
+
 def route_set(
     *,
     verbs: VerbRegistry | None = None,

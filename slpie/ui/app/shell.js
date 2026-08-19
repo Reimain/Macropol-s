@@ -9,10 +9,11 @@
 import { el, fill, h } from "./core/dom.js";
 import { on } from "./core/bus.js";
 import { navigate, parse, route, start } from "./core/router.js";
-import { cell, invalidate, subscribe } from "./core/store.js";
+import { cell, hydrate, invalidate, persist, subscribe } from "./core/store.js";
 import { connect, watchVisibility } from "./data/live.js";
 import { load as loadLexicon, seed as seedLexicon } from "./core/lexicon.js";
-import { LEXICON } from "./data/client.js";
+import { LEXICON, SCREENS } from "./data/client.js";
+import { attach, prefix, ref } from "./data/objectstore.js";
 import { status as loadStatus } from "./data/queries.js";
 import { manifest, mount } from "./screens/index.js";
 import { control } from "./ui/density.js";
@@ -152,4 +153,50 @@ loadStatus();
  * arrives. */
 seedLexicon(LEXICON);
 loadLexicon();
+
+/* The device tier (§31).
+ *
+ * The screens live on the reader's machine and the truth lives on the server.
+ * That split is what lets the API tier hold no per-session state at all — which
+ * is what makes phase 16's horizontal workers viable without sticky routing and
+ * a session store in front of them.
+ *
+ * Wired here because `core/store.js` cannot import `data/`: the browser follows
+ * the kernel's ring rule, and the composition root is where a dependency
+ * crossing tiers belongs.
+ *
+ * Restored cells arrive marked stale, and every one of them goes through the
+ * same `commit` a network answer does — so a cell from disk is older by
+ * construction and can only fill a gap, never win a race. */
+(async () => {
+  const store = await attach();
+  const owner = prefix(readerId(), tenantId());
+  await persist(store, { owner, key: (key) => ref(readerId(), tenantId(), key) });
+
+  // Only what a screen actually reads. Hydrating every key the device happens
+  // to hold would restore answers for screens this build no longer has.
+  const keys = [...new Set(
+    SCREENS.flatMap((screen) => (screen.blocks || [])
+      .map((block) => (block.source || "").replace(/^GET\s+/, ""))
+      .filter(Boolean)),
+  )];
+  const restored = await hydrate(keys);
+  if (restored) draw(parse(window.location.hash));
+})();
+
+/* Who this device belongs to.
+ *
+ * The gateway knows the real answer and says so on the status cell; until it
+ * has, everything is scoped to `anonymous`. Deliberately not read from a token
+ * in storage: the client is not the place identity is decided, and a device
+ * scope that a page could set is a device scope an attacker could set. */
+function readerId() {
+  const state = cell("status").value;
+  return (state && state.principal) || "anonymous";
+}
+
+function tenantId() {
+  const state = cell("status").value;
+  return (state && state.environment) || "_";
+}
 on("lexicon", () => draw(parse(window.location.hash)));

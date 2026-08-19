@@ -691,3 +691,121 @@ def test_the_interface_paints_in_the_platforms_words_before_any_round_trip(
         "({node: m.t('node'), plural: m.t('node', {plural: true})}))"
     )
     assert words == {"node": "node", "plural": "nodes"}
+
+
+# --- the device tier (§31) ---------------------------------------------------
+
+
+def test_a_restored_cell_cannot_overwrite_a_fresher_one(page, served):
+    """The property that makes hydration safe.
+
+    A cell from disk is older by construction, so routing it through the same
+    `commit` a network answer takes means it can only fill a gap. If hydration
+    had its own path — and it would be the obvious way to write it — a slow
+    IndexedDB read landing after a fast fetch would paint yesterday's answer
+    over today's, and it would do it intermittently.
+    """
+    _open(page, served)
+
+    kept = page.evaluate("""
+      import('/core/store.js').then(async (store) => {
+        store.commit('probe', {status: 'ready', value: {n: 'fresh'}, version: 7});
+        // Exactly what hydrate does with a restored row, at an older version.
+        store.commit('probe', {status: 'ready', value: {n: 'disk'}, version: 3,
+                               stale: true});
+        return store.cell('probe').value.n;
+      })
+    """)
+    assert kept == "fresh"
+
+
+def test_a_restored_cell_announces_that_it_is_old(page, served):
+    """`STALE_REPLICA` (§23) with the replica being a laptop.
+
+    A screen painted from disk while the server is ahead must say so — the same
+    honesty the service worker already applies to an offline answer, and
+    `panel.js` already renders it.
+    """
+    _open(page, served)
+
+    marked = page.evaluate("""
+      import('/core/store.js').then((store) => {
+        store.commit('probe2', {status: 'ready', value: {n: 1}, version: 3,
+                                ledger: 400, stale: true});
+        const held = store.cell('probe2');
+        return {stale: held.stale, behind: held.ledger > held.version};
+      })
+    """)
+    assert marked == {"stale": True, "behind": True}
+
+
+def test_the_device_tier_round_trips_through_indexeddb(page, served):
+    """It actually persists, rather than looking like it does."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/data/objectstore.js').then(async (module) => {
+        const store = await module.attach();
+        const key = module.ref('alice', 'acme', 'findings:high');
+        await store.put(key, {value: {kept: true}, version: 5});
+        const back = await store.get(key);
+        await store.clear();
+        return {tier: store.tier, kept: back && back.value.kept,
+                gone: await store.get(key)};
+      })
+    """)
+    assert result["tier"] == "device", "IndexedDB was expected to be available"
+    assert result["kept"] is True
+    assert result["gone"] is None
+
+
+def test_a_different_principal_gets_an_empty_store(page, served):
+    """Wiped, not filtered.
+
+    A filtered view of another tenant's cells is still their bytes on somebody
+    else's disk, which is the difference between a caching decision and a
+    data-residency incident.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      Promise.all([import('/core/store.js'), import('/data/objectstore.js')])
+        .then(async ([store, backend]) => {
+          const one = await backend.attach();
+          await store.persist(one, {
+            owner: backend.prefix('alice', 'acme'),
+            key: (k) => backend.ref('alice', 'acme', k),
+          });
+          store.commit('secret', {status: 'ready', value: {x: 1}, version: 2,
+                                  keep: true});
+          await new Promise((done) => setTimeout(done, 120));
+          const before = (await one.keys()).length;
+
+          // A different reader arrives on the same machine.
+          await store.persist(one, {
+            owner: backend.prefix('bob', 'acme'),
+            key: (k) => backend.ref('bob', 'acme', k),
+          });
+          return {before, after: (await one.keys()).length,
+                  held: store.cell('secret').value};
+        })
+    """)
+    assert result["before"] >= 1, "nothing was written, so the wipe proves nothing"
+    assert result["after"] == 0
+    assert result["held"] is None
+
+
+def test_a_key_cannot_escape_its_prefix(page, served):
+    """`acme` must not reach `acme-corp`, and nothing may traverse out."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/data/objectstore.js').then((module) => {
+        let refused = false;
+        try { module.ref('alice', 'acme', '../../bob/secrets'); }
+        catch (error) { refused = true; }
+        return {refused,
+                distinct: module.prefix('acme', 'p') !== module.prefix('acme-corp', 'p')};
+      })
+    """)
+    assert result == {"refused": True, "distinct": True}
