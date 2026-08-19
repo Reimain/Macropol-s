@@ -1,21 +1,21 @@
 {
   "generator": "slpie context --skill",
-  "digest": "08cccaa9d13deee614220e2658180ea08043cb7b1f505595f7ac4893cda51b47",
+  "digest": "80cde7590633c56202758ffab8de10daea958da0e9eb620f45c9b25e6b3caac5",
   "summary": {
-    "digest": "08cccaa9d13deee614220e2658180ea08043cb7b1f505595f7ac4893cda51b47",
-    "facets": 682,
+    "digest": "80cde7590633c56202758ffab8de10daea958da0e9eb620f45c9b25e6b3caac5",
+    "facets": 686,
     "counts": {
-      "component": 49,
+      "component": 52,
       "kind": 21,
       "module": 293,
       "package": 68,
       "route": 89,
       "screen": 31,
       "section": 13,
-      "test": 68,
+      "test": 69,
       "verb": 50
     },
-    "coverage": 0.9853,
+    "coverage": 0.9854,
     "unanchored": [
       "section:12",
       "section:15",
@@ -101,6 +101,18 @@
       "links": [],
       "tags": [
         "panel"
+      ]
+    },
+    {
+      "id": "component:compose",
+      "kind": "component",
+      "name": "compose",
+      "title": "compose",
+      "summary": "Exported by ui/components.js.",
+      "source": "slpie/ui/app/ui/components.js:264",
+      "links": [],
+      "tags": [
+        "components"
       ]
     },
     {
@@ -356,6 +368,18 @@
       ]
     },
     {
+      "id": "component:render",
+      "kind": "component",
+      "name": "render",
+      "title": "render",
+      "summary": "Exported by ui/components.js.",
+      "source": "slpie/ui/app/ui/components.js:250",
+      "links": [],
+      "tags": [
+        "components"
+      ]
+    },
+    {
       "id": "component:screen-catalog",
       "kind": "component",
       "name": "screen-catalog",
@@ -449,6 +473,18 @@
       "links": [],
       "tags": [
         "table"
+      ]
+    },
+    {
+      "id": "component:select",
+      "kind": "component",
+      "name": "select",
+      "title": "select",
+      "summary": "Exported by ui/components.js.",
+      "source": "slpie/ui/app/ui/components.js:85",
+      "links": [],
+      "tags": [
+        "components"
       ]
     },
     {
@@ -8105,6 +8141,10 @@
           "target": "module:slpie.ui.server"
         },
         {
+          "relation": "imports",
+          "target": "module:slpie.context.lexicon"
+        },
+        {
           "relation": "claims",
           "target": "section:24"
         }
@@ -12537,7 +12577,7 @@
       "name": "analytics",
       "title": "Analytics",
       "summary": "",
-      "source": "slpie/ui/contract.py:668",
+      "source": "slpie/ui/contract.py:809",
       "links": [
         {
           "relation": "reads",
@@ -12560,7 +12600,7 @@
       "name": "catalog",
       "title": "Catalog",
       "summary": "Tenants, realms, datasets and objects \u2014 everything the platform has catalogued, with its lineage.",
-      "source": "slpie/ui/contract.py:643",
+      "source": "slpie/ui/contract.py:748",
       "links": [
         {
           "relation": "reads",
@@ -12595,7 +12635,7 @@
       "name": "compose",
       "title": "Compose",
       "summary": "Build a pipeline from typed verbs. Invalid compositions are refused before anything runs.",
-      "source": "slpie/ui/contract.py:586",
+      "source": "slpie/ui/contract.py:685",
       "links": [
         {
           "relation": "reads",
@@ -12622,7 +12662,7 @@
       "name": "console",
       "title": "Console",
       "summary": "Ask about this environment and get the answer with the reasoning that produced it and the gaps that limit it.",
-      "source": "slpie/ui/contract.py:580",
+      "source": "slpie/ui/contract.py:679",
       "links": [
         {
           "relation": "reads",
@@ -12673,7 +12713,7 @@
       "name": "cycles",
       "title": "Cycles",
       "summary": "",
-      "source": "slpie/ui/contract.py:610",
+      "source": "slpie/ui/contract.py:709",
       "links": [
         {
           "relation": "reads",
@@ -12696,7 +12736,7 @@
       "name": "findings",
       "title": "Findings",
       "summary": "Everything the rules raised, ranked by severity, each with its evidence and a remediation.",
-      "source": "slpie/ui/contract.py:591",
+      "source": "slpie/ui/contract.py:690",
       "links": [
         {
           "relation": "reads",
@@ -12731,7 +12771,7 @@
       "name": "gateway",
       "title": "Gateway",
       "summary": "The live route table and the policy chain in front of it \u2014 which rule admitted or refused each call, and why.",
-      "source": "slpie/ui/contract.py:660",
+      "source": "slpie/ui/contract.py:778",
       "links": [
         {
           "relation": "reads",
@@ -12754,7 +12794,7 @@
       "name": "graph",
       "title": "Graph",
       "summary": "Nodes and edges as the platform observed them, shaded by the confidence of the evidence behind each one.",
-      "source": "slpie/ui/contract.py:598",
+      "source": "slpie/ui/contract.py:697",
       "links": [
         {
           "relation": "reads",
@@ -12785,7 +12825,7 @@
       "name": "group-analysis",
       "title": "Analysis",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -12820,7 +12860,7 @@
       "name": "group-artifacts",
       "title": "Artifacts",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -12855,7 +12895,7 @@
       "name": "group-audit",
       "title": "Audit",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -12882,7 +12922,7 @@
       "name": "group-capture",
       "title": "Capture",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -12913,7 +12953,7 @@
       "name": "group-context",
       "title": "Context",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -12940,7 +12980,7 @@
       "name": "group-dispatch",
       "title": "Dispatch",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -12967,7 +13007,7 @@
       "name": "group-incremental",
       "title": "Incremental",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -12990,7 +13030,7 @@
       "name": "group-rivals",
       "title": "Rivals",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -13013,7 +13053,7 @@
       "name": "group-shaping",
       "title": "Shaping",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "runs",
@@ -13060,7 +13100,7 @@
       "name": "history",
       "title": "History",
       "summary": "",
-      "source": "slpie/ui/contract.py:631",
+      "source": "slpie/ui/contract.py:730",
       "links": [
         {
           "relation": "reads",
@@ -13091,7 +13131,7 @@
       "name": "impact",
       "title": "Impact",
       "summary": "",
-      "source": "slpie/ui/contract.py:607",
+      "source": "slpie/ui/contract.py:706",
       "links": [
         {
           "relation": "reads",
@@ -13122,7 +13162,7 @@
       "name": "keys",
       "title": "Applications and keys",
       "summary": "Applications, their subscriptions, and the credentials issued to them.",
-      "source": "slpie/ui/contract.py:671",
+      "source": "slpie/ui/contract.py:812",
       "links": [
         {
           "relation": "reads",
@@ -13141,7 +13181,7 @@
       "name": "ledger",
       "title": "Ledger",
       "summary": "The append-only record every answer is derived from: chain integrity, projection lag, and the live feed's own health.",
-      "source": "slpie/ui/contract.py:625",
+      "source": "slpie/ui/contract.py:724",
       "links": [
         {
           "relation": "reads",
@@ -13168,7 +13208,7 @@
       "name": "node",
       "title": "Node",
       "summary": "",
-      "source": "slpie/ui/contract.py:604",
+      "source": "slpie/ui/contract.py:703",
       "links": [
         {
           "relation": "reads",
@@ -13191,7 +13231,7 @@
       "name": "portal",
       "title": "Developer portal",
       "summary": "The APIs this platform publishes, their operations, and a console to try them.",
-      "source": "slpie/ui/contract.py:655",
+      "source": "slpie/ui/contract.py:760",
       "links": [
         {
           "relation": "reads",
@@ -13218,7 +13258,7 @@
       "name": "reconcile",
       "title": "Reconciliation",
       "summary": "",
-      "source": "slpie/ui/contract.py:620",
+      "source": "slpie/ui/contract.py:719",
       "links": [
         {
           "relation": "reads",
@@ -13249,7 +13289,7 @@
       "name": "route-lexicon",
       "title": "Lexicon",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "reads",
@@ -13272,7 +13312,7 @@
       "name": "route-screens",
       "title": "Screens",
       "summary": "",
-      "source": "slpie/ui/contract.py:696",
+      "source": "slpie/ui/contract.py:837",
       "links": [
         {
           "relation": "reads",
@@ -13295,7 +13335,7 @@
       "name": "simulator",
       "title": "Simulator",
       "summary": "Materialise the declared world as real files, fire a scenario at it, and watch the platform react.",
-      "source": "slpie/ui/contract.py:636",
+      "source": "slpie/ui/contract.py:735",
       "links": [
         {
           "relation": "reads",
@@ -13326,7 +13366,7 @@
       "name": "station",
       "title": "Environment",
       "summary": "What is attached, which capabilities each element granted or refused, and the gaps those refusals put on every answer.",
-      "source": "slpie/ui/contract.py:614",
+      "source": "slpie/ui/contract.py:713",
       "links": [
         {
           "relation": "reads",
@@ -13357,7 +13397,7 @@
       "name": "throttling",
       "title": "Throttling",
       "summary": "",
-      "source": "slpie/ui/contract.py:665",
+      "source": "slpie/ui/contract.py:790",
       "links": [
         {
           "relation": "reads",
@@ -13380,7 +13420,7 @@
       "name": "verbs",
       "title": "Verbs",
       "summary": "Every capability this build has, as a typed verb. Each one is reachable from the CLI, the API and a pipeline.",
-      "source": "slpie/ui/contract.py:650",
+      "source": "slpie/ui/contract.py:755",
       "links": [
         {
           "relation": "reads",
@@ -13403,7 +13443,7 @@
       "name": "workspaces",
       "title": "Workspaces",
       "summary": "Tenancy, quotas and headroom, and the grants that decide who may read which dataset.",
-      "source": "slpie/ui/contract.py:676",
+      "source": "slpie/ui/contract.py:817",
       "links": [
         {
           "relation": "reads",
@@ -15538,6 +15578,25 @@
         {
           "relation": "covers",
           "target": "package:slpie.ui"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_ui_blocks",
+      "kind": "test",
+      "name": "test_slpie_ui_blocks",
+      "title": "slpie ui blocks",
+      "summary": "\u00a731 \u2014 screens as data, and the component dictionary that draws them.",
+      "source": "tests/test_slpie_ui_blocks.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.api"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.contract"
         }
       ],
       "tags": []

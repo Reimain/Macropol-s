@@ -11,6 +11,8 @@ import { on } from "./core/bus.js";
 import { navigate, parse, route, start } from "./core/router.js";
 import { cell, invalidate, subscribe } from "./core/store.js";
 import { connect, watchVisibility } from "./data/live.js";
+import { load as loadLexicon, seed as seedLexicon } from "./core/lexicon.js";
+import { LEXICON } from "./data/client.js";
 import { status as loadStatus } from "./data/queries.js";
 import { manifest, mount } from "./screens/index.js";
 import { control } from "./ui/density.js";
@@ -138,3 +140,16 @@ start(draw);
 watchVisibility();
 connect();
 loadStatus();
+
+/* The reader's own words.
+ *
+ * Seeded before anything draws, from the default baked into `data/client.js`,
+ * so the first frame — and every frame offline — paints in correct labels with
+ * no round trip. `core/lexicon.js` cannot import that constant itself: `core/`
+ * imports nothing, and the composition root is where a dependency like this
+ * belongs. Then `load()` swaps in a tenant's vocabulary when there is one, and
+ * the redraw below repaints labels that are already on screen by the time it
+ * arrives. */
+seedLexicon(LEXICON);
+loadLexicon();
+on("lexicon", () => draw(parse(window.location.hash)));

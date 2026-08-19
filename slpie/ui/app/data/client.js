@@ -1547,7 +1547,8 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Ask about this environment and get the answer with the reasoning that produced it and the gaps that limit it.",
-    "authored": true
+    "authored": true,
+    "blocks": []
   },
   {
     "key": "compose",
@@ -1566,7 +1567,8 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Build a pipeline from typed verbs. Invalid compositions are refused before anything runs.",
-    "authored": true
+    "authored": true,
+    "blocks": []
   },
   {
     "key": "findings",
@@ -1590,7 +1592,8 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Everything the rules raised, ranked by severity, each with its evidence and a remediation.",
-    "authored": true
+    "authored": true,
+    "blocks": []
   },
   {
     "key": "graph",
@@ -1614,7 +1617,8 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Nodes and edges as the platform observed them, shaded by the confidence of the evidence behind each one.",
-    "authored": true
+    "authored": true,
+    "blocks": []
   },
   {
     "key": "cycles",
@@ -1633,7 +1637,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "graph",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/cycles",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "impact",
@@ -1656,7 +1670,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "graph",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/impact",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "node",
@@ -1678,7 +1702,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "graph",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/node",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "ledger",
@@ -1697,7 +1731,33 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "The append-only record every answer is derived from: chain integrity, projection lag, and the live feed's own health.",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/integrity",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "auto",
+        "source": "GET /api/projections",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "auto",
+        "source": "GET /api/stream/status",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "history",
@@ -1719,7 +1779,25 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "ledger",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/history",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "auto",
+        "source": "GET /api/causation",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "simulator",
@@ -1743,7 +1821,34 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Materialise the declared world as real files, fire a scenario at it, and watch the platform react.",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "grid",
+        "source": "GET /api/scenarios",
+        "select": "scenarios",
+        "title": "Scenarios",
+        "columns": [
+          {
+            "key": "",
+            "label": "Scenario",
+            "align": "",
+            "density": "",
+            "format": "mono",
+            "link": ""
+          }
+        ],
+        "options": {}
+      },
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "Run",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "station",
@@ -1767,7 +1872,17 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "What is attached, which capabilities each element granted or refused, and the gaps those refusals put on every answer.",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/station",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "reconcile",
@@ -1791,7 +1906,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "station",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/reconcile",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "verbs",
@@ -1808,7 +1933,8 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Every capability this build has, as a typed verb. Each one is reachable from the CLI, the API and a pipeline.",
-    "authored": true
+    "authored": true,
+    "blocks": []
   },
   {
     "key": "group-analysis",
@@ -1830,7 +1956,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "group-artifacts",
@@ -1852,7 +1988,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "group-audit",
@@ -1872,7 +2018,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "group-capture",
@@ -1893,7 +2049,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "group-context",
@@ -1913,7 +2079,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "group-dispatch",
@@ -1933,7 +2109,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "group-incremental",
@@ -1952,7 +2138,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "group-rivals",
@@ -1971,7 +2167,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "group-shaping",
@@ -1996,7 +2202,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "route-lexicon",
@@ -2015,7 +2231,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/lexicon",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "route-screens",
@@ -2034,7 +2260,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "verbs",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/screens",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "catalog",
@@ -2058,7 +2294,8 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Tenants, realms, datasets and objects \u2014 everything the platform has catalogued, with its lineage.",
-    "authored": true
+    "authored": true,
+    "blocks": []
   },
   {
     "key": "gateway",
@@ -2076,7 +2313,34 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "The live route table and the policy chain in front of it \u2014 which rule admitted or refused each call, and why.",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "metrics",
+        "source": "GET /api/apim/gateway",
+        "select": "",
+        "title": "Gateway",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "grid",
+        "source": "GET /api/routes",
+        "select": "routes",
+        "title": "Route table",
+        "columns": [
+          {
+            "key": "",
+            "label": "Route",
+            "align": "",
+            "density": "",
+            "format": "mono",
+            "link": ""
+          }
+        ],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "analytics",
@@ -2095,7 +2359,17 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "gateway",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/apim/analytics",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "throttling",
@@ -2114,7 +2388,74 @@ export const SCREENS = Object.freeze([
     ],
     "parent": "gateway",
     "summary": "",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "grid",
+        "source": "GET /api/apim/throttles",
+        "select": "tiers",
+        "title": "Tiers",
+        "columns": [
+          {
+            "key": "name",
+            "label": "Tier",
+            "align": "",
+            "density": "",
+            "format": "",
+            "link": ""
+          },
+          {
+            "key": "requests",
+            "label": "Requests",
+            "align": "right",
+            "density": "",
+            "format": "count",
+            "link": ""
+          },
+          {
+            "key": "window_seconds",
+            "label": "Window",
+            "align": "right",
+            "density": "",
+            "format": "count",
+            "link": ""
+          },
+          {
+            "key": "burst",
+            "label": "Burst",
+            "align": "right",
+            "density": "dense",
+            "format": "count",
+            "link": ""
+          },
+          {
+            "key": "applies_to",
+            "label": "Applies to",
+            "align": "",
+            "density": "dense",
+            "format": "",
+            "link": ""
+          },
+          {
+            "key": "description",
+            "label": "What it is for",
+            "align": "",
+            "density": "",
+            "format": "",
+            "link": ""
+          }
+        ],
+        "options": {}
+      },
+      {
+        "component": "metrics",
+        "source": "GET /api/apim/throttles",
+        "select": "",
+        "title": "Right now",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "keys",
@@ -2131,7 +2472,17 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Applications, their subscriptions, and the credentials issued to them.",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/apim/subscriptions",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "portal",
@@ -2150,7 +2501,66 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "The APIs this platform publishes, their operations, and a console to try them.",
-    "authored": false
+    "authored": false,
+    "blocks": [
+      {
+        "component": "grid",
+        "source": "GET /api/apim/apis",
+        "select": "apis",
+        "title": "Published APIs",
+        "columns": [
+          {
+            "key": "name",
+            "label": "API",
+            "align": "",
+            "density": "",
+            "format": "",
+            "link": ""
+          },
+          {
+            "key": "api_id",
+            "label": "Id",
+            "align": "",
+            "density": "dense",
+            "format": "mono",
+            "link": ""
+          },
+          {
+            "key": "version",
+            "label": "Version",
+            "align": "",
+            "density": "",
+            "format": "mono",
+            "link": ""
+          },
+          {
+            "key": "visibility",
+            "label": "Visibility",
+            "align": "",
+            "density": "",
+            "format": "pill",
+            "link": ""
+          },
+          {
+            "key": "default_throttle",
+            "label": "Throttle",
+            "align": "",
+            "density": "dense",
+            "format": "",
+            "link": ""
+          },
+          {
+            "key": "operations",
+            "label": "Operations",
+            "align": "right",
+            "density": "",
+            "format": "count",
+            "link": ""
+          }
+        ],
+        "options": {}
+      }
+    ]
   },
   {
     "key": "workspaces",
@@ -2168,9 +2578,358 @@ export const SCREENS = Object.freeze([
     "crumbs": [],
     "parent": "",
     "summary": "Tenancy, quotas and headroom, and the grants that decide who may read which dataset.",
-    "authored": true
+    "authored": true,
+    "blocks": []
   }
 ]);
+
+/** The platform's own words, baked so the first frame paints in them.
+  * `core/lexicon.js` swaps in a context's vocabulary from
+  * `GET /api/lexicon` once the caller is known — but a console must
+  * render correctly before that round trip, and offline it never
+  * happens at all. */
+export const LEXICON = Object.freeze({
+  "agent": {
+    "word": "agent",
+    "plural": "agents",
+    "gloss": "the platform's capabilities, reachable by a model."
+  },
+  "apim": {
+    "word": "apim",
+    "plural": "apims",
+    "gloss": "API management, WSO2-shaped, in ring 0."
+  },
+  "artifacts": {
+    "word": "artifacts",
+    "plural": "artifacts",
+    "gloss": "SBOM, C4 views, and architecture as importable code."
+  },
+  "audit": {
+    "word": "audit",
+    "plural": "audits",
+    "gloss": "a deterministic, AST-queryable graph knowledge judge."
+  },
+  "binding": {
+    "word": "binding",
+    "plural": "bindings",
+    "gloss": "the only code that knows simulated from live."
+  },
+  "capture": {
+    "word": "capture",
+    "plural": "captures",
+    "gloss": "Format intelligence and the capture firewall."
+  },
+  "compose": {
+    "word": "compose",
+    "plural": "composes",
+    "gloss": "the philosophy, and the one registry every surface reads."
+  },
+  "connectors": {
+    "word": "connectors",
+    "plural": "connectors",
+    "gloss": "Connectors that activate when authentication arrives."
+  },
+  "context": {
+    "word": "context",
+    "plural": "contexts",
+    "gloss": "the context spine: metadata that connects the product to itself."
+  },
+  "core": {
+    "word": "core",
+    "plural": "cores",
+    "gloss": "commands in, events to the ledger, projections out."
+  },
+  "demo": {
+    "word": "demo",
+    "plural": "demos",
+    "gloss": "one script, projected to a terminal or to screens."
+  },
+  "discovery": {
+    "word": "discovery",
+    "plural": "discoveries",
+    "gloss": "reading sources and reporting what they say, with citations."
+  },
+  "dispatch": {
+    "word": "dispatch",
+    "plural": "dispatches",
+    "gloss": "the kernel does not reimplement the device."
+  },
+  "domain": {
+    "word": "domain",
+    "plural": "domains",
+    "gloss": "the vocabulary every other layer is written in."
+  },
+  "edge": {
+    "word": "edge",
+    "plural": "edges",
+    "gloss": "the relationships, and the platform's central invariant."
+  },
+  "enterprise": {
+    "word": "enterprise",
+    "plural": "enterprises",
+    "gloss": "views over the graph, emitted as code."
+  },
+  "environment": {
+    "word": "environment",
+    "plural": "environments",
+    "gloss": "The declare-first entry point."
+  },
+  "evidence": {
+    "word": "evidence",
+    "plural": "evidences",
+    "gloss": "Evidence, and the confidence derived from it."
+  },
+  "finding": {
+    "word": "finding",
+    "plural": "findings",
+    "gloss": "what governance produces, and gaps \u2014 what it admits it cannot see."
+  },
+  "gap.access_denied": {
+    "word": "access denied",
+    "plural": "access denieds",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.capability_refused": {
+    "word": "capability refused",
+    "plural": "capability refuseds",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.low_confidence": {
+    "word": "low confidence",
+    "plural": "low confidences",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.not_attached": {
+    "word": "not attached",
+    "plural": "not attacheds",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.not_declared": {
+    "word": "not declared",
+    "plural": "not declareds",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.not_implemented": {
+    "word": "not implemented",
+    "plural": "not implementeds",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.parse_failure": {
+    "word": "parse failure",
+    "plural": "parse failures",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.plugin_quarantined": {
+    "word": "plugin quarantined",
+    "plural": "plugin quarantineds",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.plugin_unavailable": {
+    "word": "plugin unavailable",
+    "plural": "plugin unavailables",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.simulated_only": {
+    "word": "simulated only",
+    "plural": "simulated onlies",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.stale_heartbeat": {
+    "word": "stale heartbeat",
+    "plural": "stale heartbeats",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "gap.unresolved_dependency": {
+    "word": "unresolved dependency",
+    "plural": "unresolved dependencies",
+    "gloss": "Something the platform could not see, and what it cost."
+  },
+  "governance": {
+    "word": "governance",
+    "plural": "governances",
+    "gloss": "many findings, never one verdict."
+  },
+  "graph": {
+    "word": "graph",
+    "plural": "graphs",
+    "gloss": "a bitemporal projection of the ledger, traversed in SQL."
+  },
+  "identity": {
+    "word": "identity",
+    "plural": "identities",
+    "gloss": "how anything in the ecosystem is named, exactly once."
+  },
+  "incremental": {
+    "word": "incremental",
+    "plural": "incrementals",
+    "gloss": "read only what moved."
+  },
+  "ledger": {
+    "word": "ledger",
+    "plural": "ledgers",
+    "gloss": "hash-chained, append-only, replayable."
+  },
+  "license": {
+    "word": "license",
+    "plural": "licenses",
+    "gloss": "Licences as expressions, not strings."
+  },
+  "lifecycle": {
+    "word": "lifecycle",
+    "plural": "lifecycles",
+    "gloss": "Classification axes carried by every node."
+  },
+  "linking": {
+    "word": "linking",
+    "plural": "linkings",
+    "gloss": "Merging identities and joining what spans two files."
+  },
+  "manual": {
+    "word": "manual",
+    "plural": "manuals",
+    "gloss": "The manual, generated from the verb registry."
+  },
+  "node": {
+    "word": "node",
+    "plural": "nodes",
+    "gloss": "the things an ecosystem is made of."
+  },
+  "normalize": {
+    "word": "normalize",
+    "plural": "normalizes",
+    "gloss": "making two dialects for one package land on one node."
+  },
+  "planner": {
+    "word": "planner",
+    "plural": "planners",
+    "gloss": "it writes a composition, and shows it before running it."
+  },
+  "plugins": {
+    "word": "plugins",
+    "plural": "plugins",
+    "gloss": "Everything is a plugin, and built-ins register through the identical path."
+  },
+  "rbac": {
+    "word": "rbac",
+    "plural": "rbacs",
+    "gloss": "embedded, deterministic, and explainable."
+  },
+  "reasoning": {
+    "word": "reasoning",
+    "plural": "reasonings",
+    "gloss": "how a conclusion traces back to a line in a file."
+  },
+  "refusal.reason": {
+    "word": "reason",
+    "plural": "reasons",
+    "gloss": "Why it was declined."
+  },
+  "refusal.refused": {
+    "word": "refused",
+    "plural": "refuseds",
+    "gloss": "A guard declined this, and said why."
+  },
+  "rivals": {
+    "word": "rivals",
+    "plural": "rivals",
+    "gloss": "What else is on the market, what it cannot do, and what to build next."
+  },
+  "severity.critical": {
+    "word": "critical",
+    "plural": "criticals",
+    "gloss": "Severity critical."
+  },
+  "severity.high": {
+    "word": "high",
+    "plural": "highs",
+    "gloss": "Severity high."
+  },
+  "severity.info": {
+    "word": "info",
+    "plural": "infos",
+    "gloss": "Severity info."
+  },
+  "severity.low": {
+    "word": "low",
+    "plural": "lows",
+    "gloss": "Severity low."
+  },
+  "severity.medium": {
+    "word": "medium",
+    "plural": "mediums",
+    "gloss": "Severity medium."
+  },
+  "simulator": {
+    "word": "simulator",
+    "plural": "simulators",
+    "gloss": "real artifacts, not mocks."
+  },
+  "spill": {
+    "word": "spill",
+    "plural": "spills",
+    "gloss": "bounded memory, isolated sessions, content-addressed blocks."
+  },
+  "station": {
+    "word": "station",
+    "plural": "stations",
+    "gloss": "elements attach, negotiate, stay tracked, and hand over."
+  },
+  "suggest": {
+    "word": "suggest",
+    "plural": "suggests",
+    "gloss": "the non-deterministic block, made accountable."
+  },
+  "target.hybrid": {
+    "word": "hybrid",
+    "plural": "hybrids",
+    "gloss": "The hybrid binding."
+  },
+  "target.live": {
+    "word": "live",
+    "plural": "lives",
+    "gloss": "The live binding."
+  },
+  "target.simulated": {
+    "word": "simulated",
+    "plural": "simulateds",
+    "gloss": "The simulated binding."
+  },
+  "ui": {
+    "word": "ui",
+    "plural": "uis",
+    "gloss": "stdlib-served, self-contained, offline-capable."
+  },
+  "verdict.inapplicable": {
+    "word": "inapplicable",
+    "plural": "inapplicables",
+    "gloss": "Verdict inapplicable."
+  },
+  "verdict.indeterminate": {
+    "word": "indeterminate",
+    "plural": "indeterminates",
+    "gloss": "Verdict indeterminate."
+  },
+  "verdict.upheld": {
+    "word": "upheld",
+    "plural": "uphelds",
+    "gloss": "Verdict upheld."
+  },
+  "verdict.violated": {
+    "word": "violated",
+    "plural": "violateds",
+    "gloss": "Verdict violated."
+  },
+  "version": {
+    "word": "version",
+    "plural": "versions",
+    "gloss": "Versions and ranges across ecosystems that disagree about both."
+  },
+  "workspace": {
+    "word": "workspace",
+    "plural": "workspaces",
+    "gloss": "One notebook environment per user, and what that user is allowed to see."
+  }
+});
 
 export const ROUTES = Object.freeze([
   {

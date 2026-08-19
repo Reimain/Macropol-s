@@ -600,3 +600,94 @@ def test_switching_register_redraws_the_columns(page, served):
         f"calm shows {calm} columns and dense {dense} — the register did not "
         f"redraw the grid"
     )
+
+
+def _faults(page):
+    """Real JavaScript failures, not the platform declining to answer.
+
+    With no environment open, half the routes correctly return 409 and the
+    browser logs each as a failed resource load. Treating those as errors would
+    make these tests assert that the console never says "nothing is attached",
+    which is a thing it is supposed to say.
+    """
+    return [
+        message for message in page.errors
+        if "Failed to load resource" not in message
+    ]
+
+
+# --- composed screens (§31) --------------------------------------------------
+
+
+@pytest.mark.parametrize("fragment, heading", [
+    ("#/throttling", "Tier"),
+    ("#/portal", "API"),
+])
+def test_a_composed_screen_draws_its_declared_columns(page, served, fragment, heading):
+    """The thesis, in a browser: a screen described as data renders components.
+
+    Nobody wrote a module for either of these. The manifest names `grid` and
+    lists the columns, `ui/components.js` resolves the key, and the reader gets
+    the same instrument the authored screens use — headers, sorting, the dense
+    register — rather than a payload.
+    """
+    _open(page, served, fragment)
+
+    headers = page.eval_on_selector_all("th", "els => els.map(e => e.textContent)")
+    assert heading in headers, f"{fragment} drew headers {headers}"
+    assert not _faults(page), _faults(page)
+
+
+def test_a_composed_screen_never_falls_back_to_a_json_dump(page, served):
+    """`<pre>` was what every one of these screens used to be.
+
+    Thirty-two screens printing `JSON.stringify(body, null, 2)` reads as
+    unfinished no matter how good the authored four are, and the whole of §31
+    step 5 is the claim that they no longer do.
+    """
+    for fragment in ("#/throttling", "#/portal", "#/gateway", "#/inspect/screens"):
+        _open(page, served, fragment)
+        dumps = page.locator("pre").count()
+        assert dumps == 0, f"{fragment} still renders {dumps} raw payload(s)"
+
+
+def test_auto_infers_columns_from_the_shape_that_arrived(page, served):
+    """Python cannot know an arbitrary route's body, so the browser looks.
+
+    Declaring columns for every inspector by hand would be a list that drifts
+    the first time a payload changes; reading the rows that actually arrived
+    cannot drift, because there is nothing to keep in step.
+    """
+    _open(page, served, "#/inspect/screens")
+
+    headers = page.eval_on_selector_all("th", "els => els.map(e => e.textContent)")
+    assert "key" in headers and "path" in headers, headers
+    assert not _faults(page), _faults(page)
+
+
+def test_a_generated_inspector_still_runs_its_verbs(page, served):
+    """The guarantee that predates composing and must survive it: no capability
+    is unreachable. A verb with no designed home has somewhere to be run."""
+    _open(page, served, "#/inspect/audit")
+
+    assert page.locator("button.go").count() >= 1
+    assert not _faults(page), _faults(page)
+
+
+def test_the_interface_paints_in_the_platforms_words_before_any_round_trip(
+    page, served,
+):
+    """The baked lexicon.
+
+    `core/lexicon.js` starts empty — `core/` may import nothing — so the shell
+    seeds it from `data/client.js` before the first draw. If that seeding were
+    dropped every label would render as its key, which is exactly the failure
+    this asserts against.
+    """
+    _open(page, served, "#/verbs")
+
+    words = page.evaluate(
+        "import('/core/lexicon.js').then(m => "
+        "({node: m.t('node'), plural: m.t('node', {plural: true})}))"
+    )
+    assert words == {"node": "node", "plural": "nodes"}

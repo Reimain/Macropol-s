@@ -25,7 +25,7 @@ Stdlib only: this writes text. No `jsonschema`, no code generator, no build step
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
 from ..compose.flow import Kind
@@ -502,6 +502,103 @@ def route_set(
 SECTIONS = ("console", "operate", "build", "catalog", "api", "admin")
 
 
+#: The components a screen block may name. This is the dictionary half of
+#: "screens as data": a block says `grid` and the browser resolves it, exactly
+#: as `screens/index.js` resolves a screen key to a module.
+#:
+#: Deliberately smaller than the browser's whole component vocabulary. `ui/` has
+#: ~35 exported functions and most take a shape only hand-written JavaScript can
+#: build — `claim(value, confidence)` wants a number the payload does not carry.
+#: What is addressable here is what can be driven by *data*, and
+#: `test_the_addressable_components_match_the_browser_registry` asserts this set
+#: equals the keys of `COMPONENTS` in `app/ui/components.js`, in both directions:
+#: a name here with no implementation renders nothing, and an implementation
+#: with no name here is unreachable.
+COMPONENTS = frozenset({
+    "auto",       # render by shape — a table if it is rows, metrics if it is fields
+    "grid",       # the dense register's instrument, with declared columns
+    "table",      # the plain table, for a handful of rows that need no sorting
+    "metrics",    # label/value pairs from a flat object
+    "runner",     # the verb forms: parameters, type signature, an example
+    "prose",      # a sentence, resolved through the lexicon
+    "stat",       # one number with a label
+    "bars",       # a ranked bar list from {label, value} rows
+})
+
+#: How a cell is drawn. A block cannot carry a function, so the rendering
+#: behaviour is a *named* formatter — the same move as naming the component.
+FORMATS = frozenset({
+    "", "mono", "severity", "pill", "cite", "count", "confidence", "link",
+})
+
+
+@dataclass(frozen=True, slots=True)
+class Column:
+    """One column of a data-driven grid.
+
+    Mirrors the spec `ui/grid.js` already takes, minus the callables: `render`
+    and `sortValue` are JavaScript functions and cannot travel as data, so their
+    common cases become `format` and the browser supplies the function.
+    """
+
+    key: str
+    label: str = ""
+    align: str = ""              # "" | "right" — right for quantities
+    density: str = ""            # "" | "dense" — a column only the dense register shows
+    format: str = ""             # a name in FORMATS
+    link: str = ""               # a hash template: "#/node/:id"
+
+    def __post_init__(self) -> None:
+        if self.format not in FORMATS:
+            raise ValueError(
+                f"column {self.key!r} asks for format {self.format!r}; "
+                f"known formats are {', '.join(sorted(FORMATS - {''}))}"
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "key": self.key, "label": self.label or self.key.replace("_", " "),
+            "align": self.align, "density": self.density,
+            "format": self.format, "link": self.link,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class Block:
+    """One piece of a screen, named rather than written.
+
+    This is the JSON dictionary the interface is shipped as. A screen with
+    blocks is *composed* by the browser from a component registry; a screen with
+    a hand-built module is drawn by that module and ignores its blocks entirely,
+    because `screens/index.js` resolves an authored key first. Authored beats
+    composed beats dumped, and nothing here changes a screen somebody designed.
+    """
+
+    component: str
+    source: str = ""             # "GET /api/findings" — a route in `Screen.reads`
+    select: str = ""             # a dotted path into the body: "findings"
+    title: str = ""              # a lexicon key, or a literal
+    columns: tuple[Column, ...] = ()
+    options: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.component not in COMPONENTS:
+            raise ValueError(
+                f"{self.component!r} is not an addressable component; "
+                f"known components are {', '.join(sorted(COMPONENTS))}"
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "component": self.component,
+            "source": self.source,
+            "select": self.select,
+            "title": self.title,
+            "columns": [column.to_dict() for column in self.columns],
+            "options": dict(self.options),
+        }
+
+
 @dataclass(frozen=True, slots=True)
 class Screen:
     """One screen, declared here so the browser does not have to guess.
@@ -532,6 +629,7 @@ class Screen:
     parent: str = ""                     # the screen this is a *view of*
     summary: str = ""                    # one line, shown under the page title
     authored: bool = False               # a hand-built screens/<key>.js exists
+    blocks: tuple[Block, ...] = ()       # how to compose it, when nobody wrote it
 
     @property
     def is_destination(self) -> bool:
@@ -562,6 +660,7 @@ class Screen:
             "parent": self.parent,
             "summary": self.summary,
             "authored": self.authored,
+            "blocks": [block.to_dict() for block in self.blocks],
         }
 
 
@@ -638,7 +737,13 @@ DESIGNED: tuple[Screen, ...] = (
            events=("scenario_fired", "target_changed"),
            action="environment.target",
            summary="Materialise the declared world as real files, fire a "
-                   "scenario at it, and watch the platform react."),
+                   "scenario at it, and watch the platform react.",
+           blocks=(
+               Block("grid", source="GET /api/scenarios", select="scenarios",
+                     title="Scenarios",
+                     columns=(Column("", label="Scenario", format="mono"),)),
+               Block("runner", title="Run"),
+           )),
 
     Screen("catalog", "/catalog/:tenant?/:realm?/:dataset?/:object?", "Catalog",
            "catalog", reads=("GET /api/search", "GET /api/admin/datasets"),
@@ -656,15 +761,51 @@ DESIGNED: tuple[Screen, ...] = (
            reads=("GET /api/manual", "GET /api/contract", "GET /api/apim/apis"),
            action="platform.discover",
            summary="The APIs this platform publishes, their operations, and a "
-                   "console to try them."),
+                   "console to try them.",
+           blocks=(
+               Block("grid", source="GET /api/apim/apis", select="apis",
+                     title="Published APIs", columns=(
+                         Column("name", "API"),
+                         Column("api_id", "Id", format="mono", density="dense"),
+                         Column("version", "Version", format="mono"),
+                         Column("visibility", "Visibility", format="pill"),
+                         Column("default_throttle", "Throttle",
+                                density="dense"),
+                         Column("operations", "Operations", align="right",
+                                format="count"),
+                     )),
+           )),
     Screen("gateway", "/gateway", "Gateway", "api",
            reads=("GET /api/routes", "GET /api/apim/gateway"),
            action="apim.gateway.read",
            summary="The live route table and the policy chain in front of it — "
-                   "which rule admitted or refused each call, and why."),
+                   "which rule admitted or refused each call, and why.",
+           blocks=(
+               Block("metrics", source="GET /api/apim/gateway",
+                     title="Gateway"),
+               Block("grid", source="GET /api/routes", select="routes",
+                     title="Route table",
+                     columns=(Column("", label="Route", format="mono"),)),
+           )),
     Screen("throttling", "/throttling", "Throttling", "api", parent="gateway",
            crumbs=("gateway",),
-           reads=("GET /api/apim/throttles",), action="apim.throttles.read"),
+           reads=("GET /api/apim/throttles",), action="apim.throttles.read",
+           blocks=(
+               Block("grid", source="GET /api/apim/throttles", select="tiers",
+                     title="Tiers", columns=(
+                         Column("name", "Tier"),
+                         Column("requests", "Requests", align="right",
+                                format="count"),
+                         Column("window_seconds", "Window", align="right",
+                                format="count"),
+                         Column("burst", "Burst", align="right", format="count",
+                                density="dense"),
+                         Column("applies_to", "Applies to", density="dense"),
+                         Column("description", "What it is for"),
+                     )),
+               Block("metrics", source="GET /api/apim/throttles",
+                     title="Right now"),
+           )),
     Screen("analytics", "/analytics", "Analytics", "api", parent="gateway",
            crumbs=("gateway",),
            reads=("GET /api/apim/analytics",), action="apim.analytics.read"),
@@ -731,6 +872,11 @@ def screens(
             crumbs=("verbs",),
             verbs=uncovered,
             action=f"{group}.*",
+            # A group inspector is verb forms and nothing else, so it is one
+            # block. That it is *composed* from the same registry an authored
+            # screen draws from — rather than being a second rendering path
+            # nobody maintains — is the whole point of naming components.
+            blocks=(Block("runner"),),
         ))
 
     claimed = {route for screen in known.values() for route in screen.reads}
@@ -747,7 +893,34 @@ def screens(
             crumbs=("verbs",),
             reads=(f"{method} {path}",),
             action="platform.discover",
+            # `auto`, because Python cannot know the shape of an arbitrary
+            # route's body and declaring columns for each of these by hand
+            # would be a list that drifts the first time a payload changes.
+            # Rendering *by shape* at draw time is honest about what is known,
+            # and it is still a component named in the manifest rather than a
+            # second code path: rows become a table, fields become metrics, and
+            # anything else says so instead of pretending.
+            blocks=(Block("auto", source=f"{method} {path}"),),
         ))
+
+    # Every screen nobody authored gets blocks, derived from what it declares
+    # it reads. Without this the unauthored *designed* screens — Station,
+    # Ledger, Reconciliation and the rest — would fall through to a JSON dump
+    # while the generated inspectors composed, which is exactly backwards: the
+    # screens somebody bothered to name are the ones most likely to be looked
+    # at. Derived rather than listed, so a screen declaring a new read composes
+    # it with no file edited.
+    for key, screen in list(known.items()):
+        if screen.blocks or _authored(key) or not screen.reads:
+            continue
+        known[key] = Screen(**{
+            **screen.to_dict(), "reads": screen.reads, "verbs": screen.verbs,
+            "events": screen.events, "crumbs": screen.crumbs,
+            "blocks": tuple(
+                Block("auto", source=read) for read in screen.reads
+                if read.startswith("GET ")
+            ),
+        })
 
     # Destinations first within each section, then their views. The rail reads
     # the first group and a parent's page reads the second, so one ordering
@@ -755,7 +928,8 @@ def screens(
     return tuple(
         Screen(**{**screen.to_dict(), "authored": _authored(screen.key),
                   "reads": screen.reads, "verbs": screen.verbs,
-                  "events": screen.events, "crumbs": screen.crumbs})
+                  "events": screen.events, "crumbs": screen.crumbs,
+                  "blocks": screen.blocks})
         for screen in sorted(known.values(), key=lambda s: (
             SECTIONS.index(s.section) if s.section in SECTIONS else len(SECTIONS),
             s.parent or s.key,
@@ -766,6 +940,19 @@ def screens(
 
 
 # --- the generated JavaScript client ------------------------------------
+
+
+def _lexicon_words() -> dict[str, Any]:
+    """The default lexicon, in the compact form the browser consumes.
+
+    Imported here rather than at module scope: `slpie/context/` imports the
+    contract to build its screen facets, and importing it back at the top would
+    be a cycle. A function-local import is the ordinary answer and is what the
+    codebase already does for the same reason elsewhere.
+    """
+    from ..context.lexicon import default
+
+    return default().words()
 
 
 def javascript(
@@ -836,6 +1023,13 @@ def javascript(
         block("GROUPS", {group: sorted(names) for group, names in sorted(groups.items())}),
         "",
         block("SCREENS", manifest),
+        "",
+        "/** The platform's own words, baked so the first frame paints in them.",
+        "  * `core/lexicon.js` swaps in a context's vocabulary from",
+        "  * `GET /api/lexicon` once the caller is known — but a console must",
+        "  * render correctly before that round trip, and offline it never",
+        "  * happens at all. */",
+        block("LEXICON", _lexicon_words()),
         "",
         block("ROUTES", [
             {"method": method, "path": path,

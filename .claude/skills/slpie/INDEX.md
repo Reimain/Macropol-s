@@ -15,8 +15,8 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `08cccaa9d13deee614220e2658180ea08043cb7b1f505595f7ac4893cda51b47`
-- **facets** 682 — 49 component, 21 kind, 293 module, 68 package, 89 route, 31 screen, 13 section, 68 test, 50 verb
+- **digest** `80cde7590633c56202758ffab8de10daea958da0e9eb620f45c9b25e6b3caac5`
+- **facets** 686 — 52 component, 21 kind, 293 module, 68 package, 89 route, 31 screen, 13 section, 69 test, 50 verb
 - **anchored** 98.5% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
@@ -130,11 +130,12 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 
 ## The browser vocabulary
 
-49 component(s), read from the exports of the app's own modules. This is the dictionary a screen block indexes into: a block naming something absent from this list is a dangling link, caught in Python rather than found as a blank area in a browser.
+52 component(s), read from the exports of the app's own modules. This is the dictionary a screen block indexes into: a block naming something absent from this list is a dangling link, caught in Python rather than found as a blank area in a browser.
 
 | module | exports |
 |---|---|
 | `ui/chart.js` | `bars`, `hero`, `share`, `spark`, `stat` |
+| `ui/components.js` | `compose`, `render`, `select` |
 | `ui/density.js` | `apply`, `control`, `density`, `setDensity`, `setTheme`, `theme` |
 | `ui/graph.js` | `diagram`, `directness`, `key`, `spread` |
 | `ui/grid.js` | `grid` |
