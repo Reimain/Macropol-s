@@ -192,6 +192,118 @@ directory would be the worse failure.
 
 ---
 
+## Screens are shipped as data
+
+A framework stays generalistic. It ships `Table` and `List` and `Item`, and
+every product built on it ends up wearing the framework's vocabulary. This
+console does the opposite, and it costs a dictionary rather than a framework.
+
+**A screen is a list of blocks, and a block names a component.**
+`slpie/ui/contract.py` emits the manifest — path, title, what it reads, which
+events invalidate it, and now which components to draw and with which columns —
+and `app/ui/components.js` is the dictionary those names index into. Each entry
+is an ordinary piece of CSS, HTML and JavaScript; what makes it addressable is
+that it is reachable by key.
+
+```json
+{
+  "component": "grid",
+  "source": "GET /api/apim/throttles",
+  "select": "tiers",
+  "columns": [
+    {"key": "name",     "label": "Tier"},
+    {"key": "requests", "label": "Requests", "align": "right", "format": "count"}
+  ]
+}
+```
+
+Two rules keep it honest. The addressable set is held in Python *and* in the
+browser and a test asserts they are equal in both directions — a name with no
+implementation would render a blank area, and an implementation with no name
+would be unreachable code. And a cell renderer is a function, so it cannot
+travel as data: `format` names the behaviour instead, exactly as `component`
+names the component one level up.
+
+Where nobody could declare the shape — an arbitrary route's body is not
+knowable from Python — the block asks for `auto`, and the browser looks at what
+actually arrived. Rows become a table, fields become metrics, and anything else
+says it could not be laid out rather than pretending. Declaring columns for
+every inspector by hand would be a list that drifts the first time a payload
+changes; reading the rows that arrived cannot drift, because there is nothing
+to keep in step.
+
+**Authored beats composed beats dumped.** A screen with a hand-built module is
+drawn by that module and ignores its blocks entirely. Composing is what the
+other screens do instead of printing a payload.
+
+---
+
+## The same platform, in your words
+
+The kernel knows what a thing *is*. What you call it is a separate fact, and
+keeping the two apart is what lets one console read as a platform-engineering
+tool to one team and a compliance tool to another.
+
+```yaml
+# .slpie/lexicon/platform-engineering.yaml
+terms:
+  node:    service
+  finding: risk
+  station: { word: fleet, gloss: The estate this console is attached to. }
+```
+
+The default vocabulary is derived from the code — the modules under
+`slpie/domain/`, whose package docstring already calls itself *"the vocabulary
+every other layer is written in"*, plus the package names — so the platform
+cannot offer a word its own code does not use, and every term carries the module
+it came from.
+
+**A profile may rename the product. It may never rename a control.** Every
+severity, gap kind, verdict and target state is protected, and the protected set
+is derived from the enums themselves rather than listed — so a severity added
+next year is protected the day it is added. A tenant renaming *refused* to
+*pending* is how a control becomes invisible, and it would be invisible to us
+reading their ledger too.
+
+---
+
+## Your device holds the screens; the server holds the truth
+
+The ledger is authoritative in one place. The graph is a read model that
+replicates freely. A replica caches up to a ledger sequence and, past its
+freshness budget, reports how far behind it is rather than answering as though
+it were fresh — and §23 says in as many words that this does not weaken because
+the replica is a laptop.
+
+So the browser is the smallest replica in that model. Answers the server marks
+keepable are held in IndexedDB and restored on the next visit, and **a restored
+answer says how old it is**: *"The world has moved on since this answer (ledger
+812, answered at 407)."*
+
+This is tractable here and awkward elsewhere for one reason. Client state
+libraries persist arbitrary state and then face cache invalidation with TTLs and
+refetch heuristics, because the server gave them nothing to order by. Every
+answer here carries its version and the ledger's, so **invalidation is ordering,
+not guessing** — and hydration goes through the same version check a network
+answer does, which means a cell from disk is older by construction and can only
+fill a gap, never win a race.
+
+Three rules are not negotiable:
+
+- **A different principal wipes the device, it does not filter it.** A filtered
+  view of another tenant's cells is still their bytes on a shared machine.
+- **A refused quota degrades, never crashes.** A device declining to store is a
+  refused capability: fall back to memory, keep answering, say what it cost.
+- **Only what the contract marks keepable is kept.** A 409 "no environment
+  open" held past the moment one opens is a console insisting the platform is
+  empty.
+
+The dividend is on the server: if the device holds the screens, the API tier
+holds no per-session state at all, which is what makes a horizontally scaled
+tier viable without sticky routing and a session store in front of it.
+
+---
+
 ## Navigation is a map, not a table of contents
 
 The rail lists **destinations**. A screen that is a *view of* something —

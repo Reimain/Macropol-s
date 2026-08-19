@@ -1,0 +1,133 @@
+name: ui
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ui-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The gates that cost nothing and catch the failures nobody reproduces until
+  # a customer does: a module that installs but 404s, a screen naming a
+  # component this build does not have, a raw pixel that makes the density axis
+  # aspirational. All of them are already tests; this job exists so a broken one
+  # is legible in the checks list rather than buried in 2800 dots.
+  structure:
+    name: structure — globs, imports, tiers, tokens
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e '.[dev]'
+
+      - name: The declared globs equal the shipped files
+        run: |
+          python -m pytest -q \
+            tests/test_slpie_ui_assets.py \
+            tests/test_slpie_ui_modules.py
+
+      - name: Screens name components that exist, in both directions
+        run: python -m pytest -q tests/test_slpie_ui_blocks.py
+
+      - name: The device tier keeps what it is allowed to keep
+        run: python -m pytest -q tests/test_slpie_ui_store.py
+
+      - name: The interface answers over HTTP as the contract says it does
+        run: |
+          python -m pytest -q \
+            tests/test_slpie_ui.py \
+            tests/test_slpie_ui_core.py \
+            tests/test_slpie_ui_command.py \
+            tests/test_slpie_api_defects.py
+
+  # A capability declared once must appear everywhere, or the projection is not
+  # total and §24's whole argument is decorative. This is the job that fails on
+  # the commit that adds a verb without regenerating.
+  contract:
+    name: contract — no drift between the server and its clients
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -e '.[dev]'
+
+      - name: The server's routes and the contract's routes are the same set
+        run: |
+          python - <<'PY'
+          from slpie.ui.api import Api
+          from slpie.ui.contract import route_set
+          served = {f"{method} {path}" for method, path in Api(engine=None).routes}
+          declared = route_set(routes=Api(engine=None).routes)
+          missing, extra = served - declared, declared - served
+          assert not missing and not extra, (
+              f"the contract and the server disagree — "
+              f"only served: {sorted(missing)}; only declared: {sorted(extra)}"
+          )
+          print(f"{len(served)} routes, one statement of them")
+          PY
+
+      - name: Every emitter is deterministic across two runs
+        run: |
+          for flag in --openapi --typescript --javascript --screens; do
+            python -m slpie.cli contract $flag > /tmp/one.txt
+            python -m slpie.cli contract $flag > /tmp/two.txt
+            diff -q /tmp/one.txt /tmp/two.txt \
+              || (echo "contract $flag is not deterministic" && exit 1)
+          done
+
+      # Regenerating once fixes today. This fixes every day after it: drift
+      # becomes a red check on the commit that causes it.
+      - name: The committed clients match their generator
+        run: python -m tools.clients --check
+
+      - name: The committed skill matches its generator
+        run: python -m slpie.cli context --skill --check
+
+      - name: The index digest is reproducible over an unchanged tree
+        run: |
+          first=$(python -m slpie.cli context --digest)
+          second=$(python -m slpie.cli context --digest)
+          test "$first" = "$second" \
+            || (echo "the context index is not reproducible" && exit 1)
+          echo "index digest $first"
+
+  # Four things this console needs proven cannot be string-matched: that it
+  # boots with no JavaScript error, that the density switch changes geometry and
+  # only geometry, that a 403 renders as a refusal rather than a fault, and that
+  # a composed screen draws components rather than a payload.
+  browser:
+    name: browser — it actually renders
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -e '.[dev,e2e]'
+      - run: python -m playwright install --with-deps chromium
+
+      # `--co -q` first, and the count checked, because this suite is opt-in by
+      # marker: if the marker were renamed or the module failed to import,
+      # `-m browser` would select nothing and the job would go green having
+      # rendered nothing at all. That is the vacuous pass §29 stage 1 exists to
+      # prevent, applied to the mechanism that prevents it.
+      - name: The browser suite is not empty
+        run: |
+          count=$(python -m pytest -q -m browser --co 2>/dev/null \
+            | grep -c '::test_' || true)
+          echo "collected $count browser tests"
+          test "$count" -ge 20 \
+            || (echo "the browser suite selected $count tests — it is not running" \
+                && exit 1)
+
+      - name: Run it
+        run: python -m pytest -q -m browser

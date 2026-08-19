@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `932d1d957075bf02548556c913788e37ed71c2c5fbd207873f457eb903e4f5db`
+- **digest** `8c9dc789852c3267eab0dcf6cb3effbd267e4dea14ff62c4c2e5a7adcb604766`
 - **facets** 692 — 52 component, 21 kind, 295 module, 68 package, 89 route, 31 screen, 15 section, 71 test, 50 verb
-- **anchored** 98.3% resolve to a file and a line
+- **anchored** 98.4% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -160,7 +160,6 @@ Kept and counted, never dropped. An index that silently omitted what it could no
 | `section:16` | section |
 | `section:18` | section |
 | `section:19` | section |
-| `section:23` | section |
 | `section:25` | section |
 | `section:26` | section |
 | `section:27` | section |

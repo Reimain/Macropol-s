@@ -369,6 +369,17 @@ def drive_real_tree(run: Run, verbs: Any, workspace: Path) -> None:
         drive(f"discover {tree} | filter --field kind --equals depends_on "
               f"| unique --field subject | count", **here)
 
+    with timed(run, "the product's own map"):
+        # The index describes this repository rather than the environment under
+        # test, which is why it needs no manifest and no scan. Exercised here
+        # for the same reason everything else is: a capability the run does not
+        # touch is a capability nobody would notice breaking.
+        mapped = drive("context", **here)
+        run.facts["facets"] = mapped.flow.facts.get("counts", {}) if mapped else {}
+        drive("context --query verb:findings", **here)
+        drive("lexicon", **here)
+        drive("lexicon | count", **here)
+
 
 # --- the claims -------------------------------------------------------------
 
