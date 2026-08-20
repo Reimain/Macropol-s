@@ -20,7 +20,7 @@
  * cache that is not this one, so the bump is what evicts a stale shell — a
  * version left alone across a restructure serves yesterday's modules from
  * cache and the page dies on an import that no longer exists. */
-const VERSION = "slpie-v6";
+const VERSION = "slpie-v7";
 
 /* Every file the app needs to open with the network unplugged. Listed rather
  * than discovered, because discovery needs a request and the whole point is to
@@ -49,6 +49,11 @@ const SHELL = [
   "/screens/catalog.js",
   "/screens/workspaces.js",
   "/screens/inspector.js",
+  // The renderer tier. `engine/vendor/` is deliberately absent: the offline
+  // shell is the native path, and precaching a vendored engine would make the
+  // air-gapped console depend on something that is not in this repository.
+  "/engine/contract.js", "/engine/camera.js", "/engine/layout.js",
+  "/engine/canvas2d.js",
 ];
 
 /* The live feed's path, which must never be cached. Named once here and

@@ -1,9 +1,9 @@
 {
   "generator": "slpie context --skill",
-  "digest": "207115aba8b0820e0892f15937c782578774aebdf2ca8cbef93daf6d62f5d180",
+  "digest": "a0d5cd3427121361e4b6a0286650de4a10b68e07533d2ee0027ecde5b85a19ea",
   "summary": {
-    "digest": "207115aba8b0820e0892f15937c782578774aebdf2ca8cbef93daf6d62f5d180",
-    "facets": 701,
+    "digest": "a0d5cd3427121361e4b6a0286650de4a10b68e07533d2ee0027ecde5b85a19ea",
+    "facets": 702,
     "counts": {
       "component": 52,
       "kind": 21,
@@ -12,7 +12,7 @@
       "route": 92,
       "screen": 33,
       "section": 16,
-      "test": 72,
+      "test": 73,
       "verb": 51
     },
     "coverage": 0.9843,
@@ -15971,6 +15971,21 @@
       "summary": "Run the browser core's own tests, under node.",
       "source": "tests/test_slpie_ui_core.py:1",
       "links": [],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_ui_engine",
+      "kind": "test",
+      "name": "test_slpie_ui_engine",
+      "title": "slpie ui engine",
+      "summary": "The renderer seam, and the boundary that keeps \"air-gapped\" literally true.",
+      "source": "tests/test_slpie_ui_engine.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "package:slpie.ui"
+        }
+      ],
       "tags": []
     },
     {

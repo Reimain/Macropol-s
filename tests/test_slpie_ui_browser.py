@@ -809,3 +809,224 @@ def test_a_key_cannot_escape_its_prefix(page, served):
       })
     """)
     assert result == {"refused": True, "distinct": True}
+
+
+# --- the renderer seam ---------------------------------------------------------
+
+
+def test_the_projection_lands_known_points_where_it_says(page, served):
+    """The camera, checked as arithmetic rather than as a picture.
+
+    A camera bug and a layout bug are indistinguishable on a canvas, so the
+    projection is pinned against points whose screen coordinates can be worked
+    out on paper. With an 800x600 viewport and a 90-degree vertical field, the
+    focal length is 300: a point ten units ahead and ten to the right lands one
+    focal length off centre, at x=700.
+
+    The handedness is the specific thing this catches. `forward x up` and
+    `up x forward` are both "the right vector" in some convention, and picking
+    the wrong one mirrors the entire scene horizontally — a bug that renders
+    perfectly and is invisible unless you know which node belongs on the left.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/camera.js').then((camera) => {
+        const at = camera.look(
+          camera.vector(0, 0, 0), camera.vector(0, 0, 10),
+          {width: 800, height: 600, fov: Math.PI / 2},
+        );
+        const round = (point) => {
+          const seen = camera.project(camera.vector(...point), at);
+          return {x: Math.round(seen.x), y: Math.round(seen.y),
+                  depth: seen.depth, visible: seen.visible};
+        };
+        return {
+          focal: Math.round(at.focal),
+          centre: round([0, 0, 10]),
+          right: round([10, 0, 10]),
+          left: round([-10, 0, 10]),
+          above: round([0, 10, 10]),
+          behind: round([0, 0, -5]),
+          twiceAsFar: round([10, 0, 20]),
+        };
+      })
+    """)
+
+    assert result["focal"] == 300
+    assert (result["centre"]["x"], result["centre"]["y"]) == (400, 300)
+    # +X is to the right and +Y is up, even though screen Y grows downward: the
+    # projection flips it exactly once so no caller has to remember.
+    assert result["right"]["x"] == 700
+    assert result["left"]["x"] == 100
+    assert result["above"]["y"] == 0
+    # Twice the distance, half the offset. That is the perspective divide doing
+    # its job, and it is the assertion an orthographic mistake fails.
+    assert result["twiceAsFar"]["x"] == 550
+    assert result["behind"]["visible"] is False
+
+
+def test_depth_fades_toward_the_ground_and_never_past_it(page, served):
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/camera.js').then((camera) => ({
+        near: camera.haze(0, {near: 0, far: 10}),
+        half: camera.haze(5, {near: 0, far: 10}),
+        far: camera.haze(10, {near: 0, far: 10}),
+        beyond: camera.haze(400, {near: 0, far: 10}),
+        degenerate: camera.haze(5, {near: 3, far: 3}),
+      }))
+    """)
+    assert result == {"near": 0, "half": 0.5, "far": 1, "beyond": 1, "degenerate": 0}
+
+
+def test_the_layout_is_deterministic_in_three_dimensions(page, served):
+    """Same graph in, same coordinates out — from any input order.
+
+    This is the snapshot digest's property applied to the drawing. Without it
+    you cannot point at the picture in a review, cannot compare two
+    screenshots, and cannot tell "the architecture changed" from "the layout
+    landed somewhere else".
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/layout.js').then((layout) => {
+        const nodes = [
+          {id: 'n1', name: 'payments', kind: 'service'},
+          {id: 'n2', name: 'orders', kind: 'service'},
+          {id: 'n3', name: 'vault', kind: 'package'},
+          {id: 'n4', name: 'redis', kind: 'package'},
+          {id: 'n5', name: 'ledger', kind: 'database'},
+        ];
+        const edges = [
+          {src: 'n1', dst: 'n3'}, {src: 'n1', dst: 'n2'},
+          {src: 'n2', dst: 'n4'}, {src: 'n1', dst: 'n5'},
+        ];
+        const inside = new Set(['payments', 'vault']);
+        const options = {regionOf: (node) => inside.has(node.name) ? 'cardholder-data' : ''};
+
+        const key = (result) => [...result.placed.values()]
+          .map((p) => [p.id, p.x, p.y, p.z, p.region].join(':')).sort().join('|');
+
+        const forward = layout.place(nodes, edges, options);
+        const backward = layout.place([...nodes].reverse(), [...edges].reverse(), options);
+
+        return {
+          same: key(forward) === key(backward),
+          placed: key(forward),
+          regions: forward.regions.map((r) => [r.name, r.count, r.declared]),
+          adjacency: [...layout.adjacency(forward.placed, edges)]
+            .map((pair) => pair[0] + '->' + [...pair[1]].sort().join(',')).sort(),
+          lanes: forward.lanes.map((strip) => [strip.region, strip.kind, strip.z]),
+        };
+      })
+    """)
+
+    assert result["same"], "two builds of one graph produced different coordinates"
+    # Declared boundaries lead; the estate is the backdrop they sit against.
+    assert result["regions"][0] == ["cardholder-data", 2, True]
+    assert result["regions"][-1] == ["estate", 3, False]
+    # A region is a *place*: its lanes are contiguous in Z, and the gap between
+    # regions is what makes a boundary visible as somewhere rather than as a
+    # legend entry.
+    declared = [z for region, _kind, z in result["lanes"] if region == "cardholder-data"]
+    estate = [z for region, _kind, z in result["lanes"] if region == "estate"]
+    assert max(declared) < min(estate)
+    assert min(estate) - max(declared) > 40
+    assert result["adjacency"] == [
+        "cardholder-data->estate", "estate->cardholder-data",
+    ]
+
+
+def test_a_missing_engine_falls_back_to_the_native_one_and_says_why(page, served):
+    """A missing engine is a capability gap, never a blank canvas.
+
+    Same treatment §27 gives a missing binary and §3 gives a refused
+    capability: the answer still renders, the fallback is *named as a
+    fallback*, and the reason reaches the reader. Silently substituting an
+    approximation produces something that looks identical to the real thing and
+    is not.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/contract.js').then(async (contract) => {
+        const missing = await contract.resolve('three');
+        const named = await contract.resolve(contract.DEFAULT);
+        return {
+          fellBack: missing.fallback,
+          drewWith: missing.engine.name,
+          reason: missing.reason,
+          native: missing.engine.native,
+          defaultIsNative: named.engine.native && !named.fallback,
+          label: contract.describe(missing.engine).label,
+        };
+      })
+    """)
+
+    assert result["fellBack"] is True
+    assert result["drewWith"] == "canvas2d"
+    assert result["native"] is True
+    assert result["defaultIsNative"] is True
+    assert result["label"] == "native"
+    assert "three" in result["reason"] and "canvas2d" in result["reason"], (
+        f"the fallback did not name what was missing or what drew instead: "
+        f"{result['reason']!r}"
+    )
+
+
+def test_an_engine_that_cannot_draw_is_refused_at_registration(page, served):
+    """Checked when it arrives, not at the first frame.
+
+    An engine that fails halfway through a paint leaves a half-drawn canvas,
+    and a reader cannot tell that from a graph that genuinely looks like that.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/contract.js').then(async (contract) => {
+        const usable = {
+          name: 'stub', native: false,
+          mount() {}, draw() {}, dispose() {},
+        };
+        const problems = [
+          contract.invalid(null),
+          contract.invalid({name: 'x', mount() {}, draw() {}, dispose() {}}),
+          contract.invalid({name: 'x', native: false, mount() {}, draw() {}}),
+          contract.invalid(usable),
+        ];
+
+        // A vendored engine resolved through an injected loader, so the seam is
+        // exercised without a network and without vendoring anything.
+        const wrapped = await contract.resolve('stub', {load: async () => ({engine: usable})});
+        const broken = await contract.resolve('bad', {
+          load: async () => ({engine: {name: 'bad', native: false}}),
+        });
+
+        return {
+          problems,
+          wrapped: {name: wrapped.engine.name, fallback: wrapped.fallback,
+                    label: contract.describe(wrapped.engine).label},
+          broken: {name: broken.engine.name, fallback: broken.fallback,
+                   reason: broken.reason},
+        };
+      })
+    """)
+
+    nothing, undeclared, incomplete, fine = result["problems"]
+    assert nothing and "not an object" in nothing
+    assert "does not declare whether it is native" in undeclared
+    assert "no dispose()" in incomplete
+    assert fine == ""
+
+    # A third party registers through the identical path a built-in does, and
+    # the console reports what it is rather than what it would like to be.
+    assert result["wrapped"] == {
+        "name": "stub", "fallback": False, "label": "not air-gapped native",
+    }
+    # Present but unusable is not the same as absent, and both fall back.
+    assert result["broken"]["name"] == "canvas2d"
+    assert result["broken"]["fallback"] is True
+    assert "unusable" in result["broken"]["reason"]

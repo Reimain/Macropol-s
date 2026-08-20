@@ -70,6 +70,10 @@ include = ["gratimos*", "slpie*", "slpie_enterprise*"]
     "app/*.html", "app/*.js", "app/*.css",
     "app/*.webmanifest", "app/*.svg",
     "app/**/*.js", "app/**/*.css", "app/**/*.svg",
+    # `engine/vendor/DATASHEET.md` — a vendored renderer's licence and provenance
+    # ship with the thing they attribute, or the attribution is a promise the
+    # wheel does not keep.
+    "app/**/*.md",
 ]
 
 # --- tooling ---------------------------------------------------------------

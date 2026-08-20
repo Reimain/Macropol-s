@@ -30,12 +30,19 @@ UI = APP_ROOT.parent
 #: The layering, innermost first. `core/` may import nothing; each later tier may
 #: import the tiers before it. The kernel's ring rule (§22), one level down —
 #: stated here because a dependency rule nobody can check is a preference.
-TIERS = ("core", "data", "ui", "screens")
+#:
+#: `engine/` sits above `ui/` and below `screens/`: it is a renderer, so a screen
+#: chooses one, and nothing a component draws may depend on which one was chosen.
+TIERS = ("core", "data", "ui", "engine", "screens")
 
 #: Files at the top of `app/`, which compose the tiers and may import anything.
 ROOTS = frozenset({"app.js", "boot.js", "sw.js", "compose.js"})
 
 TEXT_SUFFIXES = frozenset({".js", ".css", ".html", ".webmanifest", ".svg", ".json"})
+
+#: Third-party renderers, when any are taken. Exempt from the offline shell and
+#: from nothing else — see `engine/vendor/DATASHEET.md` for the declared boundary.
+VENDOR = (APP_ROOT / "engine" / "vendor").resolve()
 
 
 def _assets() -> list[Path]:
@@ -342,6 +349,10 @@ def test_every_asset_is_precached_for_offline():
         # lifecycle, and caching it would pin the version that is meant to be
         # replaced.
         and path.name != "sw.js"
+        # A vendored renderer is not part of the offline shell. Precaching one
+        # would make the air-gapped console depend on something outside this
+        # repository, which is the opposite of what `engine/vendor/` is for.
+        and VENDOR not in path.parents
         and "/" + str(path.relative_to(APP_ROOT)) not in listed
     )
     assert not missing, (

@@ -57,6 +57,23 @@
   --sim: #6b4fbb;         /* simulated-vs-live sits off the status axis on
                              purpose, so it can never read as a severity */
 
+  /* The flight canvas has its own ground, and only a ground.
+   *
+   * A full-bleed spatial view is allowed a darker surface than the console
+   * around it — Google Maps' own satellite view is the proof, and a light page
+   * makes distance unreadable because there is nothing for a far mark to fade
+   * *into*. What may not move is what the colours *mean*: confidence keeps the
+   * ordinal ramp, severity keeps the reserved status palette, and a boundary
+   * crossing keeps the colour it has on every other screen. A reader who learnt
+   * "critical is that red" on the Findings screen must not relearn it here.
+   *
+   * So depth is carried by contrast against this surface — a value change,
+   * which composes with the ramp instead of competing with it. Two tokens, and
+   * they are the same in both themes because the canvas is a place rather than
+   * a panel. */
+  --flight-surface: #0b1419;
+  --flight-ink: #dbe6ec;
+
   --shadow: 0 1px 2px rgba(16, 24, 32, 0.06), 0 1px 1px rgba(16, 24, 32, 0.04);
 
   /* The certainty ramp. Ordinal, one hue, dark = known — and validated rather
@@ -101,6 +118,10 @@
   --crit: #f29e8f;
   --sim: #a691e8;
 
+  /* The same ground in both themes: the canvas is a place, not a panel. */
+  --flight-surface: #0b1419;
+  --flight-ink: #dbe6ec;
+
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 
   /* The dark ramp is *selected for the dark surface*, not the light ramp
@@ -144,6 +165,9 @@
     --bad: #ee7b6b;
     --crit: #f29e8f;
     --sim: #a691e8;
+
+    --flight-surface: #0b1419;
+    --flight-ink: #dbe6ec;
 
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }

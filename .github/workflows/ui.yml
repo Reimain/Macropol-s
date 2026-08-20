@@ -41,6 +41,9 @@ jobs:
       - name: The device tier keeps what it is allowed to keep
         run: python -m pytest -q tests/test_slpie_ui_store.py
 
+      - name: The renderer seam declares its boundary
+        run: python -m pytest -q tests/test_slpie_ui_engine.py
+
       - name: The interface answers over HTTP as the contract says it does
         run: |
           python -m pytest -q \
@@ -134,3 +137,19 @@ jobs:
 
       - name: Run it
         run: python -m pytest -q -m browser
+
+      # The assertion that keeps "air-gapped" literal rather than nominal.
+      #
+      # §32 lets a third-party rendering engine be vendored and refuses to let
+      # one become load-bearing, and the entire difference between those two
+      # positions is this step. An engine that made itself necessary would fail
+      # here on the commit that did it, which is the `gateway=None` argument
+      # (§30 step 6) applied to rendering: the promise is kept by a check, not
+      # by intent.
+      #
+      # Deleted rather than skipped, because a skip proves the tests can be
+      # turned off and this has to prove the console runs without the files.
+      - name: It renders with every vendored engine deleted
+        run: |
+          rm -rf slpie/ui/app/engine/vendor
+          python -m pytest -q -m browser
