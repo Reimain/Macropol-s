@@ -12,6 +12,7 @@ from .schema import SCHEMA, SCHEMA_VERSION
 from .snapshot import GraphDiff, Snapshot, SnapshotStore, root_digest
 from .sqlite_graph import SqliteGraph
 from .store import GraphStore, GraphView, Traversal
+from .interest import Elision, Field, Interest, Signals, Surveyor
 from .traversal import Cycle, Impacted, ImpactResult, Path, Traverser
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "GraphProjection", "SCHEMA", "SCHEMA_VERSION",
     "Snapshot", "SnapshotStore", "GraphDiff", "root_digest",
     "Traverser", "ImpactResult", "Impacted", "Cycle", "Path",
+    "Surveyor", "Field", "Interest", "Signals", "Elision",
 ]

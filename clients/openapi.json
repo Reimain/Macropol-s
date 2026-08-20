@@ -1713,6 +1713,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -2717,6 +2718,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -2977,6 +2979,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -3190,6 +3193,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -3285,6 +3289,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -3793,6 +3798,7 @@
           "findings",
           "head",
           "impact",
+          "interest",
           "json",
           "quarantine",
           "sort",
@@ -3881,6 +3887,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -4128,6 +4135,101 @@
         }
       }
     },
+    "/api/v/interest": {
+      "post": {
+        "summary": "what a selection makes worth drawing, and what it hides",
+        "description": "what a selection makes worth drawing, and what it hides",
+        "operationId": "verb_interest",
+        "tags": [
+          "environment"
+        ],
+        "x-slpie-consumes": "nodes",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "a node id, instead of piping nodes in"
+                  },
+                  "horizon": {
+                    "type": "integer",
+                    "description": "how many hops count as the neighbourhood",
+                    "default": 6
+                  },
+                  "budget": {
+                    "type": "integer",
+                    "description": "how many nodes render as themselves",
+                    "default": 200
+                  },
+                  "threshold": {
+                    "type": "number",
+                    "description": "cut here instead of at the budget"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/json": {
       "post": {
         "summary": "serialise the flow, provenance included",
@@ -4154,6 +4256,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -5363,6 +5466,7 @@
           "findings",
           "head",
           "impact",
+          "interest",
           "json",
           "quarantine",
           "sort",
@@ -5543,6 +5647,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -5719,6 +5824,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -6074,6 +6180,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -6168,6 +6275,7 @@
           "govern",
           "head",
           "impact",
+          "interest",
           "json",
           "link",
           "options",
@@ -6435,7 +6543,8 @@
         "search"
       ],
       "consumed_by": [
-        "impact"
+        "impact",
+        "interest"
       ]
     },
     {
@@ -6518,6 +6627,7 @@
         "enterprise",
         "fire",
         "history",
+        "interest",
         "lexicon",
         "options",
         "quarantine",

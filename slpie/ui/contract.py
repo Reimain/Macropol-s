@@ -726,7 +726,7 @@ DESIGNED: tuple[Screen, ...] = (
                    "its evidence and a remediation."),
 
     Screen("graph", "/graph", "Graph", "operate",
-           reads=("GET /api/graph",), verbs=("graph", "search"),
+           reads=("GET /api/graph",), verbs=("graph", "search", "interest"),
            events=("node_asserted", "edge_asserted", "node_retired"),
            action="environment.graph",
            summary="Nodes and edges as the platform observed them, shaded by "

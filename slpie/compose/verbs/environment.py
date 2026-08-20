@@ -157,6 +157,70 @@ def _impact(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
     )
 
 
+def _boundary_rule(engine: Any) -> Any:
+    """The manifest's own boundary-membership rule, or nothing.
+
+    `SecurityPosture.boundary_for` already decides what sits inside a declared boundary,
+    and it is the rule the operator wrote once in `security.boundaries`. Asking
+    it per node keeps the cost proportional to what the walk reached; resolving
+    the whole membership set up front would scan the node table on every
+    selection.
+    """
+    security = getattr(getattr(engine, "manifest", None), "security", None)
+    if security is None or not getattr(security, "boundaries", ()):
+        return None
+    return lambda node: security.boundary_for(node.display) is not None
+
+
+def _interest(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
+    """Degree of interest around a selection — the render set, bounded by the question.
+
+    This is the verb behind the graph screen's first frame. It exists because
+    the alternative was drawing the estate and hoping the renderer kept up, and
+    no useful question about an estate returns twenty thousand nodes.
+
+    Severity is deliberately *not* read here. The graph holds no findings
+    projection, and running governance inside a read verb would hide an
+    expensive stage behind a cheap-looking one. The surveyor takes severities as
+    an injection instead, so the caller that already has findings on screen is
+    the one that supplies them.
+    """
+    from ...graph.interest import BUDGET, HORIZON, Surveyor
+
+    engine = context.require_engine("interest")
+    horizon = max(1, int(arguments.get("horizon") or HORIZON))
+    budget = max(1, int(arguments.get("budget") or BUDGET))
+    threshold = arguments.get("threshold")
+
+    explicit = str(arguments.get("id") or "")
+    focus = [explicit] if explicit else [getattr(node, "id", "") for node in flow.items]
+    focus = [item for item in focus if item][:20]
+    if not focus:
+        raise VerbError(
+            "interest needs a selection; pipe `search` or `graph` into it, or pass --id"
+        )
+
+    boundary = _boundary_rule(engine)
+    surveyor = Surveyor(engine.graph, boundary=boundary)
+    field = surveyor.field(
+        focus, horizon=horizon, budget=budget,
+        threshold=float(threshold) if threshold not in (None, "") else None,
+    )
+
+    return flow.then(
+        Kind.REPORT, field.to_dict(), stage="interest",
+        steps=[_step(
+            f"degree of interest from {len(focus)} selected node(s): {field.summary()}",
+            "rank",
+        )],
+        facts={
+            "focus": len(focus), "rendered": len(field.rendered),
+            "hidden": field.hidden, "threshold": round(field.threshold, 4),
+            "boundaries": boundary is not None,
+        },
+    )
+
+
 def _gaps(flow: Flow, _arguments: Mapping[str, Any], context: Context) -> Flow:
     engine = context.require_engine("gaps")
     found = tuple(engine.gaps())
@@ -365,6 +429,21 @@ def verbs() -> tuple[Verb, ...]:
             ),
             examples=("search lodash | impact", "graph | impact --min_confidence 0.8"),
             run=_impact,
+        ),
+        Verb(
+            name="interest", group=GROUP, consumes=Kind.NODES, produces=Kind.REPORT,
+            summary="what a selection makes worth drawing, and what it hides",
+            params=(
+                Param("id", "str", "a node id, instead of piping nodes in"),
+                Param("horizon", "int", "how many hops count as the neighbourhood", default=6),
+                Param("budget", "int", "how many nodes render as themselves", default=200),
+                Param("threshold", "float", "cut here instead of at the budget"),
+            ),
+            examples=(
+                "search lodash | interest",
+                "search redis | interest --horizon 3 --budget 40",
+            ),
+            run=_interest,
         ),
         Verb(
             name="gaps", group=GROUP, produces=Kind.GAPS,

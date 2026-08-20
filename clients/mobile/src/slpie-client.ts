@@ -79,6 +79,7 @@ export const VERB_TYPES = {
   "head": { consumes: "any", produces: "same", mutates: false },
   "history": { consumes: "nothing", produces: "report", mutates: false },
   "impact": { consumes: "nodes", produces: "impact", mutates: false },
+  "interest": { consumes: "nodes", produces: "report", mutates: false },
   "json": { consumes: "any", produces: "same", mutates: false },
   "lexicon": { consumes: "nothing", produces: "report", mutates: false },
   "link": { consumes: "observations", produces: "resolution", mutates: false },
@@ -296,6 +297,11 @@ export class SlpieClient {
   /** what depends on this, and how confidently */
   async impact(params: { id?: string; depth?: number; min_confidence?: number; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/impact`, params);
+  }
+
+  /** what a selection makes worth drawing, and what it hides */
+  async interest(params: { id?: string; horizon?: number; budget?: number; threshold?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/interest`, params);
   }
 
   /** serialise the flow, provenance included */

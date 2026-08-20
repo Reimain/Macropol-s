@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `ce8211455941b8bea2c93367c524856233907a33b357b40fd5b76d79cec4a9b0`
-- **facets** 696 — 52 component, 21 kind, 295 module, 68 package, 91 route, 33 screen, 15 section, 71 test, 50 verb
-- **anchored** 98.6% resolve to a file and a line
+- **digest** `207115aba8b0820e0892f15937c782578774aebdf2ca8cbef93daf6d62f5d180`
+- **facets** 701 — 52 component, 21 kind, 296 module, 68 package, 92 route, 33 screen, 16 section, 72 test, 51 verb
+- **anchored** 98.4% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -31,7 +31,7 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `accept` | guidance | any → same | `slpie/compose/verbs/guidance.py:286` | console |
 | `agent-tools` | incremental | nothing → report | `slpie/compose/verbs/incremental.py:187` | group-incremental |
 | `ask` | intelligence | enrichments → guidance | `slpie/compose/verbs/intelligence.py:242` | console |
-| `attach` | environment | nothing → elements | `slpie/compose/verbs/environment.py:323` | station |
+| `attach` | environment | nothing → elements | `slpie/compose/verbs/environment.py:387` | station |
 | `audit` | audit | nothing → judgements | `slpie/compose/verbs/audit.py:154` | group-audit |
 | `c4` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:320` | group-artifacts |
 | `capture` | capture | nothing → observations | `slpie/compose/verbs/capture.py:191` | group-capture |
@@ -40,20 +40,21 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `constraints` | analysis | resolution → solution | `slpie/compose/verbs/analysis.py:459` | group-analysis |
 | `context` | context | nothing → report | `slpie/context/verbs.py:123` | group-context |
 | `count` | shaping | any → same | `slpie/compose/verbs/shaping.py:210` | group-shaping |
-| `declare` | environment | nothing → elements | `slpie/compose/verbs/environment.py:269` | reconcile |
+| `declare` | environment | nothing → elements | `slpie/compose/verbs/environment.py:333` | reconcile |
 | `discover` | analysis | nothing → observations | `slpie/compose/verbs/analysis.py:424` | group-analysis |
 | `dismiss` | guidance | any → same | `slpie/compose/verbs/guidance.py:300` | console |
 | `enterprise` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:342` | group-artifacts |
 | `explain` | shaping | any → same | `slpie/compose/verbs/shaping.py:244` | group-shaping |
 | `filter` | shaping | any → same | `slpie/compose/verbs/shaping.py:226` | group-shaping |
 | `findings` | analysis | any → findings | `slpie/compose/verbs/analysis.py:470` | findings |
-| `fire` | environment | nothing → report | `slpie/compose/verbs/environment.py:301` | simulator |
-| `gaps` | environment | nothing → gaps | `slpie/compose/verbs/environment.py:370` | station |
+| `fire` | environment | nothing → report | `slpie/compose/verbs/environment.py:365` | simulator |
+| `gaps` | environment | nothing → gaps | `slpie/compose/verbs/environment.py:449` | station |
 | `govern` | governance | observations → findings | `slpie/compose/verbs/governance.py:283` | findings |
-| `graph` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:342` | graph |
+| `graph` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:406` | graph |
 | `head` | shaping | any → same | `slpie/compose/verbs/shaping.py:203` | group-shaping |
 | `history` | dispatch | nothing → report | `slpie/compose/verbs/dispatch.py:225` | history |
-| `impact` | environment | nodes → impact | `slpie/compose/verbs/environment.py:359` | impact |
+| `impact` | environment | nodes → impact | `slpie/compose/verbs/environment.py:423` | impact |
+| `interest` | environment | nodes → report | `slpie/compose/verbs/environment.py:434` | graph |
 | `json` | shaping | any → same | `slpie/compose/verbs/shaping.py:257` | group-shaping |
 | `lexicon` | context | nothing → report | `slpie/context/verbs.py:150` | group-context |
 | `link` | analysis | observations → resolution | `slpie/compose/verbs/analysis.py:449` | group-analysis |
@@ -61,19 +62,19 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `quarantine` | capture | any → report | `slpie/compose/verbs/capture.py:212` | group-capture |
 | `radius` | intelligence | enrichments → impact | `slpie/compose/verbs/intelligence.py:265` | impact |
 | `reason` | analysis | observations → enrichments | `slpie/compose/verbs/analysis.py:441` | group-analysis |
-| `reconcile` | environment | nothing → findings | `slpie/compose/verbs/environment.py:336` | reconcile |
+| `reconcile` | environment | nothing → findings | `slpie/compose/verbs/environment.py:400` | reconcile |
 | `risk` | artifacts | findings → report | `slpie/compose/verbs/artifacts.py:371` | group-artifacts |
 | `rivals` | rivals | nothing → report | `slpie/compose/verbs/rivals.py:60` | group-rivals |
 | `routine` | guidance | nothing → report | `slpie/compose/verbs/guidance.py:315` | compose |
 | `rules` | governance | nothing → report | `slpie/compose/verbs/governance.py:315` | findings |
 | `sbom` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:295` | group-artifacts |
-| `scan` | environment | nothing → observations | `slpie/compose/verbs/environment.py:330` | catalog |
-| `search` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:349` | graph |
-| `simulate` | environment | nothing → elements | `slpie/compose/verbs/environment.py:275` | simulator |
+| `scan` | environment | nothing → observations | `slpie/compose/verbs/environment.py:394` | catalog |
+| `search` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:413` | graph |
+| `simulate` | environment | nothing → elements | `slpie/compose/verbs/environment.py:339` | simulator |
 | `sort` | shaping | any → same | `slpie/compose/verbs/shaping.py:216` | group-shaping |
-| `status` | environment | nothing → report | `slpie/compose/verbs/environment.py:376` | station |
+| `status` | environment | nothing → report | `slpie/compose/verbs/environment.py:455` | station |
 | `suggest` | guidance | any → same | `slpie/compose/verbs/guidance.py:266` | console |
-| `target` | environment | nothing → report | `slpie/compose/verbs/environment.py:382` | simulator |
+| `target` | environment | nothing → report | `slpie/compose/verbs/environment.py:461` | simulator |
 | `tool` | dispatch | any → text | `slpie/compose/verbs/dispatch.py:205` | group-dispatch |
 | `tools` | dispatch | nothing → report | `slpie/compose/verbs/dispatch.py:193` | group-dispatch |
 | `unique` | shaping | any → same | `slpie/compose/verbs/shaping.py:237` | group-shaping |
@@ -108,6 +109,7 @@ Derived from the `§NN` references modules write in their own docstrings — nev
 | §27 | 2 | `slpie.compose.verbs`, `slpie.dispatch` |
 | §30 | 2 | `slpie.context`, `slpie.core` |
 | §31 | 4 | `slpie.compose.verbs`, `slpie.context` |
+| §32 | 1 | `slpie.graph` |
 | §6 | 1 | `slpie.compose` |
 
 ## Screens
@@ -164,6 +166,7 @@ Kept and counted, never dropped. An index that silently omitted what it could no
 | `section:25` | section |
 | `section:26` | section |
 | `section:27` | section |
+| `section:32` | section |
 | `section:6` | section |
 
 ## Open findings

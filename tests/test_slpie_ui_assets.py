@@ -294,6 +294,28 @@ def test_the_screen_manifest_covers_every_capability():
     assert not unclaimed, f"these read routes appear on no screen: {unclaimed}"
 
 
+def test_no_two_screens_answer_to_the_same_name():
+    """A title is what the reader navigates by, so two of them is a broken map.
+
+    This is not hypothetical. Registering the `interest` verb gave the
+    `environment` group a leftover verb, which made `screens()` emit a group
+    inspector titled *Environment* beside the designed *Environment* screen —
+    and the only thing that noticed was an opt-in browser test asserting the
+    rail lists no views. A collision the default suite cannot see is a
+    collision that ships.
+    """
+    from slpie.ui.api import Api
+    from slpie.ui.contract import screens
+
+    seen: dict[str, str] = {}
+    clashes = []
+    for screen in screens(routes=Api(engine=None).routes):
+        if screen.title in seen:
+            clashes.append(f"{screen.title!r}: {seen[screen.title]} and {screen.key}")
+        seen[screen.title] = screen.key
+    assert not clashes, f"two screens share a title: {clashes}"
+
+
 # --- the offline shell -------------------------------------------------------
 
 

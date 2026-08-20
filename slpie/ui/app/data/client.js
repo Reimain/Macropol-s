@@ -857,6 +857,48 @@ export const VERBS = Object.freeze({
       "graph | impact --min_confidence 0.8"
     ]
   },
+  "interest": {
+    "group": "environment",
+    "summary": "what a selection makes worth drawing, and what it hides",
+    "consumes": "nodes",
+    "produces": "report",
+    "mutates": false,
+    "source": false,
+    "params": [
+      {
+        "name": "id",
+        "type": "str",
+        "help": "a node id, instead of piping nodes in",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "horizon",
+        "type": "int",
+        "help": "how many hops count as the neighbourhood",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "budget",
+        "type": "int",
+        "help": "how many nodes render as themselves",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "threshold",
+        "type": "float",
+        "help": "cut here instead of at the budget",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "search lodash | interest",
+      "search redis | interest --horizon 3 --budget 40"
+    ]
+  },
   "json": {
     "group": "shaping",
     "summary": "serialise the flow, provenance included",
@@ -1481,6 +1523,7 @@ export const GROUPS = Object.freeze({
     "gaps",
     "graph",
     "impact",
+    "interest",
     "reconcile",
     "scan",
     "search",
@@ -1605,7 +1648,8 @@ export const SCREENS = Object.freeze([
     ],
     "verbs": [
       "graph",
-      "search"
+      "search",
+      "interest"
     ],
     "events": [
       "node_asserted",
@@ -3461,6 +3505,11 @@ export const ROUTES = Object.freeze([
   {
     "method": "POST",
     "path": "/api/v/impact",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/interest",
     "transport": "json"
   },
   {

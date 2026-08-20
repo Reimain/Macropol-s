@@ -1,21 +1,21 @@
 {
   "generator": "slpie context --skill",
-  "digest": "ce8211455941b8bea2c93367c524856233907a33b357b40fd5b76d79cec4a9b0",
+  "digest": "207115aba8b0820e0892f15937c782578774aebdf2ca8cbef93daf6d62f5d180",
   "summary": {
-    "digest": "ce8211455941b8bea2c93367c524856233907a33b357b40fd5b76d79cec4a9b0",
-    "facets": 696,
+    "digest": "207115aba8b0820e0892f15937c782578774aebdf2ca8cbef93daf6d62f5d180",
+    "facets": 701,
     "counts": {
       "component": 52,
       "kind": 21,
-      "module": 295,
+      "module": 296,
       "package": 68,
-      "route": 91,
+      "route": 92,
       "screen": 33,
-      "section": 15,
-      "test": 71,
-      "verb": 50
+      "section": 16,
+      "test": 72,
+      "verb": 51
     },
-    "coverage": 0.9856,
+    "coverage": 0.9843,
     "unanchored": [
       "section:12",
       "section:14",
@@ -26,6 +26,7 @@
       "section:25",
       "section:26",
       "section:27",
+      "section:32",
       "section:6"
     ],
     "dangling": []
@@ -3933,6 +3934,10 @@
         },
         {
           "relation": "imports",
+          "target": "module:slpie.graph.interest"
+        },
+        {
+          "relation": "imports",
           "target": "module:slpie.simulator.scenarios"
         }
       ],
@@ -6291,6 +6296,29 @@
         {
           "relation": "imports",
           "target": "module:slpie.graph.sqlite_graph"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.graph.interest",
+      "kind": "module",
+      "name": "slpie.graph.interest",
+      "title": "interest",
+      "summary": "Degree of interest \u2014 what a selection makes worth drawing.",
+      "source": "slpie/graph/interest.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.lifecycle"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.node"
+        },
+        {
+          "relation": "claims",
+          "target": "section:32"
         }
       ],
       "tags": []
@@ -10702,7 +10730,15 @@
         },
         {
           "relation": "imports",
+          "target": "module:slpie.graph.interest"
+        },
+        {
+          "relation": "imports",
           "target": "module:slpie.graph.traversal"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.graph.interest"
         },
         {
           "relation": "owns",
@@ -12095,7 +12131,7 @@
       "name": "POST /api/v/attach",
       "title": "POST /api/v/attach",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:323",
+      "source": "slpie/compose/verbs/environment.py:387",
       "links": [],
       "tags": [
         "generated"
@@ -12203,7 +12239,7 @@
       "name": "POST /api/v/declare",
       "title": "POST /api/v/declare",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:269",
+      "source": "slpie/compose/verbs/environment.py:333",
       "links": [],
       "tags": [
         "generated"
@@ -12287,7 +12323,7 @@
       "name": "POST /api/v/fire",
       "title": "POST /api/v/fire",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:301",
+      "source": "slpie/compose/verbs/environment.py:365",
       "links": [],
       "tags": [
         "generated"
@@ -12299,7 +12335,7 @@
       "name": "POST /api/v/gaps",
       "title": "POST /api/v/gaps",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:370",
+      "source": "slpie/compose/verbs/environment.py:449",
       "links": [],
       "tags": [
         "generated"
@@ -12323,7 +12359,7 @@
       "name": "POST /api/v/graph",
       "title": "POST /api/v/graph",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:342",
+      "source": "slpie/compose/verbs/environment.py:406",
       "links": [],
       "tags": [
         "generated"
@@ -12359,7 +12395,19 @@
       "name": "POST /api/v/impact",
       "title": "POST /api/v/impact",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:359",
+      "source": "slpie/compose/verbs/environment.py:423",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/interest",
+      "kind": "route",
+      "name": "POST /api/v/interest",
+      "title": "POST /api/v/interest",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/environment.py:434",
       "links": [],
       "tags": [
         "generated"
@@ -12455,7 +12503,7 @@
       "name": "POST /api/v/reconcile",
       "title": "POST /api/v/reconcile",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:336",
+      "source": "slpie/compose/verbs/environment.py:400",
       "links": [],
       "tags": [
         "generated"
@@ -12527,7 +12575,7 @@
       "name": "POST /api/v/scan",
       "title": "POST /api/v/scan",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:330",
+      "source": "slpie/compose/verbs/environment.py:394",
       "links": [],
       "tags": [
         "generated"
@@ -12539,7 +12587,7 @@
       "name": "POST /api/v/search",
       "title": "POST /api/v/search",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:349",
+      "source": "slpie/compose/verbs/environment.py:413",
       "links": [],
       "tags": [
         "generated"
@@ -12551,7 +12599,7 @@
       "name": "POST /api/v/simulate",
       "title": "POST /api/v/simulate",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:275",
+      "source": "slpie/compose/verbs/environment.py:339",
       "links": [],
       "tags": [
         "generated"
@@ -12575,7 +12623,7 @@
       "name": "POST /api/v/status",
       "title": "POST /api/v/status",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:376",
+      "source": "slpie/compose/verbs/environment.py:455",
       "links": [],
       "tags": [
         "generated"
@@ -12599,7 +12647,7 @@
       "name": "POST /api/v/target",
       "title": "POST /api/v/target",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/environment.py:382",
+      "source": "slpie/compose/verbs/environment.py:461",
       "links": [],
       "tags": [
         "generated"
@@ -12912,6 +12960,10 @@
         {
           "relation": "runs",
           "target": "verb:search"
+        },
+        {
+          "relation": "runs",
+          "target": "verb:interest"
         },
         {
           "relation": "renders",
@@ -13729,6 +13781,16 @@
       "title": "\u00a731",
       "summary": "A plan section claimed by at least one module.",
       "source": "docs/AUDIT.md:202",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "section:32",
+      "kind": "section",
+      "name": "32",
+      "title": "\u00a732",
+      "summary": "A plan section claimed by at least one module.",
+      "source": "",
       "links": [],
       "tags": []
     },
@@ -15067,6 +15129,57 @@
       "tags": []
     },
     {
+      "id": "test:test_slpie_interest",
+      "kind": "test",
+      "name": "test_slpie_interest",
+      "title": "slpie interest",
+      "summary": "Degree of interest \u2014 the render set is bounded by the question, not the estate.",
+      "source": "tests/test_slpie_interest.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.flow"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.pipeline"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.registry"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.verb"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.verbs.environment"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.domain.lifecycle"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.engine"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.graph.interest"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.domain"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.graph"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "test:test_slpie_jwt",
       "kind": "test",
       "name": "test_slpie_jwt",
@@ -16077,7 +16190,7 @@
       "name": "attach",
       "title": "attach",
       "summary": "register every declared element and negotiate capabilities",
-      "source": "slpie/compose/verbs/environment.py:323",
+      "source": "slpie/compose/verbs/environment.py:387",
       "links": [
         {
           "relation": "consumes",
@@ -16308,7 +16421,7 @@
       "name": "declare",
       "title": "declare",
       "summary": "build the skeleton graph from the manifest, before reading a file",
-      "source": "slpie/compose/verbs/environment.py:269",
+      "source": "slpie/compose/verbs/environment.py:333",
       "links": [
         {
           "relation": "consumes",
@@ -16485,7 +16598,7 @@
       "name": "fire",
       "title": "fire",
       "summary": "fire a scripted condition at the simulated world",
-      "source": "slpie/compose/verbs/environment.py:301",
+      "source": "slpie/compose/verbs/environment.py:365",
       "links": [
         {
           "relation": "consumes",
@@ -16512,7 +16625,7 @@
       "name": "gaps",
       "title": "gaps",
       "summary": "everything the platform currently cannot see",
-      "source": "slpie/compose/verbs/environment.py:370",
+      "source": "slpie/compose/verbs/environment.py:449",
       "links": [
         {
           "relation": "consumes",
@@ -16563,7 +16676,7 @@
       "name": "graph",
       "title": "graph",
       "summary": "read nodes from the graph",
-      "source": "slpie/compose/verbs/environment.py:342",
+      "source": "slpie/compose/verbs/environment.py:406",
       "links": [
         {
           "relation": "consumes",
@@ -16640,7 +16753,7 @@
       "name": "impact",
       "title": "impact",
       "summary": "what depends on this, and how confidently",
-      "source": "slpie/compose/verbs/environment.py:359",
+      "source": "slpie/compose/verbs/environment.py:423",
       "links": [
         {
           "relation": "consumes",
@@ -16653,6 +16766,31 @@
         {
           "relation": "projects",
           "target": "route:POST /api/v/impact"
+        }
+      ],
+      "tags": [
+        "environment"
+      ]
+    },
+    {
+      "id": "verb:interest",
+      "kind": "verb",
+      "name": "interest",
+      "title": "interest",
+      "summary": "what a selection makes worth drawing, and what it hides",
+      "source": "slpie/compose/verbs/environment.py:434",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:nodes"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/interest"
         }
       ],
       "tags": [
@@ -16841,7 +16979,7 @@
       "name": "reconcile",
       "title": "reconcile",
       "summary": "compare what was declared against what was observed",
-      "source": "slpie/compose/verbs/environment.py:336",
+      "source": "slpie/compose/verbs/environment.py:400",
       "links": [
         {
           "relation": "consumes",
@@ -16995,7 +17133,7 @@
       "name": "scan",
       "title": "scan",
       "summary": "read every attached element and record what is found",
-      "source": "slpie/compose/verbs/environment.py:330",
+      "source": "slpie/compose/verbs/environment.py:394",
       "links": [
         {
           "relation": "consumes",
@@ -17021,7 +17159,7 @@
       "name": "search",
       "title": "search",
       "summary": "find nodes by name",
-      "source": "slpie/compose/verbs/environment.py:349",
+      "source": "slpie/compose/verbs/environment.py:413",
       "links": [
         {
           "relation": "consumes",
@@ -17047,7 +17185,7 @@
       "name": "simulate",
       "title": "simulate",
       "summary": "materialise the declared world as real files on disk",
-      "source": "slpie/compose/verbs/environment.py:275",
+      "source": "slpie/compose/verbs/environment.py:339",
       "links": [
         {
           "relation": "consumes",
@@ -17099,7 +17237,7 @@
       "name": "status",
       "title": "status",
       "summary": "the environment's current state",
-      "source": "slpie/compose/verbs/environment.py:376",
+      "source": "slpie/compose/verbs/environment.py:455",
       "links": [
         {
           "relation": "consumes",
@@ -17150,7 +17288,7 @@
       "name": "target",
       "title": "target",
       "summary": "bind the environment to simulated or live",
-      "source": "slpie/compose/verbs/environment.py:382",
+      "source": "slpie/compose/verbs/environment.py:461",
       "links": [
         {
           "relation": "consumes",
