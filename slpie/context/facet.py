@@ -28,7 +28,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Mapping
 
 
 class FacetKind(str, Enum):
@@ -129,6 +129,28 @@ class Facet:
         return Facet(
             kind=self.kind, name=self.name, title=self.title,
             summary=self.summary, source=self.source, links=merged, tags=self.tags,
+        )
+
+    @classmethod
+    def from_dict(cls, body: Mapping[str, Any]) -> "Facet":
+        """Rebuild a facet from its own `to_dict`. The disk cache's other half.
+
+        `id` is derived from kind and name, so it is written for a reader's
+        benefit and ignored here — reconstructing it from the stored string
+        would let a hand-edited cache file describe a facet whose id disagrees
+        with its own identity.
+        """
+        return cls(
+            kind=FacetKind(body["kind"]),
+            name=str(body["name"]),
+            title=str(body.get("title", "")),
+            summary=str(body.get("summary", "")),
+            source=str(body.get("source", "")),
+            links=tuple(
+                Link(Relation(item["relation"]), str(item["target"]))
+                for item in body.get("links", ())
+            ),
+            tags=tuple(str(tag) for tag in body.get("tags", ())),
         )
 
     def to_dict(self) -> dict[str, Any]:

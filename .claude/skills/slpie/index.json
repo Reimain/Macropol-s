@@ -1,8 +1,8 @@
 {
   "generator": "slpie context --skill",
-  "digest": "8c9dc789852c3267eab0dcf6cb3effbd267e4dea14ff62c4c2e5a7adcb604766",
+  "digest": "1eb250051f6ccedfb864653e45b55adec73ba0eee47675cb49681b98a2c62e76",
   "summary": {
-    "digest": "8c9dc789852c3267eab0dcf6cb3effbd267e4dea14ff62c4c2e5a7adcb604766",
+    "digest": "1eb250051f6ccedfb864653e45b55adec73ba0eee47675cb49681b98a2c62e76",
     "facets": 692,
     "counts": {
       "component": 52,
@@ -15,7 +15,7 @@
       "test": 71,
       "verb": 50
     },
-    "coverage": 0.9841,
+    "coverage": 0.9855,
     "unanchored": [
       "section:12",
       "section:14",
@@ -26,7 +26,6 @@
       "section:25",
       "section:26",
       "section:27",
-      "section:31",
       "section:6"
     ],
     "dangling": []
@@ -13659,7 +13658,7 @@
       "name": "31",
       "title": "\u00a731",
       "summary": "A plan section claimed by at least one module.",
-      "source": "",
+      "source": "docs/AUDIT.md:202",
       "links": [],
       "tags": []
     },
@@ -14422,6 +14421,10 @@
         {
           "relation": "covers",
           "target": "module:slpie.compose.verb"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.context.index"
         },
         {
           "relation": "covers",

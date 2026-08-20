@@ -33,6 +33,7 @@ framework and runs offline.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -606,19 +607,138 @@ def _add_sections(index: ContextIndex, root: Path) -> None:
         ))
 
 
+#: The last index built with no arguments, and the tree fingerprint it was
+#: built from. One entry, because there is one running product.
+_CACHE: tuple[str, "ContextIndex"] | None = None
+
+#: Where the built index is kept between processes.
+#:
+#: An in-process cache does nothing for the CLI, which is the surface that
+#: needed it most: every `slpie context query` is a new interpreter, so a
+#: memory-only cache left it at 2.7 seconds a call. The facets are already
+#: serialisable — that is what `index.json` is — so the same shape is written
+#: beside the tree and reloaded when the fingerprint still matches.
+CACHE_DIR = Path(".slpie") / "cache"
+
+
+def fingerprint(root: Path | None = None) -> str:
+    """A cheap digest of the trees: every file's path, size and mtime.
+
+    Stat, not read. Parsing six hundred modules costs seconds; stating them
+    costs milliseconds, and the question "has anything changed" does not need
+    the contents — only whether the bytes could have.
+
+    Deliberately not a content hash. A content hash would be exact and would
+    also cost most of what it is trying to save; mtime-and-size is the standard
+    trade every build system makes, and the failure it admits — a file rewritten
+    within the same nanosecond at the same length — is one nothing here can
+    produce.
+    """
+    base = root or _repository()
+    parts: list[str] = []
+    for tree in TREES:
+        directory = base / tree
+        if not directory.is_dir():
+            continue
+        for path in sorted(directory.rglob("*.py")):
+            if any(skip in path.parts for skip in ("__pycache__", ".git")):
+                continue
+            try:
+                stat = path.stat()
+            except OSError:
+                continue
+            parts.append(f"{path.relative_to(base)}\x1f{stat.st_size}\x1f{stat.st_mtime_ns}")
+    return hashlib.blake2b("\n".join(parts).encode("utf-8"), digest_size=16).hexdigest()
+
+
+def _cache_file(root: Path, mark: str) -> Path:
+    return root / CACHE_DIR / f"context-{mark}.json"
+
+
+def _load(root: Path, mark: str) -> "ContextIndex | None":
+    """The index from disk, or nothing. Never raises.
+
+    A cache that can fail the caller is worse than no cache: the fallback is
+    simply to build, which is correct and merely slower, so every failure here —
+    missing, truncated, written by another version, unreadable — takes the same
+    quiet path.
+    """
+    path = _cache_file(root, mark)
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+        if body.get("contract") != CACHE_CONTRACT:
+            return None
+        index = ContextIndex(root=root)
+        for item in body["facets"]:
+            index.add(Facet.from_dict(item))
+        # The digest is recomputed, not trusted. A cache file whose stored
+        # digest disagrees with its own contents is corrupt, and believing the
+        # stored one would let it stay corrupt silently.
+        if index.digest != body.get("digest"):
+            return None
+        return index
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _store(root: Path, mark: str, index: "ContextIndex") -> None:
+    """Write the index, and drop the entries this one supersedes."""
+    path = _cache_file(root, mark)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # Written to a sibling and moved, so a reader never sees half a file.
+        temporary = path.with_suffix(".partial")
+        temporary.write_text(json.dumps({
+            "contract": CACHE_CONTRACT,
+            "digest": index.digest,
+            "facets": [facet.to_dict() for facet in index],
+        }), encoding="utf-8")
+        temporary.replace(path)
+        for stale in path.parent.glob("context-*.json"):
+            if stale != path:
+                stale.unlink(missing_ok=True)
+    except OSError:
+        pass                    # an unwritable cache is not an error, only slower
+
+
+#: Bumped when the stored shape changes, so an old file is ignored rather than
+#: misread. Cheaper than a migration for something that can always be rebuilt.
+CACHE_CONTRACT = 1
+
+
 def build(
     *,
     root: Path | str | None = None,
     verbs: Any = None,
     routes: Sequence[tuple[str, str]] | None = None,
     screens: Sequence[Any] | None = None,
+    fresh: bool = False,
 ) -> ContextIndex:
     """Read every source and project it into one index.
 
     Every argument defaults to the live thing, so `build()` with no arguments
     describes the running product. They exist for tests, which need to build an
     index over a registry they control rather than the whole platform.
+
+    **Only the no-argument call is cached.** A caller that supplied its own
+    registry is asking about something other than the running product, and
+    handing it a cached answer about the running product would be wrong in a way
+    that is very hard to see — the index would simply be about the wrong thing.
+    So the cache is consulted only when every argument is absent.
     """
+    global _CACHE
+
+    default = (root is None and verbs is None and routes is None and screens is None)
+    mark = ""
+    if default and not fresh:
+        mark = fingerprint()
+        if _CACHE is not None and _CACHE[0] == mark:
+            return _CACHE[1]
+        held = _load(_repository(), mark)
+        if held is not None:
+            _CACHE = (mark, held)
+            return held
+
     base = Path(root).resolve() if root else _repository()
     index = ContextIndex(root=base)
 
@@ -640,6 +760,14 @@ def build(
     _add_modules(index, base)
     _add_sections(index, base)
     _resolve_links(index)
+
+    if default and not fresh:
+        # Fingerprint again rather than reusing the one from the top: a file
+        # edited *while* the index was being built would otherwise be cached
+        # under the pre-edit mark and served until something else changed.
+        settled = fingerprint()
+        _CACHE = (settled, index)
+        _store(base, settled, index)
     return index
 
 

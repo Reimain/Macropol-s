@@ -16,6 +16,7 @@ from slpie.compose.flow import Kind
 from slpie.compose.registry import VerbRegistry, registry
 from slpie.compose.verb import Param, Verb
 from slpie.context import ContextIndex, Facet, FacetKind, Link, Relation, build
+from slpie.context.index import fingerprint
 from slpie.context.skill import artifacts, render_json, render_markdown, write
 
 from _walk import REPOSITORY
@@ -233,3 +234,121 @@ def test_the_root_pointer_does_not_restate_the_skill() -> None:
     body = (REPOSITORY / "CLAUDE.md").read_text()
     assert ".claude/skills/slpie/SKILL.md" in body
     assert len(body.splitlines()) < 40
+
+
+# -- the cache -----------------------------------------------------------
+
+
+def test_an_unchanged_tree_is_answered_from_cache() -> None:
+    """`build()` parses six hundred modules and took 2.6s every call.
+
+    That made `slpie context query` unusable interactively and made
+    `POST /api/v/context` an expensive uncached route. The fingerprint stats the
+    same files instead of parsing them, which is the standard trade every build
+    system makes.
+    """
+    import time
+
+    first = build()
+    started = time.perf_counter()
+    second = build()
+    warm = time.perf_counter() - started
+
+    assert second is first, "an unchanged tree should not be re-parsed"
+    assert warm < 0.5, f"a cached build took {warm:.2f}s — the cache is not being hit"
+
+
+def test_touching_a_module_lets_the_cache_go(tmp_path) -> None:
+    """Stat, not content: size and mtime are what the fingerprint watches."""
+    before = fingerprint()
+    target = REPOSITORY / "slpie" / "context" / "facet.py"
+    original = target.stat().st_mtime_ns
+    try:
+        target.touch()
+        assert fingerprint() != before
+        assert build() is not None
+    finally:
+        import os
+        os.utime(target, ns=(original, original))
+
+
+def test_a_caller_with_its_own_registry_never_gets_the_cached_index() -> None:
+    """The correctness half, and the one worth guarding.
+
+    A caller supplying its own registry is asking about something other than the
+    running product. Handing it the cached answer would be wrong in a way that
+    is very hard to see — the index would simply be about the wrong thing, with
+    no error anywhere.
+    """
+    running = build()
+    empty = build(verbs=VerbRegistry(), routes=(), screens=())
+
+    assert empty is not running
+    assert not [item for item in empty if item.kind is FacetKind.VERB]
+    assert [item for item in running if item.kind is FacetKind.VERB]
+
+
+def test_fresh_forces_a_rebuild() -> None:
+    assert build(fresh=True) is not build(fresh=True)
+
+
+def test_the_disk_cache_makes_a_second_process_fast() -> None:
+    """The in-memory cache did nothing for the CLI.
+
+    Every `slpie context query` is a fresh interpreter, so a memory-only cache
+    left the command at 2.7 seconds — which is the surface that needed it most.
+    """
+    import subprocess, sys, time
+
+    subprocess.run([sys.executable, "-m", "slpie.cli", "context", "--digest"],
+                   capture_output=True, cwd=REPOSITORY, check=True)
+    started = time.perf_counter()
+    done = subprocess.run([sys.executable, "-m", "slpie.cli", "context", "--digest"],
+                          capture_output=True, cwd=REPOSITORY, check=True)
+    warm = time.perf_counter() - started
+
+    assert warm < 1.5, f"a second process took {warm:.2f}s — the disk cache is not being read"
+    assert done.stdout.decode().strip() == build().digest
+
+
+def test_a_corrupt_cache_is_ignored_rather_than_raised(tmp_path) -> None:
+    """A cache that can fail the caller is worse than no cache.
+
+    The fallback is to build, which is correct and merely slower, so every
+    failure takes the same quiet path: truncated, wrong contract, wrong digest.
+    """
+    from slpie.context.index import _load, _store
+
+    index = build()
+    _store(tmp_path, "mark", index)
+    path = tmp_path / ".slpie" / "cache" / "context-mark.json"
+    assert path.is_file()
+    assert _load(tmp_path, "mark") is not None
+
+    path.write_text("{ not json", encoding="utf-8")
+    assert _load(tmp_path, "mark") is None
+
+
+def test_a_cache_whose_digest_disagrees_with_its_contents_is_refused(tmp_path) -> None:
+    """Believing the stored digest would let a corrupt file stay corrupt."""
+    import json
+
+    from slpie.context.index import _load, _store
+
+    _store(tmp_path, "mark", build())
+    path = tmp_path / ".slpie" / "cache" / "context-mark.json"
+    body = json.loads(path.read_text(encoding="utf-8"))
+    body["digest"] = "0" * 64
+    path.write_text(json.dumps(body), encoding="utf-8")
+
+    assert _load(tmp_path, "mark") is None
+
+
+def test_the_cache_keeps_only_the_current_entry(tmp_path) -> None:
+    from slpie.context.index import _store
+
+    index = build()
+    _store(tmp_path, "one", index)
+    _store(tmp_path, "two", index)
+    held = sorted(p.name for p in (tmp_path / ".slpie" / "cache").glob("context-*.json"))
+    assert held == ["context-two.json"]

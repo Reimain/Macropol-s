@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `8c9dc789852c3267eab0dcf6cb3effbd267e4dea14ff62c4c2e5a7adcb604766`
+- **digest** `1eb250051f6ccedfb864653e45b55adec73ba0eee47675cb49681b98a2c62e76`
 - **facets** 692 — 52 component, 21 kind, 295 module, 68 package, 89 route, 31 screen, 15 section, 71 test, 50 verb
-- **anchored** 98.4% resolve to a file and a line
+- **anchored** 98.6% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -163,7 +163,6 @@ Kept and counted, never dropped. An index that silently omitted what it could no
 | `section:25` | section |
 | `section:26` | section |
 | `section:27` | section |
-| `section:31` | section |
 | `section:6` | section |
 
 ## Open findings
@@ -179,6 +178,7 @@ From `docs/AUDIT.md`, by its own numbering. Read there for the command that repr
 | 1.5 | `--root` is ignored when opening an environment |
 | 1.6 | Coverage, and where it is thin |
 | 1.7 | Declared markers, unused |
+| 1.8 | The device tier's principal scoping is dead wiring |
 | 2.1 | Duplication in the fixtures |
 | 2.2 | One path, three sources of truth |
 | 2.3 | Names that collide |

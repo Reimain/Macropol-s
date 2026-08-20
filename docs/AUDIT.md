@@ -197,6 +197,45 @@ excluding the 10 000-node graph test (`tests/test_slpie_graph.py:493`, asserts
 `elapsed < 5.0`) and the real-subprocess tests exists and is unwired — they always run in the
 default suite, and they are the ones that flake on a loaded runner.
 
+### 1.8 The device tier's principal scoping is dead wiring
+
+Found reviewing §31 after it shipped. **Recorded rather than fixed** — identity is the gateway's
+to establish and the gateway is not wired end to end, so plumbing a principal onto `/api/status`
+now would be inventing half of it.
+
+`slpie/ui/app/shell.js:193` scopes the browser's device store to whoever is reading:
+
+```js
+function readerId() {
+  const state = cell("status").value;
+  return (state && state.principal) || "anonymous";
+}
+```
+
+`GET /api/status` returns `engine.status()`, which carries no `principal`, and nothing anywhere
+puts one on a response:
+
+```
+$ python -c "from slpie.ui.api import Api, Request; \
+    print(Api(engine=None).handle(Request('GET','/api/status',{},{})).body)"
+{'error': ..., 'type': ...}
+$ grep -rn "principal" slpie/ui/api.py | grep -v "^.*#"
+# the field on Request, written by the gateway. Never read onto a response.
+```
+
+So `readerId()` always answers `"anonymous"`, the owner prefix never changes, and **the
+principal-change wipe can never fire.** The wipe is the control that stops one tenant's graph
+staying on a shared machine after a logout.
+
+The uncomfortable half: `test_a_different_principal_gets_an_empty_store`
+(`tests/test_slpie_ui_browser.py`) passes. It calls `persist()` directly with two different
+owners, so it proves the *mechanism* works while nothing in the product invokes it. A green test
+over a path production never takes is the family §1.1 is about, arriving by a different door —
+this one is not a glob that matches nothing, it is a wipe that nothing triggers.
+
+**Closing it needs the gateway to report the principal it already resolved**, at which point the
+browser test should drive the wipe through a status change rather than by calling `persist()`.
+
 ---
 
 ## Part 2 — structural
