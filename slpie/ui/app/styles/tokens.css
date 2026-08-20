@@ -74,6 +74,38 @@
   --flight-surface: #0b1419;
   --flight-ink: #dbe6ec;
 
+  /* Region hues, for the graph-colouring problem applied to declared security
+   * boundaries rather than to nodes. Ten, because the fourth-colour theorem
+   * bounds a planar map and a dependency graph is not planar — so an eleventh
+   * mutually-adjacent region is possible, and when it happens it is *counted
+   * and reported*, never wrapped by a modulo onto a hue already in use.
+   *
+   * **Muted on purpose: saturation is reserved for severity.** These sit near
+   * 0.26; every status colour sits above 0.43, and a test compares the two so
+   * the reservation is a fact rather than an intention. The one vivid thing on
+   * a flight canvas is always a finding.
+   *
+   * Spaced by the golden angle rather than evenly, so *consecutive* indices are
+   * as far apart in hue as ten hues allow — the colouring assigns by index, and
+   * two adjacent regions frequently land on neighbouring ones. Evenly spaced,
+   * hue 1 and hue 2 are 36 degrees apart at low chroma, which is a distinction
+   * nobody can make on a projector. */
+  --flight-hue-1: #b47e7e;
+  --flight-hue-2: #7eb48e;
+  --flight-hue-3: #9d7eb4;
+  --flight-hue-4: #b4ad7e;
+  --flight-hue-5: #7eabb4;
+  --flight-hue-6: #b47e9b;
+  --flight-hue-7: #8cb47e;
+  --flight-hue-8: #817eb4;
+  --flight-hue-9: #b4907e;
+  --flight-hue-10: #7eb4a0;
+
+  /* Everything outside every declared boundary. Not a hue — the estate is the
+   * backdrop the boundaries are read against, and giving it one would make the
+   * unremarkable majority compete with the thing somebody declared. */
+  --flight-estate: #6b8290;
+
   --shadow: 0 1px 2px rgba(16, 24, 32, 0.06), 0 1px 1px rgba(16, 24, 32, 0.04);
 
   /* The certainty ramp. Ordinal, one hue, dark = known — and validated rather

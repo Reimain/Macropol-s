@@ -1030,3 +1030,166 @@ def test_an_engine_that_cannot_draw_is_refused_at_registration(page, served):
     assert result["broken"]["name"] == "canvas2d"
     assert result["broken"]["fallback"] is True
     assert "unusable" in result["broken"]["reason"]
+
+
+def test_no_two_adjacent_regions_share_a_hue(page, served):
+    """Welsh-Powell over region adjacency, checked as the property it is.
+
+    The assertion is on `clashes()` rather than on the algorithm's internals: a
+    colouring is correct exactly when no two touching regions wear the same
+    hue, and how it got there is not the promise.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      Promise.all([import('/engine/palette.js'), import('/engine/layout.js')])
+        .then(([palette, layout]) => {
+          // A wheel: one hub touching five spokes, and the spokes touching each
+          // other around the rim. Six regions, plenty of adjacency, and a naive
+          // first-fit that ignored the ordering would get it wrong.
+          const names = ['hub', 'a', 'b', 'c', 'd', 'e'];
+          const rim = ['a', 'b', 'c', 'd', 'e'];
+          const adjacency = new Map(names.map((n) => [n, new Set()]));
+          const join = (l, r) => { adjacency.get(l).add(r); adjacency.get(r).add(l); };
+          rim.forEach((spoke, index) => {
+            join('hub', spoke);
+            join(spoke, rim[(index + 1) % rim.length]);
+          });
+
+          const first = palette.colour(names, adjacency);
+          const again = palette.colour([...names].reverse(), adjacency);
+          const key = (r) => [...r.assigned].sort().map((p) => p.join('=')).join('|');
+
+          return {
+            clashes: palette.clashes(first.assigned, adjacency),
+            overflow: first.overflow,
+            shortfall: first.shortfall,
+            used: first.used,
+            deterministic: key(first) === key(again),
+            coloured: [...first.assigned].length,
+          };
+        })
+    """)
+
+    assert result["clashes"] == []
+    assert result["overflow"] == []
+    assert result["shortfall"] == ""
+    assert result["coloured"] == 6
+    assert result["deterministic"], "two runs coloured the same map differently"
+    # An odd wheel needs four; anything above that would mean the ordering step
+    # is not doing its job.
+    assert result["used"] <= 4
+
+
+def test_the_estate_is_left_out_of_the_colouring(page, served):
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/palette.js').then((palette) => {
+        const adjacency = new Map([
+          ['cardholder-data', new Set(['estate'])],
+          ['estate', new Set(['cardholder-data'])],
+        ]);
+        const answer = palette.colour(['cardholder-data', 'estate'], adjacency);
+        return {
+          assigned: [...answer.assigned],
+          estate: palette.tokenFor('estate', answer.assigned),
+          unknown: palette.tokenFor('never-declared', answer.assigned),
+        };
+      })
+    """)
+
+    assert [name for name, _hue in result["assigned"]] == ["cardholder-data"]
+    assert result["estate"] == "--flight-estate"
+    # An uncoloured region falls to the neutral, which is the honest answer —
+    # not to hue 1, which would claim a distinction that was never made.
+    assert result["unknown"] == "--flight-estate"
+
+
+def test_running_out_of_hues_is_counted_and_reported_not_wrapped(page, served):
+    """The bug this replaced, reproduced against the fix.
+
+    `index % HUES.length` put one hue on two *adjacent* regions and said
+    nothing: the picture was wrong and looked fine, which is the worst failure
+    mode a visualisation has. Now the palette runs out honestly — the regions it
+    could not reach are named, and they wear the neutral rather than a colour
+    that means something else.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/palette.js').then((palette) => {
+        // Eleven mutually adjacent regions against a ten-hue palette. Possible
+        // because a dependency graph is not planar, so the four-colour theorem
+        // does not bound it.
+        const names = Array.from({length: 11}, (_, i) => 'r' + i);
+        const adjacency = new Map(names.map(
+          (n) => [n, new Set(names.filter((other) => other !== n))],
+        ));
+        const answer = palette.colour(names, adjacency);
+        return {
+          clashes: palette.clashes(answer.assigned, adjacency),
+          overflow: answer.overflow,
+          shortfall: answer.shortfall,
+          fallsBackTo: palette.tokenFor(answer.overflow[0], answer.assigned),
+        };
+      })
+    """)
+
+    # The uncoloured region is left uncoloured. What must never happen is a
+    # clash: two regions that touch wearing the same hue.
+    assert result["clashes"] == []
+    assert len(result["overflow"]) == 1
+    assert "10 hues were not enough" in result["shortfall"]
+    assert result["overflow"][0] in result["shortfall"]
+    assert result["fallsBackTo"] == "--flight-estate"
+
+
+def test_shape_says_kind_and_falls_back_to_a_dot_when_it_is_too_small(page, served):
+    """Three channels, three meanings: hue is region, saturation is severity,
+    shape is kind. Below a few pixels a glyph is a dot with extra vertices, and
+    drawing one is the correct answer for something too far away to identify."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/glyph.js').then((glyph) => ({
+        families: [
+          glyph.familyOf('package'), glyph.familyOf('service'),
+          glyph.familyOf('table'), glyph.familyOf('deployment'),
+          glyph.familyOf('team'), glyph.familyOf('nonsense'),
+        ],
+        shapes: [
+          glyph.shapeOf('package'), glyph.shapeOf('service'),
+          glyph.shapeOf('table'), glyph.shapeOf('deployment'),
+          glyph.shapeOf('team'),
+        ],
+        corners: {
+          service: glyph.outline('service', 10).points.length,
+          package: glyph.outline('package', 10).points.length,
+          team: glyph.outline('team', 10).points.length,
+        },
+        tiny: glyph.outline('service', glyph.FLOOR - 0.1).shape,
+        big: glyph.outline('service', glyph.FLOOR + 0.1).shape,
+        unknown: glyph.outline('nonsense', 10).shape,
+        severity: [
+          glyph.severityToken('critical'), glyph.severityToken('high'),
+          glyph.severityToken('medium'), glyph.severityToken('low'),
+          glyph.severityToken(undefined),
+        ],
+      }))
+    """)
+
+    assert result["families"] == [
+        "code", "runtime", "data", "delivery", "organisation", "unknown",
+    ]
+    # Five distinguishable silhouettes for five families, told apart by corner
+    # count rather than by proportion — a square and a wide rectangle are the
+    # same shape at ten pixels.
+    assert len(set(result["shapes"])) == 5
+    assert result["corners"] == {"service": 3, "package": 4, "team": 6}
+    assert result["tiny"] == "dot"
+    assert result["big"] == "triangle"
+    # A kind nobody mapped draws a circle, which is this canvas saying it does
+    # not know what that is rather than guessing a family.
+    assert result["unknown"] == "circle"
+    assert result["severity"] == ["--crit", "--bad", "--warn", "--ok", ""]

@@ -221,3 +221,103 @@ def test_the_protocol_names_every_method_an_engine_must_have(method):
         f"contract.js no longer checks for {method}() at registration"
     )
     assert f"{method}(" in (ENGINE / "canvas2d.js").read_text(encoding="utf-8")
+
+
+# --- colour and shape: three channels, three meanings --------------------------
+
+
+def _hex(name: str, source: str) -> str | None:
+    found = re.search(rf"{re.escape(name)}:\s*(#[0-9a-fA-F]{{6}})", source)
+    return found.group(1) if found else None
+
+
+def _saturation(colour: str) -> float:
+    import colorsys
+
+    red, green, blue = (int(colour[index:index + 2], 16) / 255 for index in (1, 3, 5))
+    return colorsys.rgb_to_hls(red, green, blue)[2]
+
+
+def test_saturation_is_reserved_for_severity():
+    """The reservation is a fact, not an intention.
+
+    Region hue and finding severity are two meanings on adjacent channels, and
+    the only thing keeping them apart is that one is muted and the other is
+    not. Left as a note in a docstring that holds until somebody picks a
+    prettier region colour; measured here, it holds.
+    """
+    tokens = (APP_ROOT / "styles" / "tokens.css").read_text(encoding="utf-8")
+
+    regions = {
+        f"--flight-hue-{index}": _hex(f"--flight-hue-{index}", tokens)
+        for index in range(1, 11)
+    }
+    assert all(regions.values()), f"a region hue is not declared: {regions}"
+
+    loudest = max(_saturation(colour) for colour in regions.values())
+    quietest = min(
+        _saturation(_hex(name, tokens))
+        for name in ("--ok", "--warn", "--bad", "--crit")
+    )
+    assert loudest < quietest, (
+        f"the most saturated region hue ({loudest:.2f}) is at least as vivid as "
+        f"the least saturated severity ({quietest:.2f}) — the one vivid thing on "
+        f"a flight canvas has to be a finding"
+    )
+
+
+def test_the_region_hues_are_all_different():
+    tokens = (APP_ROOT / "styles" / "tokens.css").read_text(encoding="utf-8")
+    hues = [_hex(f"--flight-hue-{index}", tokens) for index in range(1, 11)]
+    assert len(set(hues)) == len(hues), f"two region hues are the same colour: {hues}"
+
+
+def test_the_estate_is_not_given_a_hue():
+    """The backdrop must not compete with what somebody took the trouble to declare."""
+    palette = (ENGINE / "palette.js").read_text(encoding="utf-8")
+    assert 'export const ESTATE = "--flight-estate"' in palette
+    assert "--flight-estate" not in re.search(
+        r"export const HUES = \[(.*?)\];", palette, re.DOTALL,
+    ).group(1)
+
+
+def test_the_palette_never_wraps_by_modulo():
+    """The bug this replaced, pinned so it cannot come back.
+
+    `index % HUES.length` put one hue on two *adjacent* regions and said
+    nothing. The picture was wrong and looked fine, which is the worst failure
+    a visualisation has.
+    """
+    body = _uncommented((ENGINE / "palette.js").read_text(encoding="utf-8"))
+    assert "%" not in body, (
+        "palette.js contains a modulo — if the hue assignment wraps, an "
+        "overflowing colouring is silently wrong"
+    )
+    assert "overflow" in body and "shortfall" in body
+
+
+def test_every_node_kind_has_a_family_and_a_shape():
+    """Read off the domain enum, so a new kind cannot slip through unshaped."""
+    from slpie.domain.node import NodeKind
+
+    body = (ENGINE / "glyph.js").read_text(encoding="utf-8")
+    mapping = re.search(r"export const FAMILY_OF = \{(.*?)\};", body, re.DOTALL).group(1)
+    named = set(re.findall(r"(\w+):\s*\"", mapping))
+    missing = sorted(kind.value for kind in NodeKind if kind.value not in named)
+    assert not missing, f"these node kinds have no glyph family: {missing}"
+
+    shapes = re.search(r"export const SHAPE_OF = \{(.*?)\};", body, re.DOTALL).group(1)
+    families = set(re.findall(r"(\w+):\s*\"", shapes))
+    assert set(re.findall(r':\s*"(\w+)"', mapping)) <= families, (
+        "a family is used in FAMILY_OF and has no shape"
+    )
+
+
+def test_shape_and_colour_are_separate_channels():
+    """`glyph.js` must not reach for a hue, and `palette.js` must not reach for a shape."""
+    glyph = _uncommented((ENGINE / "glyph.js").read_text(encoding="utf-8"))
+    palette = _uncommented((ENGINE / "palette.js").read_text(encoding="utf-8"))
+    assert "flight-hue" not in glyph, "glyph.js assigns a region hue"
+    assert "SHAPE" not in palette and "outline" not in palette, (
+        "palette.js decides a shape"
+    )

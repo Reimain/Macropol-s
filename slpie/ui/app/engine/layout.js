@@ -123,6 +123,7 @@ export function place(nodes, edges, { regionOf = () => "", lane = LANE } = {}) {
   return {
     placed,
     lanes,
+    edges: edges || [],
     regions: order.map((name) => ({
       name,
       count: regions.get(name),

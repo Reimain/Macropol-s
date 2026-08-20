@@ -1,8 +1,8 @@
 {
   "generator": "slpie context --skill",
-  "digest": "a0d5cd3427121361e4b6a0286650de4a10b68e07533d2ee0027ecde5b85a19ea",
+  "digest": "a585fcdb8bf2d95cf94b2086385868df68202e55578cb25c6760ce5292c370cc",
   "summary": {
-    "digest": "a0d5cd3427121361e4b6a0286650de4a10b68e07533d2ee0027ecde5b85a19ea",
+    "digest": "a585fcdb8bf2d95cf94b2086385868df68202e55578cb25c6760ce5292c370cc",
     "facets": 702,
     "counts": {
       "component": 52,
@@ -15981,6 +15981,10 @@
       "summary": "The renderer seam, and the boundary that keeps \"air-gapped\" literally true.",
       "source": "tests/test_slpie_ui_engine.py:1",
       "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.domain.node"
+        },
         {
           "relation": "covers",
           "target": "package:slpie.ui"

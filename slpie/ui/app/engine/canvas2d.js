@@ -34,21 +34,36 @@
  */
 
 import { haze, project } from "./camera.js";
+import { FLOOR, outline, severityToken } from "./glyph.js";
+import { ESTATE, HUES, tokenFor } from "./palette.js";
 
-/** Marks smaller than this are not worth a stroke; they are drawn as a dot. */
+/** The cap on a mark's radius. A near node is a landmark, not a planet. */
 const FINE = 2.4;
+
+/* Re-exported so a caller can ask where the glyph threshold is without
+ * importing two modules to draw one scene. */
+export { FLOOR };
 
 /** How far into the ground the furthest marks fade. 1 would erase them. */
 const DEEPEST = 0.82;
 
+/* Every colour the renderer will ever use, resolved once. The names come from
+ * `palette.js` and `glyph.js` rather than being spelled here, so the theme axis
+ * stays in CSS and there is exactly one statement of what a severity looks
+ * like — the identical custom property the Findings screen paints with. */
 function tokens(canvas) {
   const style = getComputedStyle(canvas);
   const read = (name, fallback) => (style.getPropertyValue(name) || "").trim() || fallback;
-  return {
+  const resolved = {
     surface: read("--flight-surface", read("--bg", "#0d1117")),
     ink: read("--flight-ink", read("--text", "#e6edf3")),
     line: read("--line", "#30363d"),
+    hue: {},
   };
+  for (const name of [...HUES, ESTATE, "--ok", "--warn", "--bad", "--crit"]) {
+    resolved.hue[name] = read(name, resolved.ink);
+  }
+  return resolved;
 }
 
 /* Blend toward the surface in sRGB. Approximate, and deliberately so: a correct
@@ -87,7 +102,7 @@ export const canvas2d = {
     // number the console reports about this scene comes from here rather than
     // from a formula over the node count — a figure nobody computed is not
     // telemetry, it is decoration.
-    this.drawn = { marks: 0, edges: 0, clipped: 0 };
+    this.drawn = { marks: 0, edges: 0, clipped: 0, dots: 0, severe: 0 };
     return this;
   },
 
@@ -106,7 +121,7 @@ export const canvas2d = {
     context.fillStyle = palette.surface;
     context.fillRect(0, 0, width, height);
 
-    const tally = { marks: 0, edges: 0, clipped: 0 };
+    const tally = { marks: 0, edges: 0, clipped: 0, dots: 0, severe: 0 };
     const screen = new Map();
     let nearest = Infinity;
     let furthest = 0;
@@ -143,14 +158,35 @@ export const canvas2d = {
     // Painters' order, far to near, so a near mark covers a far one rather than
     // whichever happened to be iterated last.
     const ordered = [...screen.values()].sort((left, right) => right.at.depth - left.at.depth);
+    const assigned = this.scene.colouring ? this.scene.colouring.assigned : new Map();
+
     for (const item of ordered) {
       const share = haze(item.at.depth, span) * DEEPEST;
-      const radius = Math.max(1, item.at.scale * 2.2);
-      context.fillStyle = fade(palette.ink, palette.surface, share);
+      const radius = Math.min(Math.max(1, item.at.scale * 2.2), FINE * 4);
+
+      // Hue is the region. Severity, when there is one, replaces it entirely
+      // rather than tinting it: a finding is the one thing on this canvas that
+      // must not be a shade of something else.
+      const severity = severityToken(item.point.severity);
+      const token = severity || tokenFor(item.point.region, assigned);
+      context.fillStyle = fade(palette.hue[token] || palette.ink, palette.surface, share);
+
+      const glyph = outline(item.point.kind, radius);
       context.beginPath();
-      context.arc(item.at.x, item.at.y, Math.min(radius, FINE * 4), 0, Math.PI * 2);
+      if (glyph.points.length) {
+        glyph.points.forEach((corner, index) => {
+          const method = index === 0 ? "moveTo" : "lineTo";
+          context[method](item.at.x + corner.x, item.at.y + corner.y);
+        });
+        context.closePath();
+      } else {
+        context.arc(item.at.x, item.at.y, Math.max(radius, 1), 0, Math.PI * 2);
+      }
       context.fill();
+
       tally.marks += 1;
+      if (glyph.shape === "dot") tally.dots += 1;
+      if (severity) tally.severe += 1;
     }
 
     this.drawn = tally;
