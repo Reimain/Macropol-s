@@ -33,6 +33,7 @@
  * spends it on distance makes the two channels that carry meaning unreadable.
  */
 
+import { aggregate, bundle } from "./aggregate.js";
 import { haze, project } from "./camera.js";
 import { FLOOR, outline, severityToken } from "./glyph.js";
 import { ESTATE, HUES, tokenFor } from "./palette.js";
@@ -102,7 +103,10 @@ export const canvas2d = {
     // number the console reports about this scene comes from here rather than
     // from a formula over the node count — a figure nobody computed is not
     // telemetry, it is decoration.
-    this.drawn = { marks: 0, edges: 0, clipped: 0, dots: 0, severe: 0 };
+    this.drawn = {
+      marks: 0, edges: 0, clipped: 0, dots: 0, severe: 0,
+      represented: 0, internal: 0, tiers: { node: 0, lane: 0, cluster: 0 },
+    };
     return this;
   },
 
@@ -121,8 +125,12 @@ export const canvas2d = {
     context.fillStyle = palette.surface;
     context.fillRect(0, 0, width, height);
 
-    const tally = { marks: 0, edges: 0, clipped: 0, dots: 0, severe: 0 };
-    const screen = new Map();
+    const tally = {
+      marks: 0, edges: 0, clipped: 0, dots: 0, severe: 0,
+      represented: 0, internal: 0, tiers: { node: 0, lane: 0, cluster: 0 },
+    };
+
+    const projected = [];
     let nearest = Infinity;
     let furthest = 0;
 
@@ -132,55 +140,71 @@ export const canvas2d = {
         tally.clipped += 1;
         continue;
       }
-      screen.set(point.id, { point, at });
+      projected.push({
+        id: point.id, x: at.x, y: at.y, depth: at.depth,
+        radius: Math.min(Math.max(1, at.scale * 2.2), FINE * 4),
+        region: point.region, kind: point.kind, severity: point.severity || "",
+      });
       if (at.depth < nearest) nearest = at.depth;
       if (at.depth > furthest) furthest = at.depth;
     }
 
     const span = { near: nearest, far: Math.max(furthest, nearest + 1) };
 
+    // Everything below is drawn from *marks*, not from nodes. A lane too small
+    // on screen to have members is one mark carrying its count, and whatever
+    // still overlaps after that is one coarser mark — nothing is dropped, and
+    // every mark knows how many nodes are inside it.
+    const field = aggregate(projected);
+    const drawn = bundle(this.scene.edges || [], field.assignment);
+    tally.represented = field.represented;
+    tally.internal = drawn.internal;
+    tally.tiers = field.tiers;
+
     // Edges first and unsorted: they sit behind every mark, and sorting them
     // buys nothing a reader can see while costing a sort of the larger set.
     context.lineWidth = 1;
-    for (const edge of this.scene.edges || []) {
-      const from = screen.get(edge.src);
-      const to = screen.get(edge.dst);
-      if (!from || !to) continue;
-      const share = haze((from.at.depth + to.at.depth) / 2, span) * DEEPEST;
+    for (const edge of drawn.edges) {
+      const from = field.marks[edge.from];
+      const to = field.marks[edge.to];
+      const share = haze((from.depth + to.depth) / 2, span) * DEEPEST;
       context.strokeStyle = fade(palette.line, palette.surface, share);
       context.beginPath();
-      context.moveTo(from.at.x, from.at.y);
-      context.lineTo(to.at.x, to.at.y);
+      context.moveTo(from.x, from.y);
+      context.lineTo(to.x, to.y);
       context.stroke();
       tally.edges += 1;
     }
 
     // Painters' order, far to near, so a near mark covers a far one rather than
     // whichever happened to be iterated last.
-    const ordered = [...screen.values()].sort((left, right) => right.at.depth - left.at.depth);
+    const ordered = [...field.marks].sort((left, right) => right.depth - left.depth);
     const assigned = this.scene.colouring ? this.scene.colouring.assigned : new Map();
 
     for (const item of ordered) {
-      const share = haze(item.at.depth, span) * DEEPEST;
-      const radius = Math.min(Math.max(1, item.at.scale * 2.2), FINE * 4);
+      const share = haze(item.depth, span) * DEEPEST;
 
       // Hue is the region. Severity, when there is one, replaces it entirely
       // rather than tinting it: a finding is the one thing on this canvas that
-      // must not be a shade of something else.
-      const severity = severityToken(item.point.severity);
-      const token = severity || tokenFor(item.point.region, assigned);
+      // must not be a shade of something else — and severity propagates up
+      // through an aggregate as the worst it contains, so a cluster can never
+      // swallow a critical.
+      const severity = severityToken(item.severity);
+      const token = severity || tokenFor(item.region, assigned);
       context.fillStyle = fade(palette.hue[token] || palette.ink, palette.surface, share);
 
-      const glyph = outline(item.point.kind, radius);
+      // An aggregate spanning several kinds has no kind, and `outline` answers
+      // a circle for that rather than picking one of them.
+      const glyph = outline(item.kind, item.radius);
       context.beginPath();
       if (glyph.points.length) {
         glyph.points.forEach((corner, index) => {
           const method = index === 0 ? "moveTo" : "lineTo";
-          context[method](item.at.x + corner.x, item.at.y + corner.y);
+          context[method](item.x + corner.x, item.y + corner.y);
         });
         context.closePath();
       } else {
-        context.arc(item.at.x, item.at.y, Math.max(radius, 1), 0, Math.PI * 2);
+        context.arc(item.x, item.y, Math.max(item.radius, 1), 0, Math.PI * 2);
       }
       context.fill();
 

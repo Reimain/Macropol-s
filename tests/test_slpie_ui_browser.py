@@ -1193,3 +1193,195 @@ def test_shape_says_kind_and_falls_back_to_a_dot_when_it_is_too_small(page, serv
     # not know what that is rather than guessing a family.
     assert result["unknown"] == "circle"
     assert result["severity"] == ["--crit", "--bad", "--warn", "--ok", ""]
+
+
+def test_a_lane_too_small_on_screen_becomes_one_mark_that_carries_its_count(page, served):
+    """Maps draws cities at country zoom, not buildings.
+
+    Not because buildings are slow — because at that distance a building is not
+    the unit of anything. Forty overlapping circles carry nothing; one mark
+    saying *forty* carries the fact.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/aggregate.js').then((aggregate) => {
+        // Forty nodes of one kind, one region, all inside eight pixels.
+        const tight = Array.from({length: 40}, (_, i) => ({
+          id: 'tight' + i, x: 100 + (i % 8), y: 100 + (i % 5),
+          depth: 50 + i, radius: 3, region: 'estate', kind: 'package', severity: '',
+        }));
+        // And one kind spread far enough that its members are still worth drawing.
+        const spread = Array.from({length: 5}, (_, i) => ({
+          id: 'spread' + i, x: 400 + i * 60, y: 300, depth: 40,
+          radius: 4, region: 'estate', kind: 'service', severity: '',
+        }));
+
+        const field = aggregate.aggregate([...tight, ...spread]);
+        const lane = field.marks.find((m) => m.tier === 'lane');
+        return {
+          marks: field.marks.length,
+          represented: field.represented,
+          tiers: field.tiers,
+          laneCount: lane ? lane.count : 0,
+          laneKind: lane ? lane.kind : '',
+          everyMarkCounts: field.marks.every((m) => m.count >= 1),
+          total: field.marks.reduce((sum, m) => sum + m.count, 0),
+          assigned: field.assignment.size,
+        };
+      })
+    """)
+
+    assert result["represented"] == 45
+    # Nothing is dropped: the marks account for every node that was projected.
+    assert result["total"] == 45
+    assert result["assigned"] == 45
+    assert result["laneCount"] == 40
+    assert result["laneKind"] == "package"
+    assert result["tiers"]["lane"] == 1
+    assert result["marks"] < 45, "aggregation drew a mark per node"
+
+
+def test_marks_that_still_overlap_merge_into_a_coarser_tier(page, served):
+    """The problem the prototype exposed and had no answer for.
+
+    Two small lanes at the same distance land on top of each other. Piled up
+    they look exactly like one dark mark and are not one, and nothing on screen
+    says so. The second pass merges them and the merged mark carries the sum.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/aggregate.js').then((aggregate) => {
+        const at = (id, x, y, kind, region, severity) => ({
+          id, x, y, depth: 50, radius: 3, kind, region, severity: severity || '',
+        });
+        // Two different lanes, three pixels apart. Each is one mark after pass
+        // one; both fall in one cell in pass two.
+        const points = [
+          at('a1', 200, 200, 'package', 'estate'),
+          at('a2', 202, 201, 'package', 'estate'),
+          at('b1', 203, 202, 'service', 'cardholder-data'),
+          at('b2', 201, 203, 'service', 'cardholder-data'),
+          at('far', 600, 400, 'table', 'estate'),
+        ];
+
+        const field = aggregate.aggregate(points);
+        const cluster = field.marks.find((m) => m.tier === 'cluster');
+        return {
+          marks: field.marks.length,
+          tiers: field.tiers,
+          clusterCount: cluster ? cluster.count : 0,
+          clusterRegion: cluster ? cluster.region : 'absent',
+          clusterKind: cluster ? cluster.kind : 'absent',
+          sameMark: field.assignment.get('a1') === field.assignment.get('b1'),
+          total: field.marks.reduce((sum, m) => sum + m.count, 0),
+        };
+      })
+    """)
+
+    assert result["tiers"]["cluster"] == 1
+    assert result["clusterCount"] == 4
+    assert result["sameMark"] is True
+    assert result["total"] == 5, "the merge lost or duplicated a node"
+    # An aggregate spanning two regions has no region and must not borrow one.
+    assert result["clusterRegion"] == ""
+    assert result["clusterKind"] == ""
+
+
+def test_a_cluster_can_never_swallow_a_finding(page, served):
+    """Severity is the one attribute that propagates upward, as the worst
+    contained. Reserving saturation for severity is worthless if the mark that
+    absorbed a critical draws as though nothing were wrong."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/aggregate.js').then((aggregate) => {
+        const points = [
+          {id: 'q', x: 100, y: 100, depth: 9, radius: 3, kind: 'package',
+           region: 'estate', severity: ''},
+          {id: 'l', x: 101, y: 100, depth: 8, radius: 3, kind: 'package',
+           region: 'estate', severity: 'low'},
+          {id: 'c', x: 102, y: 101, depth: 7, radius: 3, kind: 'package',
+           region: 'estate', severity: 'critical'},
+          {id: 'm', x: 103, y: 101, depth: 6, radius: 3, kind: 'package',
+           region: 'estate', severity: 'medium'},
+        ];
+        const field = aggregate.aggregate(points);
+        return {
+          marks: field.marks.length,
+          severity: field.marks[0].severity,
+          // The nearest member's depth, so a cluster cannot sink behind
+          // something it visibly overlaps.
+          depth: field.marks[0].depth,
+        };
+      })
+    """)
+
+    assert result["marks"] == 1
+    assert result["severity"] == "critical"
+    assert result["depth"] == 6
+
+
+def test_an_edge_inside_one_mark_is_not_drawn_and_parallels_collapse(page, served):
+    """At twenty thousand nodes most edges are internal, which is where the edge
+    pass stops being the expensive half. Forty overlapping lines and one line
+    look identical; only the second is honest about being one."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/aggregate.js').then((aggregate) => {
+        const assignment = new Map([
+          ['a', 0], ['b', 0], ['c', 1], ['d', 1], ['e', 2],
+        ]);
+        const drawn = aggregate.bundle([
+          {src: 'a', dst: 'b'},            // inside mark 0
+          {src: 'a', dst: 'c'},            // 0 -> 1
+          {src: 'b', dst: 'd'},            // 0 -> 1 again
+          {src: 'c', dst: 'a'},            // 1 -> 0, the same pair reversed
+          {src: 'e', dst: 'c'},            // 2 -> 1
+          {src: 'e', dst: 'missing'},      // an endpoint that was clipped
+        ], assignment);
+        return {
+          internal: drawn.internal,
+          edges: drawn.edges.map((e) => [e.from, e.to, e.count]),
+        };
+      })
+    """)
+
+    assert result["internal"] == 1
+    # Direction does not make a second edge between the same two marks.
+    assert sorted(result["edges"]) == [[0, 1, 3], [1, 2, 1]]
+
+
+def test_aggregation_is_deterministic(page, served):
+    """Two runs over one scene produce one picture, as the layout and the
+    colouring already do. Without it the marks reshuffle between frames and the
+    canvas crawls while nothing is moving."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/aggregate.js').then((aggregate) => {
+        // Dense enough that both passes actually bite: two hundred points in a
+        // 200x150 box, against 14-pixel cells.
+        const points = Array.from({length: 200}, (_, i) => ({
+          id: 'n' + i,
+          x: (i * 37) % 200, y: (i * 53) % 150,
+          depth: 20 + (i % 17), radius: 3,
+          kind: ['package', 'service', 'table'][i % 3],
+          region: i % 4 ? 'estate' : 'cardholder-data',
+          severity: i % 25 ? '' : 'high',
+        }));
+        const key = (field) => field.marks
+          .map((m) => [m.tier, Math.round(m.x), Math.round(m.y), m.count].join(':'))
+          .join('|');
+        return {
+          same: key(aggregate.aggregate(points))
+             === key(aggregate.aggregate([...points].reverse())),
+          marks: aggregate.aggregate(points).marks.length,
+        };
+      })
+    """)
+
+    assert result["same"], "two runs over one scene produced different marks"
+    assert result["marks"] < 200
