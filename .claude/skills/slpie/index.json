@@ -1,21 +1,21 @@
 {
   "generator": "slpie context --skill",
-  "digest": "1eb250051f6ccedfb864653e45b55adec73ba0eee47675cb49681b98a2c62e76",
+  "digest": "ce8211455941b8bea2c93367c524856233907a33b357b40fd5b76d79cec4a9b0",
   "summary": {
-    "digest": "1eb250051f6ccedfb864653e45b55adec73ba0eee47675cb49681b98a2c62e76",
-    "facets": 692,
+    "digest": "ce8211455941b8bea2c93367c524856233907a33b357b40fd5b76d79cec4a9b0",
+    "facets": 696,
     "counts": {
       "component": 52,
       "kind": 21,
       "module": 295,
       "package": 68,
-      "route": 89,
-      "screen": 31,
+      "route": 91,
+      "screen": 33,
       "section": 15,
       "test": 71,
       "verb": 50
     },
-    "coverage": 0.9855,
+    "coverage": 0.9856,
     "unanchored": [
       "section:12",
       "section:14",
@@ -11598,6 +11598,18 @@
       ]
     },
     {
+      "id": "route:GET /api/apim/actions",
+      "kind": "route",
+      "name": "GET /api/apim/actions",
+      "title": "GET /api/apim/actions",
+      "summary": "Declared on the API route table.",
+      "source": "slpie/ui/api.py:490",
+      "links": [],
+      "tags": [
+        "declared"
+      ]
+    },
+    {
       "id": "route:GET /api/apim/analytics",
       "kind": "route",
       "name": "GET /api/apim/analytics",
@@ -11634,6 +11646,18 @@
       ]
     },
     {
+      "id": "route:GET /api/apim/lifecycle",
+      "kind": "route",
+      "name": "GET /api/apim/lifecycle",
+      "title": "GET /api/apim/lifecycle",
+      "summary": "Declared on the API route table.",
+      "source": "slpie/ui/api.py:449",
+      "links": [],
+      "tags": [
+        "declared"
+      ]
+    },
+    {
       "id": "route:GET /api/apim/subscriptions",
       "kind": "route",
       "name": "GET /api/apim/subscriptions",
@@ -11663,7 +11687,7 @@
       "name": "GET /api/causation",
       "title": "GET /api/causation",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:582",
+      "source": "slpie/ui/api.py:660",
       "links": [],
       "tags": [
         "declared"
@@ -11675,7 +11699,7 @@
       "name": "GET /api/contract",
       "title": "GET /api/contract",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:674",
+      "source": "slpie/ui/api.py:752",
       "links": [],
       "tags": [
         "declared"
@@ -11687,7 +11711,7 @@
       "name": "GET /api/cycles",
       "title": "GET /api/cycles",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:558",
+      "source": "slpie/ui/api.py:636",
       "links": [],
       "tags": [
         "declared"
@@ -11699,7 +11723,7 @@
       "name": "GET /api/findings",
       "title": "GET /api/findings",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:568",
+      "source": "slpie/ui/api.py:646",
       "links": [],
       "tags": [
         "declared"
@@ -11711,7 +11735,7 @@
       "name": "GET /api/graph",
       "title": "GET /api/graph",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:505",
+      "source": "slpie/ui/api.py:583",
       "links": [],
       "tags": [
         "declared"
@@ -11723,7 +11747,7 @@
       "name": "GET /api/history",
       "title": "GET /api/history",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:573",
+      "source": "slpie/ui/api.py:651",
       "links": [],
       "tags": [
         "declared"
@@ -11735,7 +11759,7 @@
       "name": "GET /api/impact",
       "title": "GET /api/impact",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:547",
+      "source": "slpie/ui/api.py:625",
       "links": [],
       "tags": [
         "declared"
@@ -11747,7 +11771,7 @@
       "name": "GET /api/integrity",
       "title": "GET /api/integrity",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:587",
+      "source": "slpie/ui/api.py:665",
       "links": [],
       "tags": [
         "declared"
@@ -11759,7 +11783,7 @@
       "name": "GET /api/lexicon",
       "title": "GET /api/lexicon",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:449",
+      "source": "slpie/ui/api.py:527",
       "links": [],
       "tags": [
         "declared"
@@ -11771,7 +11795,7 @@
       "name": "GET /api/manifest",
       "title": "GET /api/manifest",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:495",
+      "source": "slpie/ui/api.py:573",
       "links": [],
       "tags": [
         "declared"
@@ -11783,7 +11807,7 @@
       "name": "GET /api/manual",
       "title": "GET /api/manual",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:668",
+      "source": "slpie/ui/api.py:746",
       "links": [],
       "tags": [
         "declared"
@@ -11795,7 +11819,7 @@
       "name": "GET /api/node",
       "title": "GET /api/node",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:517",
+      "source": "slpie/ui/api.py:595",
       "links": [],
       "tags": [
         "declared"
@@ -11807,7 +11831,7 @@
       "name": "GET /api/projections",
       "title": "GET /api/projections",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:591",
+      "source": "slpie/ui/api.py:669",
       "links": [],
       "tags": [
         "declared"
@@ -11819,7 +11843,7 @@
       "name": "GET /api/reconcile",
       "title": "GET /api/reconcile",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:564",
+      "source": "slpie/ui/api.py:642",
       "links": [],
       "tags": [
         "declared"
@@ -11843,7 +11867,7 @@
       "name": "GET /api/scenarios",
       "title": "GET /api/scenarios",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:595",
+      "source": "slpie/ui/api.py:673",
       "links": [],
       "tags": [
         "declared"
@@ -11867,7 +11891,7 @@
       "name": "GET /api/search",
       "title": "GET /api/search",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:542",
+      "source": "slpie/ui/api.py:620",
       "links": [],
       "tags": [
         "declared"
@@ -11879,7 +11903,7 @@
       "name": "GET /api/station",
       "title": "GET /api/station",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:499",
+      "source": "slpie/ui/api.py:577",
       "links": [],
       "tags": [
         "declared"
@@ -11915,7 +11939,7 @@
       "name": "GET /api/stream/status",
       "title": "GET /api/stream/status",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:486",
+      "source": "slpie/ui/api.py:564",
       "links": [],
       "tags": [
         "declared"
@@ -11927,7 +11951,7 @@
       "name": "GET /api/verbs",
       "title": "GET /api/verbs",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:664",
+      "source": "slpie/ui/api.py:742",
       "links": [],
       "tags": [
         "declared"
@@ -11939,7 +11963,7 @@
       "name": "POST /api/ask",
       "title": "POST /api/ask",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:601",
+      "source": "slpie/ui/api.py:679",
       "links": [],
       "tags": [
         "declared"
@@ -11951,7 +11975,7 @@
       "name": "POST /api/compose/validate",
       "title": "POST /api/compose/validate",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:680",
+      "source": "slpie/ui/api.py:758",
       "links": [],
       "tags": [
         "declared"
@@ -11963,7 +11987,7 @@
       "name": "POST /api/plan",
       "title": "POST /api/plan",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:712",
+      "source": "slpie/ui/api.py:790",
       "links": [],
       "tags": [
         "declared"
@@ -11975,7 +11999,7 @@
       "name": "POST /api/run",
       "title": "POST /api/run",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:693",
+      "source": "slpie/ui/api.py:771",
       "links": [],
       "tags": [
         "declared"
@@ -11987,7 +12011,7 @@
       "name": "POST /api/scan",
       "title": "POST /api/scan",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:637",
+      "source": "slpie/ui/api.py:715",
       "links": [],
       "tags": [
         "declared"
@@ -11999,7 +12023,7 @@
       "name": "POST /api/scenario",
       "title": "POST /api/scenario",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:607",
+      "source": "slpie/ui/api.py:685",
       "links": [],
       "tags": [
         "declared"
@@ -12011,7 +12035,7 @@
       "name": "POST /api/snapshot",
       "title": "POST /api/snapshot",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:630",
+      "source": "slpie/ui/api.py:708",
       "links": [],
       "tags": [
         "declared"
@@ -12023,7 +12047,7 @@
       "name": "POST /api/target",
       "title": "POST /api/target",
       "summary": "Declared on the API route table.",
-      "source": "slpie/ui/api.py:617",
+      "source": "slpie/ui/api.py:695",
       "links": [],
       "tags": [
         "declared"
@@ -12630,6 +12654,29 @@
       ]
     },
     {
+      "id": "screen:actions",
+      "kind": "screen",
+      "name": "actions",
+      "title": "Actions",
+      "summary": "Which permission each route demands \u2014 the question an operator writing a grant actually has.",
+      "source": "slpie/ui/contract.py:869",
+      "links": [
+        {
+          "relation": "reads",
+          "target": "route:GET /api/apim/actions"
+        },
+        {
+          "relation": "parent",
+          "target": "screen:gateway"
+        }
+      ],
+      "tags": [
+        "api",
+        "generated",
+        "view"
+      ]
+    },
+    {
       "id": "screen:analytics",
       "kind": "screen",
       "name": "analytics",
@@ -12883,7 +12930,7 @@
       "name": "group-analysis",
       "title": "Analysis",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -12918,7 +12965,7 @@
       "name": "group-artifacts",
       "title": "Artifacts",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -12953,7 +13000,7 @@
       "name": "group-audit",
       "title": "Audit",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -12980,7 +13027,7 @@
       "name": "group-capture",
       "title": "Capture",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -13011,7 +13058,7 @@
       "name": "group-context",
       "title": "Context",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -13038,7 +13085,7 @@
       "name": "group-dispatch",
       "title": "Dispatch",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -13065,7 +13112,7 @@
       "name": "group-incremental",
       "title": "Incremental",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -13088,7 +13135,7 @@
       "name": "group-rivals",
       "title": "Rivals",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -13111,7 +13158,7 @@
       "name": "group-shaping",
       "title": "Shaping",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "runs",
@@ -13220,7 +13267,7 @@
       "name": "keys",
       "title": "Applications and keys",
       "summary": "Applications, their subscriptions, and the credentials issued to them.",
-      "source": "slpie/ui/contract.py:843",
+      "source": "slpie/ui/contract.py:885",
       "links": [
         {
           "relation": "reads",
@@ -13311,6 +13358,29 @@
       ]
     },
     {
+      "id": "screen:publisher",
+      "kind": "screen",
+      "name": "publisher",
+      "title": "Publisher",
+      "summary": "Every API this platform publishes, where it stands in its life, and which moves are legal from there.",
+      "source": "slpie/ui/contract.py:843",
+      "links": [
+        {
+          "relation": "reads",
+          "target": "route:GET /api/apim/lifecycle"
+        },
+        {
+          "relation": "reads",
+          "target": "route:GET /api/apim/apis"
+        }
+      ],
+      "tags": [
+        "api",
+        "generated",
+        "destination"
+      ]
+    },
+    {
       "id": "screen:reconcile",
       "kind": "screen",
       "name": "reconcile",
@@ -13347,7 +13417,7 @@
       "name": "route-lexicon",
       "title": "Lexicon",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "reads",
@@ -13370,7 +13440,7 @@
       "name": "route-screens",
       "title": "Screens",
       "summary": "",
-      "source": "slpie/ui/contract.py:868",
+      "source": "slpie/ui/contract.py:910",
       "links": [
         {
           "relation": "reads",
@@ -13501,7 +13571,7 @@
       "name": "workspaces",
       "title": "Workspaces",
       "summary": "Tenancy, quotas and headroom, and the grants that decide who may read which dataset.",
-      "source": "slpie/ui/contract.py:848",
+      "source": "slpie/ui/contract.py:890",
       "links": [
         {
           "relation": "reads",

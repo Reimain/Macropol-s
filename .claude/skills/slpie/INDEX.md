@@ -15,8 +15,8 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `1eb250051f6ccedfb864653e45b55adec73ba0eee47675cb49681b98a2c62e76`
-- **facets** 692 — 52 component, 21 kind, 295 module, 68 package, 89 route, 31 screen, 15 section, 71 test, 50 verb
+- **digest** `ce8211455941b8bea2c93367c524856233907a33b357b40fd5b76d79cec4a9b0`
+- **facets** 696 — 52 component, 21 kind, 295 module, 68 package, 91 route, 33 screen, 15 section, 71 test, 50 verb
 - **anchored** 98.6% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
@@ -120,11 +120,12 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 | `compose` | operate | authored | — | 1 |
 | `console` | console | authored | — | 3 |
 | `findings` | operate | authored | — | 1 |
-| `gateway` | api | generated | analytics, throttling | 2 |
+| `gateway` | api | generated | actions, analytics, throttling | 2 |
 | `graph` | operate | authored | cycles, impact, node | 1 |
 | `keys` | api | generated | — | 1 |
 | `ledger` | operate | generated | history | 3 |
 | `portal` | api | generated | — | 3 |
+| `publisher` | api | generated | — | 2 |
 | `simulator` | operate | generated | — | 1 |
 | `station` | operate | generated | reconcile | 1 |
 | `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-dispatch, group-incremental, group-rivals, group-shaping, route-lexicon, route-screens | 1 |

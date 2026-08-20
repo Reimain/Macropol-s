@@ -446,6 +446,84 @@ class Api:
                 for screen in manifest(verbs=self.verbs, routes=self.routes)
             ]}
 
+        @self.route("GET", "/api/apim/lifecycle")
+        def apim_lifecycle(_request: Request) -> Any:
+            """The whole state machine, as data, plus where each API stands.
+
+            `lifecycle.describe()` has carried the docstring "for the publisher
+            screen" since it was written, and there was no publisher screen and
+            no route to reach it from — the transition table, the terminal rule
+            and the reason-required set were all correct and all unreachable.
+            That is the drift §24 exists to prevent, inside the API manager
+            itself.
+
+            The table travels rather than the interface restating it, so a
+            reader sees the machine a refusal came from instead of only the
+            refusal.
+            """
+            from ..apim import lifecycle
+
+            states = [lifecycle.describe(state) for state in lifecycle.ApiState]
+            body: dict[str, Any] = {
+                "states": states,
+                "reason_required": sorted(
+                    state.value for state in lifecycle.REASON_REQUIRED
+                ),
+                "attached": self.gateway is not None,
+            }
+            if self.gateway is None:
+                # Absent a manager every API is served without lifecycle checks,
+                # which is a fact about this deployment rather than an error.
+                body["apis"] = []
+                body["detail"] = (
+                    "no API manager is attached, so no API carries a lifecycle "
+                    "state and every route is served"
+                )
+                return body
+            body["apis"] = [
+                {"api_id": api.api_id, "name": api.name, "version": api.version,
+                 "state": getattr(api, "state", lifecycle.ApiState.PUBLISHED).value}
+                for api in self.gateway.catalog
+            ]
+            return body
+
+        @self.route("GET", "/api/apim/actions")
+        def apim_actions(_request: Request) -> Any:
+            """Which action every route needs, grouped by family.
+
+            The gateway screen showed the route table and the policy chain but
+            never *which permission a route demands*, which is the question an
+            operator writing a grant actually has. `action.coverage()` computed
+            it already and nothing rendered it.
+
+            `platform.unmapped` is reported rather than hidden: a route with no
+            action is not open, it is unreachable, and an operator needs to see
+            that before they are told a grant does not work.
+            """
+            from ..apim import action
+
+            mapped = action.coverage(self.routes, verbs=self.verbs)
+            # Rows, not a mapping of name to list. `coverage()` returns the
+            # latter because that is what a lookup wants, but this is a *table* —
+            # one line per action — and shaping it here means the interface can
+            # render it rather than falling back to printing the payload.
+            rows = [
+                {
+                    "action": name,
+                    "family": name.split(".", 1)[0] + ".*",
+                    "routes": len(paths),
+                    "serves": ", ".join(sorted(paths)[:3])
+                              + (f" +{len(paths) - 3}" if len(paths) > 3 else ""),
+                }
+                for name, paths in sorted(mapped.items())
+            ]
+            return {
+                "actions": rows,
+                "families": len(action.families(self.verbs)),
+                "routes": len(self.routes),
+                "unmapped": len(mapped.get("platform.unmapped", [])),
+            }
+
         @self.route("GET", "/api/lexicon")
         def lexicon(request: Request) -> Any:
             """The words this caller's context uses for the platform's nouns.

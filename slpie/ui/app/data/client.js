@@ -2343,6 +2343,76 @@ export const SCREENS = Object.freeze([
     ]
   },
   {
+    "key": "actions",
+    "path": "/actions",
+    "title": "Actions",
+    "section": "api",
+    "reads": [
+      "GET /api/apim/actions"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "apim.gateway.read",
+    "resource": "*",
+    "crumbs": [
+      "gateway"
+    ],
+    "parent": "gateway",
+    "summary": "Which permission each route demands \u2014 the question an operator writing a grant actually has.",
+    "authored": false,
+    "blocks": [
+      {
+        "component": "metrics",
+        "source": "GET /api/apim/actions",
+        "select": "",
+        "title": "Coverage",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "grid",
+        "source": "GET /api/apim/actions",
+        "select": "actions",
+        "title": "Every action, and what it opens",
+        "columns": [
+          {
+            "key": "action",
+            "label": "Action",
+            "align": "",
+            "density": "",
+            "format": "mono",
+            "link": ""
+          },
+          {
+            "key": "family",
+            "label": "Family",
+            "align": "",
+            "density": "dense",
+            "format": "pill",
+            "link": ""
+          },
+          {
+            "key": "routes",
+            "label": "Routes",
+            "align": "right",
+            "density": "",
+            "format": "count",
+            "link": ""
+          },
+          {
+            "key": "serves",
+            "label": "Serves",
+            "align": "",
+            "density": "",
+            "format": "mono",
+            "link": ""
+          }
+        ],
+        "options": {}
+      }
+    ]
+  },
+  {
     "key": "analytics",
     "path": "/analytics",
     "title": "Analytics",
@@ -2558,6 +2628,132 @@ export const SCREENS = Object.freeze([
             "link": ""
           }
         ],
+        "options": {}
+      }
+    ]
+  },
+  {
+    "key": "publisher",
+    "path": "/publisher/:api?",
+    "title": "Publisher",
+    "section": "api",
+    "reads": [
+      "GET /api/apim/lifecycle",
+      "GET /api/apim/apis"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "apim.lifecycle.read",
+    "resource": "*",
+    "crumbs": [],
+    "parent": "",
+    "summary": "Every API this platform publishes, where it stands in its life, and which moves are legal from there.",
+    "authored": false,
+    "blocks": [
+      {
+        "component": "grid",
+        "source": "GET /api/apim/lifecycle",
+        "select": "states",
+        "title": "The transition table",
+        "columns": [
+          {
+            "key": "state",
+            "label": "State",
+            "align": "",
+            "density": "",
+            "format": "pill",
+            "link": ""
+          },
+          {
+            "key": "serves",
+            "label": "Serves calls",
+            "align": "",
+            "density": "",
+            "format": "",
+            "link": ""
+          },
+          {
+            "key": "terminal",
+            "label": "Terminal",
+            "align": "",
+            "density": "dense",
+            "format": "",
+            "link": ""
+          },
+          {
+            "key": "may_reach",
+            "label": "May move to",
+            "align": "",
+            "density": "",
+            "format": "",
+            "link": ""
+          },
+          {
+            "key": "reason_required",
+            "label": "Needs a stated reason",
+            "align": "",
+            "density": "",
+            "format": "",
+            "link": ""
+          }
+        ],
+        "options": {}
+      },
+      {
+        "component": "grid",
+        "source": "GET /api/apim/apis",
+        "select": "apis",
+        "title": "Published APIs",
+        "columns": [
+          {
+            "key": "name",
+            "label": "API",
+            "align": "",
+            "density": "",
+            "format": "",
+            "link": ""
+          },
+          {
+            "key": "api_id",
+            "label": "Id",
+            "align": "",
+            "density": "dense",
+            "format": "mono",
+            "link": ""
+          },
+          {
+            "key": "version",
+            "label": "Version",
+            "align": "",
+            "density": "",
+            "format": "mono",
+            "link": ""
+          },
+          {
+            "key": "visibility",
+            "label": "Visibility",
+            "align": "",
+            "density": "",
+            "format": "pill",
+            "link": ""
+          },
+          {
+            "key": "operations",
+            "label": "Operations",
+            "align": "right",
+            "density": "",
+            "format": "count",
+            "link": ""
+          }
+        ],
+        "options": {}
+      },
+      {
+        "component": "metrics",
+        "source": "GET /api/apim/lifecycle",
+        "select": "",
+        "title": "Manager",
+        "columns": [],
         "options": {}
       }
     ]
@@ -2949,6 +3145,11 @@ export const ROUTES = Object.freeze([
   },
   {
     "method": "GET",
+    "path": "/api/apim/actions",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
     "path": "/api/apim/analytics",
     "transport": "json"
   },
@@ -2960,6 +3161,11 @@ export const ROUTES = Object.freeze([
   {
     "method": "GET",
     "path": "/api/apim/gateway",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/apim/lifecycle",
     "transport": "json"
   },
   {

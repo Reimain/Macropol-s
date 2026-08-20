@@ -129,6 +129,47 @@
         ]
       }
     },
+    "/api/apim/actions": {
+      "get": {
+        "summary": "GET /api/apim/actions",
+        "operationId": "get_api_apim_actions",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
     "/api/apim/analytics": {
       "get": {
         "summary": "GET /api/apim/analytics",
@@ -215,6 +256,47 @@
       "get": {
         "summary": "GET /api/apim/gateway",
         "operationId": "get_api_apim_gateway",
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "read"
+        ]
+      }
+    },
+    "/api/apim/lifecycle": {
+      "get": {
+        "summary": "GET /api/apim/lifecycle",
+        "operationId": "get_api_apim_lifecycle",
         "responses": {
           "200": {
             "description": "the answer, with its reasoning and its gaps",

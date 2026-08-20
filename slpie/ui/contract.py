@@ -840,6 +840,48 @@ DESIGNED: tuple[Screen, ...] = (
     Screen("analytics", "/analytics", "Analytics", "api", parent="gateway",
            crumbs=("gateway",),
            reads=("GET /api/apim/analytics",), action="apim.analytics.read"),
+    Screen("publisher", "/publisher/:api?", "Publisher", "api",
+           reads=("GET /api/apim/lifecycle", "GET /api/apim/apis"),
+           action="apim.lifecycle.read",
+           summary="Every API this platform publishes, where it stands in its "
+                   "life, and which moves are legal from there.",
+           blocks=(
+               Block("grid", source="GET /api/apim/lifecycle", select="states",
+                     title="The transition table", columns=(
+                         Column("state", "State", format="pill"),
+                         Column("serves", "Serves calls"),
+                         Column("terminal", "Terminal", density="dense"),
+                         Column("may_reach", "May move to"),
+                         Column("reason_required", "Needs a stated reason"),
+                     )),
+               Block("grid", source="GET /api/apim/apis", select="apis",
+                     title="Published APIs", columns=(
+                         Column("name", "API"),
+                         Column("api_id", "Id", format="mono", density="dense"),
+                         Column("version", "Version", format="mono"),
+                         Column("visibility", "Visibility", format="pill"),
+                         Column("operations", "Operations", align="right",
+                                format="count"),
+                     )),
+               Block("metrics", source="GET /api/apim/lifecycle",
+                     title="Manager"),
+           )),
+    Screen("actions", "/actions", "Actions", "api", parent="gateway",
+           crumbs=("gateway",),
+           reads=("GET /api/apim/actions",), action="apim.gateway.read",
+           summary="Which permission each route demands — the question an "
+                   "operator writing a grant actually has.",
+           blocks=(
+               Block("metrics", source="GET /api/apim/actions",
+                     title="Coverage"),
+               Block("grid", source="GET /api/apim/actions", select="actions",
+                     title="Every action, and what it opens", columns=(
+                         Column("action", "Action", format="mono"),
+                         Column("family", "Family", format="pill", density="dense"),
+                         Column("routes", "Routes", align="right", format="count"),
+                         Column("serves", "Serves", format="mono"),
+                     )),
+           )),
     Screen("keys", "/apps/:application?", "Applications and keys", "api",
            reads=("GET /api/apim/subscriptions",), action="apim.subscriptions.read",
            summary="Applications, their subscriptions, and the credentials "
