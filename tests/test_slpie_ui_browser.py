@@ -128,6 +128,28 @@ def populated(tmp_path_factory):
     running.stop()
 
 
+def _vendored(name="three"):
+    """Skip when a vendored engine is not in this checkout, and say why.
+
+    The seam's headline gate deletes `engine/vendor/` and runs this whole tier.
+    Tests *about* a vendored engine cannot pass then and must not fail then
+    either — the gate is about the console surviving, not about tests for a
+    deleted thing still running. So they skip, loudly.
+
+    Guarding the guard: the **default** suite asserts the vendored files are
+    present and match their digests (`tools/vendor.py --check`), so this can
+    never turn into a permanent silent skip. A missing `vendor/` is a failure
+    there and a skip here, which is exactly the split that makes both honest.
+    """
+    from slpie.ui import APP_ROOT
+
+    if not (APP_ROOT / "engine" / "vendor" / f"{name}.js").is_file():
+        pytest.skip(
+            f"{name} is not vendored in this checkout — this is the seam's "
+            f"deleted-directory gate, and the console is what it tests",
+        )
+
+
 def _open(page, served, fragment=""):
     page.goto(served.url + fragment, wait_until="networkidle")
     page.wait_for_timeout(400)
@@ -823,10 +845,18 @@ def test_the_projection_lands_known_points_where_it_says(page, served):
     focal length is 300: a point ten units ahead and ten to the right lands one
     focal length off centre, at x=700.
 
-    The handedness is the specific thing this catches. `forward x up` and
-    `up x forward` are both "the right vector" in some convention, and picking
-    the wrong one mirrors the entire scene horizontally — a bug that renders
-    perfectly and is invisible unless you know which node belongs on the left.
+    The handedness is the specific thing this catches, and it caught a real
+    one. `forward x up` and `up x forward` are both "the right vector" in some
+    convention, and picking the wrong one mirrors the entire scene horizontally
+    — a bug that renders perfectly and is invisible unless you know which node
+    belongs on the left.
+
+    The counter-intuitive part, pinned here on purpose: **looking along +Z,
+    world +X lands on the LEFT.** You have turned to face the opposite way from
+    the one the axes were drawn for. An earlier revision "fixed" that surprise
+    by swapping the operands, which matched the intuition and disagreed with
+    every other renderer; `test_both_engines_put_a_point_in_the_same_place`
+    found it 252 pixels out.
     """
     _open(page, served)
 
@@ -855,14 +885,15 @@ def test_the_projection_lands_known_points_where_it_says(page, served):
 
     assert result["focal"] == 300
     assert (result["centre"]["x"], result["centre"]["y"]) == (400, 300)
-    # +X is to the right and +Y is up, even though screen Y grows downward: the
-    # projection flips it exactly once so no caller has to remember.
-    assert result["right"]["x"] == 700
-    assert result["left"]["x"] == 100
+    # Right-handed, and this camera faces +Z: world +X is therefore on the left.
+    assert result["right"]["x"] == 100
+    assert result["left"]["x"] == 700
+    # +Y is up, even though screen Y grows downward — the projection flips it
+    # exactly once so no caller has to remember.
     assert result["above"]["y"] == 0
     # Twice the distance, half the offset. That is the perspective divide doing
     # its job, and it is the assertion an orthographic mistake fails.
-    assert result["twiceAsFar"]["x"] == 550
+    assert result["twiceAsFar"]["x"] == 250
     assert result["behind"]["visible"] is False
 
 
@@ -953,7 +984,10 @@ def test_a_missing_engine_falls_back_to_the_native_one_and_says_why(page, served
 
     result = page.evaluate("""
       import('/engine/contract.js').then(async (contract) => {
-        const missing = await contract.resolve('three');
+        // A name nothing will ever vendor. Naming a real engine here worked
+        // only while `vendor/` was empty, and went green-then-red the moment
+        // one landed — an absence test has to ask for something absent.
+        const missing = await contract.resolve('unobtainium');
         const named = await contract.resolve(contract.DEFAULT);
         return {
           fellBack: missing.fallback,
@@ -971,7 +1005,7 @@ def test_a_missing_engine_falls_back_to_the_native_one_and_says_why(page, served
     assert result["native"] is True
     assert result["defaultIsNative"] is True
     assert result["label"] == "native"
-    assert "three" in result["reason"] and "canvas2d" in result["reason"], (
+    assert "unobtainium" in result["reason"] and "canvas2d" in result["reason"], (
         f"the fallback did not name what was missing or what drew instead: "
         f"{result['reason']!r}"
     )
@@ -1385,3 +1419,199 @@ def test_aggregation_is_deterministic(page, served):
 
     assert result["same"], "two runs over one scene produced different marks"
     assert result["marks"] < 200
+
+
+# --- the vendored engine -------------------------------------------------------
+
+
+def test_three_loads_from_the_seam_and_declares_what_it_is(page, served):
+    """A third party registering through the identical path a built-in uses.
+
+    That is invariant 6's argument applied to rendering, and it is the whole
+    reason the seam was built before anything was vendored: the plug is proven
+    by its own use rather than asserted.
+    """
+    _vendored()
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/contract.js').then(async (contract) => {
+        const chosen = await contract.resolve('three');
+        return {
+          name: chosen.engine.name,
+          native: chosen.engine.native,
+          fallback: chosen.fallback,
+          reason: chosen.reason,
+          label: contract.describe(chosen.engine).label,
+          listed: contract.engines().map((e) => e.name).sort(),
+        };
+      })
+    """)
+
+    if result["fallback"]:
+        # A machine without WebGL is a legitimate answer, and the point is that
+        # it *says so* rather than drawing nothing. Assert the honesty, then
+        # stop — the rest of this test needs a GPU.
+        assert "cannot run here" in result["reason"] or "unusable" in result["reason"]
+        pytest.skip(f"no WebGL in this browser: {result['reason']}")
+
+    assert result["name"] == "three"
+    assert result["native"] is False
+    assert result["label"] == "not air-gapped native"
+    assert result["listed"] == ["canvas2d", "three"]
+
+
+def test_both_engines_put_a_point_in_the_same_place(page, served):
+    """Different renderers must not be different answers.
+
+    §24's seventh acceptance — one composition, several surfaces, one answer —
+    applied to rendering. Three's camera looks down its own local -Z and ours is
+    a hand-rolled basis; if the two disagree on handedness the whole scene
+    mirrors, renders perfectly, and is a different picture of the same query.
+
+    So the projection is compared directly: our `project()` against Three's own
+    `Vector3.project()` through a camera built from the same numbers.
+    """
+    _vendored()
+    _open(page, served)
+
+    result = page.evaluate("""
+      Promise.all([
+        import('/engine/camera.js'),
+        import('/engine/vendor/three.module.min.js'),
+      ]).then(([ours, THREE]) => {
+        const width = 800;
+        const height = 600;
+        const fov = Math.PI / 3;
+        const eye = ours.vector(120, 90, 300);
+        const target = ours.vector(0, 0, 0);
+
+        const mine = ours.look(eye, target, {width, height, fov, near: 0.5});
+
+        const theirs = new THREE.PerspectiveCamera(
+          (fov * 180) / Math.PI, width / height, 0.5, 4000,
+        );
+        theirs.position.set(eye.x, eye.y, eye.z);
+        theirs.up.set(0, 1, 0);
+        theirs.lookAt(target.x, target.y, target.z);
+        theirs.updateProjectionMatrix();
+        theirs.updateMatrixWorld(true);
+
+        const samples = [[0, 0, 0], [80, 0, 0], [-80, 0, 0], [0, 60, 0], [0, 0, -140]];
+        return samples.map((point) => {
+          const A = ours.project(ours.vector(...point), mine);
+          const ndc = new THREE.Vector3(...point).project(theirs);
+          return {
+            point,
+            ours: [Math.round(A.x), Math.round(A.y)],
+            theirs: [
+              Math.round((ndc.x + 1) / 2 * width),
+              Math.round((1 - ndc.y) / 2 * height),
+            ],
+          };
+        });
+      })
+    """)
+
+    for sample in result:
+        assert abs(sample["ours"][0] - sample["theirs"][0]) <= 1, (
+            f"the two engines disagree on x for {sample['point']}: {sample}"
+        )
+        assert abs(sample["ours"][1] - sample["theirs"][1]) <= 1, (
+            f"the two engines disagree on y for {sample['point']}: {sample}"
+        )
+
+
+def test_the_vendored_engine_draws_the_same_marks_as_the_native_one(page, served):
+    """The seam's central promise, checked rather than asserted.
+
+    WebGL could happily push twenty thousand instances, and drawing them would
+    make this engine show a *different picture of the same query* — which is a
+    worse failure than being slow. So the vendored engine runs the identical
+    `aggregate()` over the identical projection, and the two tallies must match
+    on everything that is about the answer: how many marks, what they stand
+    for, how many carry a finding, how they tier.
+    """
+    _vendored()
+    _open(page, served)
+
+    result = page.evaluate("""
+      (async () => {
+        const [contract, layout, palette] = await Promise.all([
+          import('/engine/contract.js'),
+          import('/engine/layout.js'),
+          import('/engine/palette.js'),
+        ]);
+        const camera = await import('/engine/camera.js');
+
+        const kinds = ['package', 'service', 'table', 'deployment', 'team'];
+        const nodes = Array.from({length: 900}, (_, i) => ({
+          id: 'n' + i, name: 'node-' + i, kind: kinds[i % kinds.length],
+          severity: i % 90 === 0 ? 'critical' : '',
+        }));
+        const edges = Array.from({length: 1400}, (_, i) => ({
+          src: 'n' + (i % 900), dst: 'n' + ((i * 7 + 13) % 900),
+        }));
+        const inside = (node) => Number(node.id.slice(1)) % 5 === 0
+          ? 'cardholder-data' : '';
+
+        const scene = layout.place(nodes, edges, {regionOf: inside});
+        for (const [id, point] of scene.placed) {
+          point.severity = nodes[Number(id.slice(1))].severity;
+        }
+        scene.colouring = palette.colour(
+          scene.regions.map((r) => r.name),
+          layout.adjacency(scene.placed, edges),
+        );
+
+        const view = camera.frame(scene.extent, {width: 900, height: 620});
+
+        const run = async (name) => {
+          const holder = document.createElement('canvas');
+          holder.width = 900; holder.height = 620;
+          document.body.appendChild(holder);
+          const chosen = await contract.resolve(name);
+          if (chosen.fallback) return {fallback: true, reason: chosen.reason};
+          const drawing = Object.create(chosen.engine);
+          drawing.mount(holder, scene);
+          const first = drawing.draw(view);
+          const started = performance.now();
+          let frames = 0;
+          while (performance.now() - started < 260) { drawing.draw(view); frames += 1; }
+          const fps = frames / ((performance.now() - started) / 1000);
+          drawing.dispose();
+          holder.remove();
+          return {
+            fallback: false, name: chosen.engine.name, fps: Math.round(fps),
+            marks: first.marks, represented: first.represented,
+            severe: first.severe, edges: first.edges, tiers: first.tiers,
+          };
+        };
+
+        return {native: await run('canvas2d'), vendored: await run('three'),
+                nodes: nodes.length};
+      })()
+    """)
+
+    native = result["native"]
+    vendored = result["vendored"]
+    assert not native["fallback"], native
+    if vendored["fallback"]:
+        pytest.skip(f"no WebGL in this browser: {vendored['reason']}")
+
+    # Same answer. Not "similar" — the same numbers, because both engines ran
+    # the same aggregation over the same projection.
+    for field in ("marks", "represented", "severe", "edges", "tiers"):
+        assert native[field] == vendored[field], (
+            f"the two engines disagree on {field}: "
+            f"canvas2d={native[field]} three={vendored[field]}"
+        )
+    assert native["represented"] == result["nodes"]
+    # And the aggregation actually bit, or this proves two engines agree about
+    # drawing everything, which is not the property under test.
+    assert native["marks"] < result["nodes"]
+
+    print(
+        f"\\n  {result['nodes']} nodes, {native['marks']} marks:"
+        f"  canvas2d {native['fps']}fps   three {vendored['fps']}fps",
+    )

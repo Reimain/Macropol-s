@@ -80,10 +80,21 @@ function mark(members, tier) {
   let radius = 0;
   let severity = "";
   let count = 0;
+  // Carried only when the caller supplied it. A renderer working in world
+  // space needs the centroid *there*, not the centroid of the projection —
+  // averaging screen coordinates and unprojecting would put a cluster
+  // somewhere none of its members are.
+  const world = members[0] && members[0].world
+    ? { x: 0, y: 0, z: 0 } : null;
 
   for (const member of members) {
     x += member.x;
     y += member.y;
+    if (world && member.world) {
+      world.x += member.world.x;
+      world.y += member.world.y;
+      world.z += member.world.z;
+    }
     // The nearest member's depth, because that is what decides whether this
     // mark is in front of another one. Averaging would let a cluster with one
     // distant member sink behind something it visibly overlaps.
@@ -93,10 +104,17 @@ function mark(members, tier) {
     count += member.count || 1;
   }
 
+  if (world) {
+    world.x /= members.length;
+    world.y /= members.length;
+    world.z /= members.length;
+  }
+
   return {
     tier,
     x: x / members.length,
     y: y / members.length,
+    world,
     depth,
     // A cluster is drawn a little larger than its largest member, so "several
     // things here" reads as weight rather than as one thing that moved.

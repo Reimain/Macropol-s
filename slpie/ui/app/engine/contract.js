@@ -112,6 +112,18 @@ export async function resolve(name = DEFAULT, { load = importer } = {}) {
     if (problem) {
       return fell(`${name} is present but unusable: ${problem}`);
     }
+    // An engine may decline the machine it landed on — no WebGL, no GPU, a
+    // locked-down browser. Asked before it is chosen rather than at first
+    // frame, so the reader gets a stated fallback instead of a black canvas
+    // and a console insisting it is drawing. The same treatment §27 gives a
+    // missing binary and §3 gives a refused capability.
+    const declined = typeof engine.available === "function" ? engine.available() : "";
+    if (declined) {
+      return fell(
+        `${name} cannot run here — ${declined}. Drawing with ${DEFAULT}, `
+        + `which needs nothing outside this repository.`,
+      );
+    }
     ENGINES.set(engine.name, engine);
     return { engine, fallback: false, reason: "" };
   } catch (error) {

@@ -26,14 +26,47 @@ import pytest
 
 from slpie.ui import APP_ROOT
 
+ROOT = Path(__file__).resolve().parent.parent
 ENGINE = APP_ROOT / "engine"
 VENDOR = ENGINE / "vendor"
 
 
 def _modules() -> list[Path]:
-    found = sorted(path for path in ENGINE.rglob("*.js") if path.is_file())
+    """The native tier: everything under `engine/` that is ours."""
+    found = sorted(
+        path for path in ENGINE.rglob("*.js")
+        if path.is_file() and VENDOR not in path.parents
+    )
     assert found, f"nothing under {ENGINE} — did the renderer tier move?"
     return found
+
+
+def _libraries() -> set[Path]:
+    """Third-party files, read from the vendoring declaration rather than guessed.
+
+    `tools/vendored.json` is the statement of what was fetched from where. A
+    file under `vendor/` that it does not name is ours — a wrapper — and the two
+    are held to different rules: a wrapper must declare `native: false`, and a
+    library must not be edited at all.
+    """
+    import json
+
+    document = json.loads(
+        (Path(__file__).resolve().parent.parent / "tools" / "vendored.json")
+        .read_text(encoding="utf-8"),
+    )
+    named: set[Path] = set()
+    for package in document["packages"]:
+        for entry in package["files"]:
+            named.add((ROOT / package["destination"] / entry["to"]).resolve())
+    return named
+
+
+def _wrappers() -> list[Path]:
+    libraries = _libraries()
+    return sorted(
+        path for path in VENDOR.glob("*.js") if path.resolve() not in libraries
+    )
 
 
 def _shipped() -> list[Path]:
@@ -59,15 +92,44 @@ def test_the_default_engine_declares_itself_native():
 def test_every_vendored_engine_declares_that_it_is_not_native():
     """The honesty lives in the metadata, which is where this product puts it.
 
-    Vacuous while `vendor/` is empty, and deliberately so: it is the assertion
-    that fires on the commit that takes a dependency, which is the only commit
-    where it matters.
+    Only *wrappers* are held to this — a vendored library is not an engine and
+    has no opinion about air gaps. Which is which comes from
+    `tools/vendored.json` rather than from a filename convention, because the
+    declaration is the thing that actually knows.
     """
-    for path in sorted(VENDOR.glob("*.js")):
+    for path in _wrappers():
         body = path.read_text(encoding="utf-8")
         assert re.search(r"\bnative:\s*false\b", body), (
-            f"{path.name} is vendored and does not declare `native: false`"
+            f"{path.name} is a vendored engine and does not declare `native: false`"
         )
+
+
+def test_every_vendored_library_matches_its_recorded_digest():
+    """A third party's source, unedited, and provably so.
+
+    An edited vendored file is a fork nobody declared: it works, it blocks the
+    next upgrade, and there is no other way to notice. `tools/vendor.py --check`
+    is the same `--check` discipline the four contract emitters already use.
+    """
+    from tools.vendor import check, load
+
+    problems = check(load())
+    assert not problems, "\n".join(problems)
+
+
+def test_every_vendored_package_records_its_licence_and_where_it_came_from():
+    import json
+
+    document = json.loads(
+        (ROOT / "tools" / "vendored.json").read_text(encoding="utf-8"),
+    )
+    for package in document["packages"]:
+        for field in ("name", "version", "registry", "license", "why"):
+            assert package.get(field), f"{package.get('name')} declares no {field}"
+        for entry in package["files"]:
+            assert entry["sha256"] and entry["bytes"], (
+                f"{package['name']}/{entry['to']} has no digest recorded"
+            )
 
 
 def test_the_vendor_directory_records_its_boundary():
@@ -81,23 +143,58 @@ def test_the_vendor_directory_records_its_boundary():
 # --- the boundary --------------------------------------------------------------
 
 
-def test_nothing_statically_imports_a_vendored_engine():
+def test_nothing_outside_vendor_statically_imports_into_it():
     """The assertion that keeps the air-gapped claim literal.
 
     A static `import "./vendor/x.js"` in a build that ships without `vendor/`
     takes the whole screen down, and a build that *needs* one is no longer
     air-gapped whatever the prose says. `contract.js` reaches for an engine by
     name at runtime instead, and falls back with a stated reason.
+
+    The rule is directional and stated as such: files **outside** `vendor/` may
+    not statically import files **inside** it. A wrapper importing the library
+    it wraps, or reaching up to the shared scene modules, is fine — both
+    disappear together when the directory does. Matching on the substring
+    `vendor/` instead would have got this right by accident and been wrong the
+    first time a wrapper imported `./three.module.min.js`.
     """
     static = re.compile(r"""^\s*import\s[^;]*?["']([^"']+)["']""", re.MULTILINE)
     offenders = []
+    checked = 0
     for path in _shipped():
+        if VENDOR in path.parents:
+            continue
         for specifier in static.findall(path.read_text(encoding="utf-8")):
-            if "vendor/" in specifier:
+            checked += 1
+            if not specifier.startswith("."):
+                continue
+            target = (path.parent / specifier).resolve()
+            if VENDOR == target.parent or VENDOR in target.parents:
                 offenders.append(f"{path.relative_to(APP_ROOT)} imports {specifier}")
+    assert checked, "no imports were examined — did the specifier regex stop matching?"
     assert not offenders, (
         f"these modules would not load with engine/vendor/ deleted: {offenders}"
     )
+
+
+def test_a_wrapper_may_import_the_library_it_wraps():
+    """The converse, so the rule above is not accidentally absolute.
+
+    Vacuous until something is vendored, and the guard says so rather than
+    passing silently over an empty directory.
+    """
+    wrappers = [
+        path for path in sorted(VENDOR.glob("*.js"))
+        if not path.name.endswith(".min.js")
+    ]
+    if not wrappers:
+        pytest.skip("nothing is vendored yet, so there is no wrapper to check")
+
+    static = re.compile(r"""^\s*import\s[^;]*?["']([^"']+)["']""", re.MULTILINE)
+    for path in wrappers:
+        for specifier in static.findall(path.read_text(encoding="utf-8")):
+            target = (path.parent / specifier).resolve()
+            assert target.is_file(), f"{path.name} imports {specifier}, which is not there"
 
 
 def test_the_dynamic_specifier_is_the_only_way_in():
@@ -163,15 +260,39 @@ def test_the_camera_touches_no_dom():
         )
 
 
-def test_only_one_module_touches_a_rendering_context():
+def test_only_the_native_renderer_touches_a_rendering_context():
+    """One module in the shared tier draws; the rest decide what to draw.
+
+    Vendored engines are renderers by definition and hold their own contexts —
+    that is what they are for. The rule is about the *shared* modules: layout,
+    projection, colouring, glyphs and aggregation must stay free of a context,
+    or the scene stops being something two engines can both draw.
+    """
     holders = [
-        path.relative_to(APP_ROOT)
+        str(path.relative_to(APP_ROOT))
         for path in _modules()
         if "getContext" in _uncommented(path.read_text(encoding="utf-8"))
     ]
-    assert [str(path) for path in holders] == ["engine/canvas2d.js"], (
+    assert holders == ["engine/canvas2d.js"], (
         f"a rendering context is held outside the renderer: {holders}"
     )
+
+
+def test_the_shared_scene_modules_are_engine_agnostic():
+    """No engine name appears in the modules both engines consume.
+
+    This is what makes "different renderers, same answer" structural rather
+    than aspirational: if `aggregate.js` ever learns which engine is asking, the
+    two pictures can diverge and nothing would catch it.
+    """
+    shared = ("layout.js", "camera.js", "palette.js", "glyph.js", "aggregate.js")
+    for name in shared:
+        body = _uncommented((ENGINE / name).read_text(encoding="utf-8"))
+        for engine in ("three", "THREE", "canvas2d", "WebGL", "webgl"):
+            assert engine not in body, (
+                f"{name} mentions {engine!r} — a shared scene module must not "
+                f"know which engine is drawing it"
+            )
 
 
 def test_the_palette_is_resolved_once_and_never_inside_a_frame():

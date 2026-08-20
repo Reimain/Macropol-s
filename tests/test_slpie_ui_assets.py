@@ -193,6 +193,12 @@ def test_nothing_in_the_interface_reaches_an_external_origin():
     known = "|".join(re.escape(uri) for uri in (
         "http://www.w3.org/2000/svg",
         "http://www.w3.org/1999/xlink",
+        # `createElementNS(xhtml, "canvas")` — a vendored renderer builds its
+        # drawing surface this way, and the namespace is an identifier the
+        # parser compares as a string exactly as the other two are. Exempted by
+        # literal URI, like them, rather than by "it is in vendor/": a vendored
+        # file reaching a CDN would still be a finding.
+        "http://www.w3.org/1999/xhtml",
     ))
     namespace = re.compile(
         rf'''\bxmlns(?::\w+)?\s*=\s*(["'])[^"']*\1|(["'])(?:{known})\2''',
@@ -219,7 +225,13 @@ def test_nothing_in_the_interface_reaches_an_external_origin():
             path.read_text(encoding="utf-8").splitlines(), start=1,
         ):
             if fetched.search(namespace.sub("", text)):
-                offenders.append(f"{path.relative_to(APP_ROOT)}:{line}: {text.strip()}")
+                # Truncated, because a minified vendored file is one line of
+                # three hundred kilobytes and a failure message nobody can read
+                # is a failure message nobody acts on.
+                excerpt = text.strip()
+                if len(excerpt) > 160:
+                    excerpt = excerpt[:160] + f"… ({len(text)} chars)"
+                offenders.append(f"{path.relative_to(APP_ROOT)}:{line}: {excerpt}")
 
     assert not offenders, (
         "the interface must work with the network unplugged, inside private "

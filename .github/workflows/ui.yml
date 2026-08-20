@@ -94,6 +94,11 @@ jobs:
       - name: The committed clients match their generator
         run: python -m tools.clients --check
 
+      # A vendored file edited in place is a fork nobody declared: it works, it
+      # blocks the next upgrade, and there is no other way to notice.
+      - name: The vendored third-party files match their recorded digests
+        run: python -m tools.vendor --check
+
       - name: The committed skill matches its generator
         run: python -m slpie.cli context --skill --check
 
@@ -152,4 +157,10 @@ jobs:
       - name: It renders with every vendored engine deleted
         run: |
           rm -rf slpie/ui/app/engine/vendor
-          python -m pytest -q -m browser
+          python -m pytest -q -rs -m browser
+        # Tests *about* a vendored engine skip here rather than failing, and say
+        # so in the `-rs` summary — this step is about the console surviving,
+        # not about tests for a deleted thing still running. They cannot become
+        # a permanent silent skip: the default suite asserts those same files
+        # are present and match their digests, so a missing `vendor/` is a
+        # failure there and a skip here.

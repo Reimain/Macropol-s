@@ -71,22 +71,32 @@ export function look(
   { up = vector(0, 1, 0), fov = Math.PI / 3, near = 0.1, width = 1, height = 1 } = {},
 ) {
   const forward = normalise(subtract(target, eye));
-  // `up x forward`, not `forward x up`. Both are "the right vector" in some
+  // `forward x up`, not `up x forward`. Both are "the right vector" in some
   // convention, and picking the wrong one mirrors the whole scene horizontally
   // — a bug that renders perfectly and is only visible if you happen to know
-  // which node should be on the left. Pinned by test against a known point.
-  let right = cross(up, forward);
+  // which node should be on the left.
+  //
+  // This is the right-handed convention every graphics API uses, and it has the
+  // consequence people find counter-intuitive: **looking along +Z, world +X is
+  // on your left**, because you have turned to face the opposite way from the
+  // one the axes were drawn for. An earlier revision of this file "fixed" that
+  // surprise by swapping the operands, which agreed with the intuition and
+  // disagreed with every other renderer on earth. It was caught by projecting
+  // the same point through this module and through a vendored engine and
+  // finding them 252 pixels apart — which is the argument for having two
+  // renderers rather than one.
+  let right = cross(forward, up);
   if (length(right) < EPSILON) {
     // Looking straight along `up`: the cross product degenerates and every
     // point would land on the centre. Tilt the reference rather than returning
     // a camera that silently draws nothing.
-    right = cross(vector(up.z, up.x, up.y), forward);
+    right = cross(forward, vector(up.z, up.x, up.y));
   }
   right = normalise(right);
 
   return Object.freeze({
     eye, target, forward, right,
-    up: normalise(cross(forward, right)),
+    up: normalise(cross(right, forward)),
     fov, near, width, height,
     focal: (height / 2) / Math.tan(fov / 2),
   });
