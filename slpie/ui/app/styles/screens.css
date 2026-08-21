@@ -313,3 +313,26 @@
 @media (max-width: 720px) {
   .toolbar input[type="search"] { min-width: 0; width: 100%; }
 }
+
+/* --- the spatial estate ------------------------------------------------- */
+
+/* Its own darker ground, which §32 allows and the rest of the console does
+   not: a full-bleed spatial view is a different instrument, and a satellite
+   view is darker than the map it sits in. What does *not* change is what the
+   colours mean — confidence keeps the ramp, severity keeps the status palette,
+   and a boundary keeps the colour it has on every other screen. */
+.flight-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 12 / 7;
+  background: var(--flight-ground, var(--sunk));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.flight-caption {
+  gap: var(--sp-2) var(--sp-4);
+  flex-wrap: wrap;
+  margin-top: var(--sp-3);
+  font-size: var(--fs-sm);
+}

@@ -963,3 +963,29 @@ def test_the_chain_is_consulted_once_per_call():
 
     total = sum(entry["hits"] for entry in api.gateway.chain.report())
     assert total <= 1, f"the chain fired {total} times for one call"
+
+
+def test_analytics_records_what_the_caller_received():
+    """"By outcome" has to mean the outcome, not the admission.
+
+    The gateway used to record every admitted call as 200 at the moment it let
+    it through — before the handler had run. So a 400, a 404 and a 409 all
+    counted as successes, and the one screen whose whole job is proportion
+    could only ever draw a single slice.
+    """
+    from slpie.apim.gateway import Gateway
+    from slpie.ui.api import Api, Request
+
+    api = Api(engine=None)
+    api.gateway = Gateway.over(api.routes)
+
+    # A route that needs an environment, against an engine that has none.
+    api.handle(Request("GET", "/api/status", {}, {}))
+    # And one that needs a parameter the caller did not send.
+    api.handle(Request("GET", "/api/node", {}, {}))
+
+    summary = api.gateway.analytics.summary()
+    assert summary["calls"] == 2
+    assert set(summary["by_status"]) - {"2xx"}, (
+        f"every call recorded as a success: {summary['by_status']}"
+    )

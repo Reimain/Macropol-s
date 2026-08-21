@@ -377,6 +377,23 @@ def drive_real_tree(run: Run, verbs: Any, workspace: Path) -> None:
         drive(f"discover {tree} | filter --field kind --equals depends_on "
               f"| unique --field subject | count", **here)
 
+    with timed(run, "warehouse and dashboards"):
+        # The BI half, driven the way a reader reaches it: build the stars from
+        # a scan, export them, load them into the store, and read one through a
+        # template. `--govern` on the dashboard because half the templates read
+        # the findings star and the rules are what fills it.
+        drive(f"discover {tree} | warehouse", **here)
+        drive(f"discover {tree} | warehouse-export --format csv "
+              f"--out {workspace / 'warehouse'}", **here)
+        # `warehouse-load` mutates — it drops and rebuilds the tables — so it
+        # goes through the same guard `deploy-apply` does, with confirmation
+        # rather than around it.
+        drive(f"discover {tree} | warehouse-load "
+              f"--database {workspace / 'warehouse.db'}",
+              **{**here, "confirmed": True})
+        drive(f"discover {tree} | dashboard --govern --domain security "
+              f"--utility monitor", **here)
+
     with timed(run, "the product's own map"):
         # The index describes this repository rather than the environment under
         # test, which is why it needs no manifest and no scan. Exercised here

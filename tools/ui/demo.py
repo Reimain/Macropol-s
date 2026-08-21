@@ -33,6 +33,7 @@ import re
 import sys
 import tempfile
 from pathlib import Path
+from urllib.parse import parse_qsl
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -49,23 +50,28 @@ EXCLUDED = ("sw.js", "boot.js", "engine/vendor/")
 #: Where the bundle starts. Everything else is reached from here.
 ENTRY = "shell.js"
 
-#: Ships, is precached for offline, and no screen imports it — measured, and
-#: recorded in `docs/AUDIT.md` rather than quietly bundled. The graph screen
-#: draws through `components/graph.js`'s SVG, so the whole renderer seam is
-#: reachable from its own tests and from nowhere a reader can get to. Bundling
-#: it would put 60KB of unreachable code in the published page and hide the
-#: finding; naming it here keeps `test_the_bundle_reaches_every_file_that_ships`
-#: able to fail on the *next* orphan.
-UNREACHED = (
-    "engine/aggregate.js", "engine/camera.js", "engine/canvas2d.js",
-    "engine/contract.js", "engine/glyph.js", "engine/layout.js",
-    "engine/palette.js", "engine/ride.js",
+#: Ships and nothing reaches. §1.9 in `docs/AUDIT.md` recorded eight of these —
+#: the whole renderer seam, with tests and no screen. The graph screen's flight
+#: view reaches seven of them now. `ride.js` computes the *travelled* road —
+#: the corridor, the hop bars, the ribbon ahead — and the spatial view draws
+#: the estate standing still, so it is still a capability no surface reaches
+#: and it is still named rather than tolerated.
+UNREACHED: tuple[str, ...] = ("engine/ride.js",)
+
+#: Import specifiers, as the browser sees them — static and dynamic both.
+#: The renderer seam is reached only through `import()`, so a walker that
+#: followed static imports alone declared eight modules unreachable that a
+#: reader can get to by opening the flight view.
+IMPORTS = re.compile(
+    r'^\s*import\s+(?:[^"\';]+\s+from\s+)?["\']([^"\']+)["\']'
+    r'|import\s*\(\s*["\']([^"\']+)["\']\s*\)',
+    re.M,
 )
 
-#: Static import specifiers, as the browser sees them.
-IMPORTS = re.compile(
-    r'^\s*import\s+(?:[^"\';]+\s+from\s+)?["\']([^"\']+)["\']', re.M,
-)
+
+def specifiers(source: str) -> list[str]:
+    """Every module this one names, in the order it names them."""
+    return [static or dynamic for static, dynamic in IMPORTS.findall(source)]
 
 
 def _relative(spec: str, origin: str) -> str | None:
@@ -95,7 +101,7 @@ def modules(entry: str = ENTRY) -> list[str]:
             # named rather than silently producing a half-initialised module.
             raise SystemExit(f"import cycle through {name}: {' -> '.join(stack)}")
         source = (APP / name).read_text(encoding="utf-8")
-        for spec in IMPORTS.findall(source):
+        for spec in specifiers(source):
             target = _relative(spec, name)
             if target and not target.startswith(EXCLUDED):
                 if not (APP / target).is_file():
@@ -145,7 +151,20 @@ def transform(path: str, source: str) -> str:
         alias, spec = match.group(1), match.group(2)
         return f'const {alias} = __m("{resolve(spec, path)}");'
 
-    out = re.sub(r'import\s*\{([^}]*)\}\s*from\s*["\']([^"\']+)["\']\s*;', named, source)
+    def dynamic(match: re.Match) -> str:
+        spec = match.group(1)
+        if not spec.startswith("."):
+            return match.group(0)
+        key = resolve(spec, path)
+        if key.startswith(EXCLUDED):
+            # A vendored engine is not in this page, and saying so *as a
+            # rejected promise* is what the seam is built to handle: it falls
+            # back to the native renderer and states the reason.
+            return (f'Promise.reject(new Error("{key} is not in this build"))')
+        return f'Promise.resolve(__m("{key}"))'
+
+    out = re.sub(r'import\s*\(\s*["\']([^"\']+)["\']\s*\)', dynamic, source)
+    out = re.sub(r'import\s*\{([^}]*)\}\s*from\s*["\']([^"\']+)["\']\s*;', named, out)
     out = re.sub(r'import\s*\*\s*as\s+(\w+)\s+from\s*["\']([^"\']+)["\']\s*;', star, out)
 
     # `export { fmt };` — a plain re-export of an already-declared binding.
@@ -194,6 +213,20 @@ def _demands() -> list[dict]:
     return out
 
 
+#: The questions the recorded console can answer, and the list it offers when
+#: asked something else. Chosen to cover what a first-time reader types: the
+#: headline example, the shape of the estate, the security question, and the
+#: two that lead somewhere — impact and reconciliation.
+QUESTIONS = (
+    "what breaks if lodash 5 lands?",
+    "what is in this environment?",
+    "what is wrong right now?",
+    "which services cross the cardholder-data boundary?",
+    "what depends on payments?",
+    "what was declared and never observed?",
+    "how much of this was read rather than inferred?",
+)
+
 #: What the estate's own root is called in the published page. The world is
 #: materialised into a temporary directory, and a demo whose evidence cites
 #: `/tmp/tmp8f3k/services/payments` reads as a bug rather than as an estate.
@@ -219,6 +252,29 @@ def scrub(recording: dict, *paths: str) -> dict:
     return json.loads(body)
 
 
+def _gateway(engine):
+    """An API manager over the real route table.
+
+    Attached because three screens read one — Gateway, Analytics and Throttling
+    — and with none attached they render an honest "not configured", which is
+    the right answer for a bare install and the wrong picture of the product.
+    Every API, operation, throttle tier and admission decision the demo shows is
+    derived by `ApiCatalog.from_registry` from the routes that actually exist.
+
+    Anonymous callers are admitted, which is the default: the recording is made
+    by an unauthenticated client, and turning subscriptions on here would
+    produce a demo of 403s.
+    """
+    from slpie.apim.gateway import Gateway
+    from slpie.ui.api import Api
+
+    # No `access=`. With an access engine attached the gateway authorizes, and
+    # the recording is made by an unauthenticated client — so every admin route
+    # would be a 403 and the demo would be a tour of refusals. Lifecycle,
+    # throttling and analytics all still run, which is what these screens show.
+    return Gateway.over(Api(engine=engine).routes)
+
+
 def capture() -> dict:
     """A real scan, recorded route by route."""
     from slpie.ui.api import Api, Request
@@ -226,11 +282,17 @@ def capture() -> dict:
 
     world = tempfile.mkdtemp()
     engine = build(world)
-    api = Api(engine=engine)
+    api = Api(engine=engine, gateway=_gateway(engine))
 
     def record(method: str, path: str, body: dict | None = None) -> dict:
+        # The query goes in `query`, not on the path. `Api.handle` matches the
+        # path exactly, so `/api/node?id=…` was matching nothing and every
+        # subject-scoped route in the recording was a 404 the demo then served
+        # as the answer.
+        route, _, search = path.partition("?")
+        query = dict(parse_qsl(search))
         try:
-            response = api.handle(Request(method, path, {}, body or {}))
+            response = api.handle(Request(method, route, query, body or {}))
         except Exception as error:                       # noqa: BLE001
             return {"__status": 500, "__body": {"error": str(error)}}
         return {
@@ -258,13 +320,22 @@ def capture() -> dict:
         for path in ("/api/node", "/api/impact"):
             recorded[f"{path}?id={subject}"] = record("GET", f"{path}?id={subject}")
 
+    for tenant in ("acme", "globex"):
+        for path in (f"/api/admin/datasets?tenant={tenant}",
+                     f"/api/admin/quota?tenant={tenant}"):
+            recorded[path] = record("GET", path)
+
     posts: dict[str, dict] = {}
 
     def post(path: str, body: dict) -> None:
         posts.setdefault(path, {})[_key(body)] = record("POST", path, body)
 
-    post("/api/ask", {"question": "what breaks if lodash 5 lands?"})
-    post("/api/plan", {"question": "what breaks if lodash 5 lands?"})
+    # A recording answers the questions it was asked, so it is asked the ones a
+    # reader actually types. Each is a real turn through the real console —
+    # answer, reasoning path, gaps and next questions.
+    for question in QUESTIONS:
+        post("/api/ask", {"question": question})
+        post("/api/plan", {"question": question})
     # The *estate*, not this repository. Recording `discover --path .` scanned
     # whatever tree the build ran in, so the Compose screen answered about the
     # machine that baked the page while every other screen answered about
@@ -276,6 +347,21 @@ def capture() -> dict:
             f" --{name} {value}" for name, value in demand.items()
         )
         post("/api/run", {"pipeline": pipeline})
+
+    # A handful of calls that do *not* succeed, because a status ring with one
+    # slice in it is a ring nobody learns anything from — and because these are
+    # the outcomes an operator actually watches for. Every one is a real
+    # response from the real route table: a path that does not exist, and a
+    # route asking for a parameter the caller did not send.
+    for path in ("/api/nonexistent", "/api/apim/apis/nope", "/api/node",
+                 "/api/impact", "/api/causation"):
+        record("GET", path)
+
+    # Last, so it carries the traffic of everything above it rather than an
+    # empty board — the analytics screen is about calls that happened, and the
+    # calls that happened are this capture.
+    for path in ("/api/apim/analytics", "/api/apim/gateway", "/api/apim/throttles"):
+        recorded[path] = record("GET", path)
 
     events = []
     try:
@@ -289,7 +375,8 @@ def capture() -> dict:
         pass
 
     return scrub(
-        {"get": recorded, "post": posts, "events": events, "node": subject},
+        {"get": recorded, "post": posts, "events": events, "node": subject,
+         "questions": list(QUESTIONS)},
         world, str(ROOT), tempfile.gettempdir(),
     )
 
@@ -344,10 +431,25 @@ window.fetch = async (input, init = {}) => {
   await new Promise((done) => setTimeout(done, 90));   // a plausible latency
 
   if ((init.method || "GET") === "POST") {
-    const bucket = RECORDED.post[path.split("?")[0]];
+    const route = path.split("?")[0];
+    const bucket = RECORDED.post[route];
     if (!bucket) return missing(path);
     const hit = bucket[bodyKey(init.body)];
-    return hit ? answer(hit) : missing("that request");
+    if (hit) return answer(hit);
+    // A question this recording was not asked is *refused*, not broken. The
+    // console renders `refused: true` in the accent rather than the danger
+    // colour, and the obligation lists what it can answer — which is the same
+    // shape a real refusal takes, and the reason the demo can teach the
+    // refusal treatment rather than only describe it.
+    if (route === "/api/ask" || route === "/api/plan") {
+      return new Response(JSON.stringify({
+        error: "This recording was not asked that.",
+        refused: true,
+        stage: "recording",
+        obligation: "It can answer: " + RECORDED.questions.join(" · "),
+      }), {status: 403, headers: {"content-type": "application/json"}});
+    }
+    return missing("that request");
   }
   // Exact first — `/api/node?id=…` is recorded whole — then the bare path, so
   // a query the recording ignores still answers.

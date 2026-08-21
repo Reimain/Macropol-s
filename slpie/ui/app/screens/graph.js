@@ -156,6 +156,150 @@ function chooser(value) {
       : h("p", { class: "empty" }, "Nothing to choose from yet."));
 }
 
+/* --- the spatial view, drawn through the renderer seam ------------------- */
+
+//: The engine currently drawing, and whether it needed anything outside this
+//: repository. Held so the caption can say which — a console that does not
+//: report what is rendering it cannot honestly claim to be air-gapped.
+let drawing = null;
+
+/**
+ * Mount a renderer into a canvas and draw one frame.
+ *
+ * Asynchronous because resolving an engine may be a dynamic import, and the
+ * canvas has to be in the document before a context exists — so the caption is
+ * filled in when the engine answers rather than guessed at beforehand.
+ *
+ * A missing engine falls back to the native one **with its reason shown**,
+ * which is the treatment §27 gives a missing binary: the answer still arrives
+ * and says what it cost. Deleting `engine/vendor/` leaves this working.
+ */
+async function paint(canvas, caption, value, wanted) {
+  const [contract, layout, palette, camera] = await Promise.all([
+    import("../engine/contract.js"),
+    import("../engine/layout.js"),
+    import("../engine/palette.js"),
+    import("../engine/camera.js"),
+  ]);
+
+  const nodes = value.nodes || [];
+  const edges = value.edges || [];
+  if (!nodes.length) return;
+
+  const scene = layout.place(nodes, edges, {
+    regionOf: (node) => node.boundary || "",
+  });
+  // Severity rides on the point, because it is the one channel the renderer
+  // reserves saturation for — a finding is the only vivid thing on the surface.
+  for (const node of nodes) {
+    const point = scene.placed.get(node.id);
+    if (point) point.severity = node.severity || "";
+  }
+  scene.colouring = palette.colour(
+    scene.regions.map((region) => region.name),
+    layout.adjacency(scene.placed, edges),
+  );
+
+  const chosen = await contract.resolve(wanted || contract.DEFAULT);
+  const engine = Object.create(chosen.engine);
+
+  // Framed to the box it is displayed in, not to the element's intrinsic size.
+  // The renderer owns the backing store — it multiplies by the device ratio
+  // itself — so setting `canvas.width` here as well multiplied the two
+  // together and drew a scene four times the size of the surface.
+  const box = canvas.getBoundingClientRect();
+  const width = Math.max(320, Math.round(box.width));
+  const height = Math.max(200, Math.round(box.height));
+
+  // A three-quarter view rather than the head-on default. The layout puts kind
+  // in Z and degree in X, so looking straight down the Z axis stacks every lane
+  // on top of the one behind it — the separation the layout encodes is exactly
+  // what a yaw of zero throws away.
+  //
+  // Framed here rather than through `camera.frame`, which fits the *largest*
+  // axis with a 1.4 margin — right for a cube-shaped scene and wrong for this
+  // one, which is long in Z and shallow in Y, so fitting Z left the estate
+  // occupying a quarter of the surface. The eye is placed to fit the diagonal
+  // the reader actually sees, which is what fills the frame.
+  const PITCH = 0.38;
+  const YAW = -0.62;
+  const extent = scene.extent;
+  // Aimed at where the marks *are*, not at the middle of the box that contains
+  // them. The layout leaves whole regions of the extent empty — kinds with two
+  // members occupy a lane as wide as a kind with twenty — so the box's centre
+  // is a place with nothing in it, and aiming there pushes the estate into a
+  // corner.
+  let sx = 0;
+  let sy = 0;
+  let sz = 0;
+  for (const point of scene.placed.values()) {
+    sx += point.x; sy += point.y; sz += point.z;
+  }
+  const many = Math.max(1, scene.placed.size);
+  const middle = camera.vector(sx / many, sy / many, sz / many);
+  const across = Math.hypot(
+    extent.max.x - extent.min.x, extent.max.z - extent.min.z,
+  );
+  const fov = Math.PI / 3;
+  // 0.62 rather than 1.4: the diagonal already accounts for the two axes that
+  // matter, and the marks have their own radius allowance in the renderer.
+  const back = Math.max(60, (across / 2) / Math.tan(fov / 2) * 0.52);
+  const view = camera.look(
+    camera.vector(
+      middle.x + back * Math.cos(PITCH) * Math.sin(YAW),
+      middle.y + back * Math.sin(PITCH),
+      middle.z + back * Math.cos(PITCH) * Math.cos(YAW),
+    ),
+    middle,
+    { fov, width, height, near: Math.max(0.1, across / 1000) },
+  );
+
+  if (drawing && drawing.dispose) drawing.dispose();
+  drawing = engine;
+  engine.mount(canvas, scene);
+  const tally = engine.draw(view);
+
+  const named = contract.describe(chosen.engine);
+  fill(caption,
+    h("span", { class: "mono" }, `drawing with ${named.name}`),
+    h("span", { class: "mono muted" }, named.label),
+    // Counted by the renderer, never modelled: `marks` is what it actually put
+    // on the surface, and `represented` is how many elements those marks stand
+    // for once the far ones are aggregated.
+    h("span", { class: "mono muted" },
+      `${tally.marks} mark(s) for ${tally.represented} element(s), `
+      + `${tally.edges} link(s)`),
+    chosen.fallback
+      ? h("span", { class: "mono" }, `— ${chosen.reason}`)
+      : null);
+}
+
+/**
+ * The estate as a surface rather than a diagram.
+ *
+ * The renderer tier shipped with `test_slpie_ui_engine.py` proving it and no
+ * screen reaching it — recorded as §1.9 in `docs/AUDIT.md`. This is the screen
+ * reaching it: the same seam, the same two engines, chosen by `?engine=`, with
+ * the native one as the default so nothing outside this repository is needed
+ * to see it work.
+ */
+function spatial(value, wanted) {
+  const canvas = h("canvas", { class: "flight-canvas", width: 960, height: 560 });
+  const caption = h("div", { class: "row flight-caption" },
+    h("span", { class: "mono muted" }, "resolving a renderer…"));
+
+  // After the node is in the document: a canvas with no context yet cannot be
+  // drawn into, and `requestAnimationFrame` is the first moment it has one.
+  requestAnimationFrame(() => {
+    paint(canvas, caption, value, wanted).catch((error) => {
+      fill(caption, h("span", { class: "mono" },
+        `no renderer available: ${(error && error.message) || error}`));
+    });
+  });
+
+  return card("The estate, in three dimensions", canvas, caption);
+}
+
 /** What the ride is worth, in the words the panel shows. */
 function narration(evidenceFor) {
   if (!route) return null;
@@ -211,6 +355,12 @@ export function mount(outlet, _params = {}, query = {}) {
         // Nothing spatial before a selection — in flight mode. The chooser
         // replaces the scene rather than sitting beside an empty one.
         flying && !flight.draws ? chooser(value) : null,
+
+        // In flight, once something is selected, the estate is a *surface*
+        // drawn through the renderer seam. Outside flight it stays the SVG
+        // diagram, which is the right instrument for a glance and the one that
+        // needs no canvas at all.
+        flying && flight.draws ? spatial(value, query.engine) : null,
 
         !flying || flight.draws ? card("The estate",
           key(),

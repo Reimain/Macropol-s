@@ -67,6 +67,18 @@ class Engine:
     #: on any tree worth asking about.
     observed: tuple[Any, ...] = ()
     stream: Any = None
+    #: The workspace control plane, when this deployment has tenancy. `None` is
+    #: correct for a single-tenant install and the admin routes report it as
+    #: "no control plane attached" rather than as an empty tenant list — the two
+    #: are different answers.
+    #:
+    #: The field exists because `slpie/ui/api.py` already reads it: the admin
+    #: routes were written against `getattr(engine, "plane", None)` on a
+    #: `slots=True` dataclass that had no such attribute, so they could not
+    #: answer 200 in any deployment. The reader was there and the writer was
+    #: missing, which is the same shape as the findings projection nothing
+    #: filled.
+    plane: Any = None
     started_at: int = 0
 
     # -- construction ----------------------------------------------------

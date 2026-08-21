@@ -12,7 +12,7 @@ import { on } from "../core/bus.js";
 import { cell, subscribe } from "../core/store.js";
 import { cite, confidence } from "../core/format.js";
 import { ask, status as loadStatus } from "../data/queries.js";
-import { card, claim, fault, key, loading, panel, unsurveyed } from "../components/panel.js";
+import { card, claim, fault, key, loading, panel, refusal, unsurveyed } from "../components/panel.js";
 import { opener } from "../components/opener.js";
 import { pill, target } from "../components/pill.js";
 
@@ -52,8 +52,13 @@ function gaps(found) {
 
 function turn(entry) {
   if (entry.error) {
+    // A refusal is not a fault, and this screen was drawing both in red. `core/
+    // result.js` already decides which is which — the console has to honour it,
+    // or the one screen where a reader meets the platform's policy teaches them
+    // that policy is a bug.
+    const draw = entry.error.className === "refusal" ? refusal : fault;
     return h("div", { class: "turn" },
-      h("div", { class: "q" }, entry.question), fault(entry.error));
+      h("div", { class: "q" }, entry.question), draw(entry.error));
   }
   const answer = entry.answer || {};
   return h("div", { class: "turn" },

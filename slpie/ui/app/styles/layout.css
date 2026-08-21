@@ -190,10 +190,22 @@ main {
   gap: var(--gap);
   grid-template-columns: repeat(auto-fit, minmax(var(--card-min), 1fr));
 }
+/* Same reason as `.stack > *`: a tile holding an unbreakable value — a ledger
+   digest is forty hex characters with nowhere to break — refused to shrink,
+   and the auto-fit track grew past the viewport carrying the page with it. */
+.grid > * { min-width: 0; }
 .row { display: flex; gap: var(--sp-4); align-items: center; flex-wrap: wrap; }
 .spacer { flex: 1; }
 .scroll { overflow-x: auto; }
 .stack { display: grid; gap: var(--gap); }
+
+/* A grid item defaults to `min-width: auto`, which means "never narrower than
+   my content" — so a wide diagram inside a `.scroll` container stretched the
+   whole column instead of scrolling inside it, and the *page* scrolled
+   sideways with the rail and the topbar sliding out of view. The Graph screen
+   measured 2726px of scroll width against a 1400px viewport before this line.
+   Wide content scrolls in its own box; the body never does. */
+.stack > * { min-width: 0; }
 
 /* The measure cap applies to prose, never to tables — a table wants the width
  * it can get, and capping it would reintroduce the horizontal scroll the cap

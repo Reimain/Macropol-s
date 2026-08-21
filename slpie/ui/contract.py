@@ -672,6 +672,7 @@ COMPONENTS = frozenset({
     "prose",      # a sentence, resolved through the lexicon
     "stat",       # one number with a label
     "bars",       # a ranked bar list from {label, value} rows
+    "donut",      # part-to-whole over a handful of groups, as a ring
 })
 
 #: How a cell is drawn. A block cannot carry a function, so the rendering
@@ -1103,9 +1104,35 @@ DESIGNED: tuple[Screen, ...] = (
                Block("metrics", source="GET /api/apim/throttles",
                      title="Right now"),
            )),
+    # Blocks rather than a bare inspector, because this is the one screen whose
+    # whole job is proportion: "how much of the traffic is refused" and "which
+    # API carries it" are part-to-whole questions, and a table of counts makes
+    # the reader do the division.
     Screen("analytics", "/analytics", "Analytics", "api", parent="gateway",
            crumbs=("gateway",),
-           reads=("GET /api/apim/analytics",), action="apim.analytics.read"),
+           reads=("GET /api/apim/analytics",), action="apim.analytics.read",
+           summary="Every call this gateway admitted or refused, aggregated by "
+                   "API, application, status class and minute — and nothing "
+                   "finer, which is the privacy commitment rather than a "
+                   "limitation.",
+           blocks=(
+               Block("stat", source="GET /api/apim/analytics", select="calls",
+                     title="Calls recorded",
+                     options={"note": "since this gateway started"}),
+               Block("stat", source="GET /api/apim/analytics", select="buckets",
+                     title="Minutes with traffic"),
+               Block("donut", source="GET /api/apim/analytics",
+                     select="by_status", title="By outcome",
+                     options={"unit": "calls"}),
+               Block("donut", source="GET /api/apim/analytics", select="by_api",
+                     title="By API", options={"unit": "calls"}),
+               Block("bars", source="GET /api/apim/analytics",
+                     select="top_consumers", title="Busiest applications"),
+               Block("metrics", source="GET /api/apim/analytics", select="p99",
+                     title="Slowest call per API, in seconds"),
+               Block("metrics", source="GET /api/apim/analytics",
+                     select="refusals", title="Refusals by rule"),
+           )),
     Screen("publisher", "/publisher/:api?", "Publisher", "api",
            reads=("GET /api/apim/lifecycle", "GET /api/apim/apis"),
            action="apim.lifecycle.read",

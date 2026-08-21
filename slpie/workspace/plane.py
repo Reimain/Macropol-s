@@ -136,6 +136,18 @@ class ControlPlane:
 
     # -- what exists -----------------------------------------------------
 
+    @property
+    def grants(self) -> tuple[DatasetGrant, ...]:
+        """Every grant, unfiltered.
+
+        The administrative catalogue route reads this — it lists what a tenant
+        holds, which is a different question from what a principal may see, and
+        `datasets_for` answers that one. It was reading `getattr(plane,
+        "grants", ())` against a plane that kept them in `_grants` with no
+        accessor, so the Catalog screen listed nothing in every deployment.
+        """
+        return tuple(self._grants)
+
     def grant(self, grant: DatasetGrant) -> DatasetGrant:
         self._grants.append(grant)
         return grant

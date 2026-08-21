@@ -106,6 +106,12 @@
    * unremarkable majority compete with the thing somebody declared. */
   --flight-estate: #6b8290;
 
+  /* The spatial view's own ground. Darker than the console it sits in, which
+     §32 allows for a full-bleed instrument and the rest of the interface does
+     not — a satellite view is darker than the map around it. Only the ground
+     moves: every semantic colour above keeps its meaning here. */
+  --flight-ground: #101922;
+
   --shadow: 0 1px 2px rgba(16, 24, 32, 0.06), 0 1px 1px rgba(16, 24, 32, 0.04);
 
   /* The certainty ramp. Ordinal, one hue, dark = known — and validated rather

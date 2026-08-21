@@ -21,7 +21,7 @@
 import { h, link } from "../core/dom.js";
 import { cite, count as fmtCount } from "../core/format.js";
 import { label as resolveLabel, t } from "../core/lexicon.js";
-import { bars as barList, stat as statTile } from "./chart.js";
+import { bars as barList, donut as donutRing, stat as statTile } from "./chart.js";
 import { grid } from "./grid.js";
 import { card, metric } from "./panel.js";
 import { pill, severity as severityPill } from "./pill.js";
@@ -174,7 +174,15 @@ function statBlock(block, data) {
 }
 
 function barsBlock(block, data) {
-  const rows = rowsOf(select(data, block.select)) || [];
+  const value = select(data, block.select);
+  // `{npm: 17, pip: 6}` is the same fact as `[{label, value}]` and several
+  // routes hand out the first shape. Accepting both here costs three lines;
+  // making each caller reshape its payload first would put them in each.
+  const rows = rowsOf(value)
+    || (value && typeof value === "object" && !Array.isArray(value)
+      ? Object.entries(value).map(([label, n]) => ({ label, value: n }))
+      : [])
+    || [];
   const labelKey = (block.options && block.options.label) || "label";
   const valueKey = (block.options && block.options.value) || "value";
   // `chart.bars` destructures `[name, value]` pairs. This handed it objects,
@@ -185,6 +193,29 @@ function barsBlock(block, data) {
     String(row[labelKey] ?? ""),
     Number(row[valueKey]) || 0,
   ]));
+}
+
+/**
+ * A ring over a `{name: count}` object or over labelled rows.
+ *
+ * Two shapes because two kinds of payload carry the same fact: analytics hands
+ * out `{"2xx": 85, "4xx": 3}` and a warehouse breakdown hands out
+ * `[{label, value}]`. Accepting both here costs six lines; making every caller
+ * reshape its payload first would put the same six lines in each of them.
+ */
+function donutBlock(block, data) {
+  const value = select(data, block.select);
+  const options = block.options || {};
+  let parts = [];
+  if (Array.isArray(value)) {
+    const labelKey = options.label || "label";
+    const valueKey = options.value || "value";
+    parts = value.map((row) => [String(row[labelKey] ?? ""), Number(row[valueKey]) || 0]);
+  } else if (value && typeof value === "object") {
+    parts = Object.entries(value).map(([name, n]) => [name, Number(n) || 0]);
+  }
+  if (!parts.length) return null;
+  return donutRing(parts, { unit: String(options.unit || "") });
 }
 
 function proseBlock(block) {
@@ -241,6 +272,7 @@ export const COMPONENTS = {
   metrics: metricsBlock,
   stat: statBlock,
   bars: barsBlock,
+  donut: donutBlock,
   prose: proseBlock,
   runner: runnerBlock,
 };
@@ -271,12 +303,32 @@ export function render(block, data, options = {}) {
   return heading ? card(heading, body) : body;
 }
 
-/** Every block of a screen, in order, skipping the ones with nothing to say. */
+/**
+ * Every block of a screen, in order, skipping the ones with nothing to say.
+ *
+ * Consecutive tiles are grouped into one row rather than stacked. Three stats
+ * one above the other read as three unrelated paragraphs; side by side they
+ * read as what they are — the headline of the screen underneath them. The
+ * grouping is a rendering decision and belongs here, where every composed
+ * screen gets it, rather than in each screen that happens to declare tiles.
+ */
 export function compose(blocks, dataFor, options = {}) {
-  const drawn = (blocks || [])
-    .map((block) => render(block, dataFor(block), options))
-    .filter(Boolean);
-  return h("div", { class: "stack" }, drawn);
+  const out = [];
+  let tiles = [];
+  const flush = () => {
+    if (!tiles.length) return;
+    out.push(h("div", { class: "grid" }, tiles));
+    tiles = [];
+  };
+
+  for (const block of blocks || []) {
+    const node = render(block, dataFor(block), options);
+    if (!node) continue;
+    if (SELF_LABELLING.has(block.component)) tiles.push(node);
+    else { flush(); out.push(node); }
+  }
+  flush();
+  return h("div", { class: "stack" }, out);
 }
 
 export { t };

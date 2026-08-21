@@ -658,3 +658,43 @@ def test_findings_are_ranked_worst_first(repository, verbs):
     ranks = [finding.severity.rank for finding in result.flow.items]
 
     assert ranks == sorted(ranks, reverse=True)
+
+
+# --- what the screen reads ----------------------------------------------------
+
+
+def test_govern_records_what_it_raised(repository, verbs, tmp_path):
+    """The Findings screen reads a projection, and nothing was filling it.
+
+    `RaiseFinding`, `FINDING_RAISED` and the findings projection have all
+    existed since phase 2, and the command was dispatched by exactly one unit
+    test — so an estate with twenty open findings showed an empty list, which
+    reads as "nothing is wrong". That is the most expensive thing an empty
+    state can say.
+    """
+    from slpie.core.queries import OpenFindings
+    from slpie.engine import Engine
+
+    engine = Engine.from_text(
+        "apiVersion: slpie/v1\nenvironment: acme\ntarget: simulated\n"
+        f"codebase:\n  - root: {repository}\n"
+    )
+    engine.declare()
+
+    result = Composition.read(f"discover {repository} | govern", verbs=verbs).run(
+        Context(root=str(repository), engine=engine))
+
+    assert result.ok, result.error
+    assert result.flow.facts["recorded"] == len(result.flow.items)
+    on_screen = engine.queries.ask(OpenFindings()).value
+    assert on_screen, "the projection the Findings screen reads is still empty"
+
+
+def test_govern_without_an_engine_still_answers(repository, verbs):
+    """`discover . | govern` from a directory with no environment is a
+    legitimate way to use this verb, and it has nowhere to record."""
+    result = run(f"discover {repository} | govern", repository, verbs)
+
+    assert result.ok
+    assert result.flow.facts["recorded"] == 0
+    assert result.flow.items, "the findings themselves must still be produced"

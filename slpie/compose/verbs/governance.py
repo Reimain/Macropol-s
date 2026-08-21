@@ -138,6 +138,32 @@ def _facts(arguments: Mapping[str, Any], context: Context) -> dict[str, Any]:
     return facts
 
 
+def _record(findings: tuple[Any, ...], context: Context) -> int:
+    """Put what was raised on the ledger, when there is a ledger to put it on.
+
+    Without this the Findings screen reads a projection nothing fills. The
+    command, the event kind and the projection have all existed since phase 2
+    and `RaiseFinding` was dispatched by exactly one unit test — so the machinery
+    was proven and unused, and the surface it feeds showed an empty list on an
+    estate with two hundred open findings. That reads as "nothing is wrong",
+    which is the most expensive thing an empty state can say.
+
+    Silent when no engine is attached: `discover . | govern` from a directory
+    with no environment is a legitimate way to use this verb, and it has nowhere
+    to record. The count travels in `facts` either way, so a caller can tell the
+    difference between "recorded nothing" and "had nowhere to record".
+    """
+    commands = getattr(context.engine, "commands", None)
+    if commands is None or not findings:
+        return 0
+
+    from ...core.commands import RaiseFinding
+
+    for finding in findings:
+        commands.dispatch(RaiseFinding(finding=finding, actor=context.actor))
+    return len(findings)
+
+
 def _govern(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
     """Run every built-in rule over what was scanned."""
     from ...domain.finding import Gap, GapKind
@@ -214,6 +240,8 @@ def _govern(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
             confidence_impact=0.2,
         ),)
 
+    recorded = _record(findings, context)
+
     return flow.then(
         Kind.FINDINGS, findings, stage="govern",
         steps=[ReasoningStep(
@@ -242,6 +270,7 @@ def _govern(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
             "ruleset_digest": ruleset.digest,
             "by_severity": evaluation.by_severity(),
             "sources_read": len(sources),
+            "recorded": recorded,
         },
     )
 

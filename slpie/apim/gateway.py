@@ -50,6 +50,10 @@ class Admission:
     api: str = ""
     operation: str = ""
     application: str = ""
+    #: When admission started, so the call's duration is measured over the work
+    #: rather than over the check. Zero on the shared `ALLOWED` sentinel, which
+    #: is returned for routes the catalogue does not know and never recorded.
+    started: float = 0.0
 
     def body(self) -> dict[str, Any]:
         """The refusal, as the client sees it.
@@ -157,14 +161,18 @@ class Gateway:
             # getting, not on a mailing list they are not reading.
             sent.append(("Sunset", str(int(definition.sunset_at))))
 
-        allowed = Admission(
+        # Not recorded here. An admitted call has no outcome yet — the handler
+        # has not run — and recording it as 200 at this point is why the
+        # analytics screen could only ever show one status class however the
+        # request actually ended. `Api.handle` calls `complete()` with what the
+        # caller was really sent.
+        return Admission(
             allowed=True, principal=principal, api=definition.api_id,
             operation=f"{operation.method} {operation.path}",
             application=application,
             headers=tuple(sent),
+            started=started,
         )
-        self._record(definition, operation, application, allowed, started)
-        return allowed
 
     # -- the steps -------------------------------------------------------
 
@@ -384,6 +392,29 @@ class Gateway:
             status=admission.status,
             refused_by="" if admission.allowed else admission.stage,
             seconds=time.monotonic() - started,
+        )
+
+    def complete(self, admission: Admission, status: int) -> None:
+        """Record an admitted call, once its real status is known.
+
+        Refusals are recorded by the chain that made them — the gateway knows
+        those outcomes itself. Everything it let through is recorded here, so
+        "by outcome" means what the caller received rather than what the
+        gateway decided.
+
+        Silent for a call it never admitted: a route outside the catalogue gets
+        the shared `ALLOWED` sentinel, and counting those would report traffic
+        on APIs that do not exist.
+        """
+        if not admission.allowed or not admission.api:
+            return
+        self.analytics.record(
+            api=admission.api,
+            operation=admission.operation,
+            application=admission.application or "anonymous",
+            status=status,
+            refused_by="",
+            seconds=max(0.0, time.monotonic() - admission.started),
         )
 
     def status(self) -> dict[str, Any]:

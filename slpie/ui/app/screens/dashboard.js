@@ -174,16 +174,13 @@ function body() {
   }
 
   const answer = held.answer;
+  // Grouping consecutive tiles into a row is `compose()`'s job, and this screen
+  // draws its panels one at a time because each carries its own data — so the
+  // grouping is applied here in the same shape rather than reimplemented.
   const drawn = [];
   let tiles = [];
-
-  // Consecutive stats become one row of tiles rather than three stacked
-  // paragraphs. The grouping is a rendering decision and belongs here rather
-  // than in the template: a template says *what* the panel is, and how three
-  // of them sit next to each other is the screen's business.
   const flush = () => {
-    if (!tiles.length) return;
-    drawn.push(h("div", { class: "grid" }, tiles));
+    if (tiles.length) drawn.push(h("div", { class: "grid" }, tiles));
     tiles = [];
   };
 

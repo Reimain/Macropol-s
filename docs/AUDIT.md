@@ -257,9 +257,15 @@ SVG `diagram()`. The renderer itself is reached by `tests/test_slpie_ui_engine.p
 That is §24's own drift shape inside the browser tier: a capability the platform has and no
 surface reaches. It is also why `sw.js` precaches 60KB the offline console cannot use.
 
-**Recorded rather than fixed.** Wiring the graph screen through `engine/contract.js` is §32
-steps 6–8, and doing it as a side effect of a demo build would be the wrong place to make a
-rendering decision. The names are pinned in `tools/ui/demo.UNREACHED` so
+**Fixed for seven of the eight.** `screens/graph.js` now resolves an engine through the seam and
+draws the estate as a surface in the flight view, so `contract`, `camera`, `canvas2d`,
+`aggregate`, `glyph`, `layout` and `palette` are reached by a reader rather than only by a test —
+including the vendored engine, selected with `?engine=three` and falling back to the native one
+with a stated reason when it is absent.
+
+`engine/ride.js` is still unreached. It computes the *travelled* road — the corridor, the hop
+bars, the ribbon ahead — and the spatial view draws the estate standing still; wiring the ride is
+§32 steps 6–8 proper. It stays pinned in `tools/ui/demo.UNREACHED` so
 `test_the_bundle_reaches_every_file_that_ships` fails on the *next* orphan rather than growing a
 tolerated category.
 

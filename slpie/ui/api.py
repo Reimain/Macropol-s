@@ -171,10 +171,11 @@ class Api:
         rule applied in each handler is a rule applied in most handlers, and the
         one it is missing from is the one somebody finds.
         """
-        admitted = self._admit(request)
-        if admitted is not None:
-            return admitted
+        refusal, admission = self._admit(request)
+        if refusal is not None:
+            return refusal
         answered = self._dispatch(request).with_headers(*self._position())
+        self._complete(admission, answered.status)
         # Whether a client may keep this. Stamped only on answers that worked:
         # a refusal or a fault is never something to hold on a device, and a
         # 409 "no environment open" cached past the moment one is opened is a
@@ -183,10 +184,15 @@ class Api:
             answered = answered.with_headers(("X-Slpie-Cacheable", "1"))
         return answered
 
-    def _admit(self, request: Request) -> Response | None:
-        """The gateway's refusal, or nothing. Absent gateway, always nothing."""
+    def _admit(self, request: Request) -> tuple["Response | None", Any]:
+        """The gateway's refusal and its decision. Absent gateway, neither.
+
+        Both, because the decision is needed *after* dispatch: an admitted call
+        has no outcome at admission time, and recording it then is why the
+        analytics screen could only ever show one status class.
+        """
         if self.gateway is None:
-            return None
+            return None, None
         try:
             decision = self.gateway.admit(request)
         except Exception as error:  # noqa: BLE001 - a broken gateway is a fault
@@ -196,13 +202,28 @@ class Api:
             return Response({
                 "error": f"the API manager could not decide: {error}",
                 "type": "GatewayFault",
-            }, status=503)
+            }, status=503), None
 
         if decision.allowed:
-            return None
+            return None, decision
         return Response(
             decision.body(), status=decision.status, headers=decision.headers,
-        )
+        ), decision
+
+    def _complete(self, admission: Any, status: int) -> None:
+        """Tell the gateway what the caller was actually sent.
+
+        Guarded the same way `_admit` is: a gateway that raises while recording
+        must not turn a served answer into a fault. Analytics is a record of
+        what happened, and losing a row is a smaller failure than losing the
+        response it describes.
+        """
+        if self.gateway is None or admission is None:
+            return
+        try:
+            self.gateway.complete(admission, status)
+        except Exception:  # noqa: BLE001 - the answer is already correct
+            pass
 
     def _position(self) -> tuple[tuple[str, str], ...]:
         """Where the world is, stamped on every response including failures.

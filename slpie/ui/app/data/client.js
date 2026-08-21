@@ -3064,14 +3064,68 @@ export const SCREENS = Object.freeze([
       "gateway"
     ],
     "parent": "gateway",
-    "summary": "",
+    "summary": "Every call this gateway admitted or refused, aggregated by API, application, status class and minute \u2014 and nothing finer, which is the privacy commitment rather than a limitation.",
     "authored": false,
     "blocks": [
       {
-        "component": "auto",
+        "component": "stat",
         "source": "GET /api/apim/analytics",
-        "select": "",
-        "title": "",
+        "select": "calls",
+        "title": "Calls recorded",
+        "columns": [],
+        "options": {
+          "note": "since this gateway started"
+        }
+      },
+      {
+        "component": "stat",
+        "source": "GET /api/apim/analytics",
+        "select": "buckets",
+        "title": "Minutes with traffic",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "donut",
+        "source": "GET /api/apim/analytics",
+        "select": "by_status",
+        "title": "By outcome",
+        "columns": [],
+        "options": {
+          "unit": "calls"
+        }
+      },
+      {
+        "component": "donut",
+        "source": "GET /api/apim/analytics",
+        "select": "by_api",
+        "title": "By API",
+        "columns": [],
+        "options": {
+          "unit": "calls"
+        }
+      },
+      {
+        "component": "bars",
+        "source": "GET /api/apim/analytics",
+        "select": "top_consumers",
+        "title": "Busiest applications",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "metrics",
+        "source": "GET /api/apim/analytics",
+        "select": "p99",
+        "title": "Slowest call per API, in seconds",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "metrics",
+        "source": "GET /api/apim/analytics",
+        "select": "refusals",
+        "title": "Refusals by rule",
         "columns": [],
         "options": {}
       }

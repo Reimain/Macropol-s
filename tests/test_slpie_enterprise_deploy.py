@@ -243,8 +243,25 @@ def test_the_runner_defaults_to_a_real_broker():
     assert BROKER_ENV == "SLPIE_BROKER_URL" and BACKEND_ENV == "SLPIE_RESULT_BACKEND"
 
 
+def _celery():
+    """A configured app, or a loud skip.
+
+    Celery is an `enterprise` extra and the kernel job installs no extras —
+    invariant 4 is that a clean `pip install -e .` passes the suite, so a test
+    that *imports* an extra has to say so rather than failing the kernel job.
+    These five construct a real Celery app to read its configuration back,
+    which is the only way to prove the settings are the ones that ship; the
+    tests around them read module constants and need nothing installed.
+    """
+    pytest.importorskip("celery", reason="celery is an `enterprise` extra")
+    from slpie_enterprise.queue.celery_runner import application
+
+    return application
+
+
 def test_the_environment_overrides_the_default(monkeypatch):
-    from slpie_enterprise.queue.celery_runner import BROKER_ENV, application
+    application = _celery()
+    from slpie_enterprise.queue.celery_runner import BROKER_ENV
 
     monkeypatch.setenv(BROKER_ENV, "amqp://elsewhere:5672//")
     assert application(eager=True).conf.broker_url == "amqp://elsewhere:5672//"
@@ -258,9 +275,7 @@ def test_a_worker_that_dies_returns_its_unit_to_the_queue():
     deallocation protocol getting its guarantee from the broker instead of from
     a timer, and it is one configuration flag away from not happening.
     """
-    from slpie_enterprise.queue.celery_runner import application
-
-    conf = application(eager=True).conf
+    conf = _celery()(eager=True).conf
     assert conf.task_acks_late is True
     assert conf.task_reject_on_worker_lost is True
     # And a started task says so, rather than being PENDING for six minutes —
@@ -270,7 +285,8 @@ def test_a_worker_that_dies_returns_its_unit_to_the_queue():
 
 
 def test_results_do_not_accumulate_forever():
-    from slpie_enterprise.queue.celery_runner import RESULT_TTL, application
+    application = _celery()
+    from slpie_enterprise.queue.celery_runner import RESULT_TTL
 
     assert application(eager=True).conf.result_expires == RESULT_TTL
     assert RESULT_TTL >= 3600, "too short to read a scan started before a weekend"
@@ -278,9 +294,7 @@ def test_results_do_not_accumulate_forever():
 
 def test_pickle_is_still_refused():
     """The one setting that must not drift: it is the RCE surface."""
-    from slpie_enterprise.queue.celery_runner import application
-
-    conf = application(eager=True).conf
+    conf = _celery()(eager=True).conf
     assert conf.task_serializer == "json"
     assert list(conf.accept_content) == ["json"]
 
@@ -369,7 +383,8 @@ def test_no_worker_answering_is_not_the_same_as_no_workers():
 
 
 def test_the_runner_exposes_what_is_still_in_flight():
-    from slpie_enterprise.queue.celery_runner import CeleryRunner, application
+    application = _celery()
+    from slpie_enterprise.queue.celery_runner import CeleryRunner
 
     runner = CeleryRunner(app=application(eager=True))
     runner.run([("a", lambda: 1), ("b", lambda: 2)])

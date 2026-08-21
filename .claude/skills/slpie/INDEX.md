@@ -15,7 +15,7 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `900741df8cd4d79e9554b037a8b21efb64e254f3496348f2fe334669ba3f14ac`
+- **digest** `b6f91f211db06e922324247b43941b4a19463372fdd9bd414859f30381b183a9`
 - **facets** 727 — 8 component, 21 kind, 324 module, 72 package, 102 route, 38 screen, 19 section, 83 test, 60 verb
 - **anchored** 99.2% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
@@ -55,7 +55,7 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `findings` | analysis | any → findings | `slpie/compose/verbs/analysis.py:470` | findings |
 | `fire` | environment | nothing → report | `slpie/compose/verbs/environment.py:372` | simulator |
 | `gaps` | environment | nothing → gaps | `slpie/compose/verbs/environment.py:456` | station |
-| `govern` | governance | observations → findings | `slpie/compose/verbs/governance.py:283` | findings |
+| `govern` | governance | observations → findings | `slpie/compose/verbs/governance.py:312` | findings |
 | `graph` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:413` | graph |
 | `head` | shaping | any → same | `slpie/compose/verbs/shaping.py:203` | group-shaping |
 | `history` | dispatch | nothing → report | `slpie/compose/verbs/dispatch.py:225` | history |
@@ -72,7 +72,7 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `risk` | artifacts | findings → report | `slpie/compose/verbs/artifacts.py:396` | group-artifacts |
 | `rivals` | rivals | nothing → report | `slpie/compose/verbs/rivals.py:60` | group-rivals |
 | `routine` | guidance | nothing → report | `slpie/compose/verbs/guidance.py:315` | compose |
-| `rules` | governance | nothing → report | `slpie/compose/verbs/governance.py:315` | findings |
+| `rules` | governance | nothing → report | `slpie/compose/verbs/governance.py:344` | findings |
 | `sbom` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:320` | group-artifacts |
 | `scan` | environment | nothing → observations | `slpie/compose/verbs/environment.py:401` | catalog |
 | `search` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:420` | graph |

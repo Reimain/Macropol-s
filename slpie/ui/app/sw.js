@@ -20,7 +20,7 @@
  * cache that is not this one, so the bump is what evicts a stale shell — a
  * version left alone across a restructure serves yesterday's modules from
  * cache and the page dies on an import that no longer exists. */
-const VERSION = "slpie-v11";
+const VERSION = "slpie-v12";
 
 /* Every file the app needs to open with the network unplugged. Listed rather
  * than discovered, because discovery needs a request and the whole point is to

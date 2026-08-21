@@ -60,7 +60,7 @@ def test_every_bundled_module_exists_and_the_order_is_a_dependency_order():
 
     for name in ordered:
         source = (APP / name).read_text(encoding="utf-8")
-        for spec in demo.IMPORTS.findall(source):
+        for spec in demo.specifiers(source):
             if not spec.startswith("."):
                 continue
             target = demo.resolve(spec, name)

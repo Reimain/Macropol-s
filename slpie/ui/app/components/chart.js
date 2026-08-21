@@ -107,6 +107,75 @@ export function share(parts, { total = 0 } = {}) {
 }
 
 /**
+ * Part-to-whole across a handful of categories, as a ring.
+ *
+ * A ring rather than a pie, and this is the one place a circle earns its keep:
+ * the reader's job here is "is this mostly one thing", which a single closed
+ * shape answers at a glance, and the hole carries the total so the headline
+ * number and the shape are the same object rather than two.
+ *
+ * **Five slices, then a rest.** Beyond five, angle differences stop being
+ * comparable and a sixth colour stops being distinguishable — so the tail is
+ * summed into one honest `rest` slice and the legend says how many it holds,
+ * instead of a wheel of slivers nobody can read or name.
+ *
+ * Drawn with `stroke-dasharray` on one circle per slice: no arc path maths, no
+ * rounding artefacts where slices meet, and every slice is a real element with
+ * its own title, so hovering names it.
+ */
+export function donut(parts, { total = 0, unit = "" } = {}) {
+  const sum = total || parts.reduce((acc, [, n]) => acc + Number(n || 0), 0);
+  if (!sum) return h("p", { class: "empty" }, "Nothing measured yet.");
+
+  const ordered = [...parts]
+    .map(([name, n]) => [String(name), Number(n) || 0])
+    .filter(([, n]) => n > 0)
+    .sort((left, right) => right[1] - left[1]);
+  const head = ordered.slice(0, 5);
+  const tail = ordered.slice(5);
+  const shown = tail.length
+    ? [...head, [`rest (${tail.length})`, tail.reduce((acc, [, n]) => acc + n, 0)]]
+    : head;
+
+  // A circle of radius 15.9155 has a circumference of 100, so a dash length is
+  // a percentage directly and no slice needs a conversion nobody can check.
+  const RADIUS = 15.9155;
+  const HUES = ["var(--ramp-4)", "var(--ramp-3)", "var(--ramp-2)",
+                "var(--ramp-1)", "var(--ramp-none)", "var(--line-strong)"];
+
+  let offset = 25;                       // 12 o'clock rather than 3 o'clock
+  const rings = shown.map(([name, n], index) => {
+    const slice = (n / sum) * 100;
+    const ring = svg("circle", {
+      class: "donut-slice", cx: 21, cy: 21, r: RADIUS, fill: "none",
+      stroke: HUES[index % HUES.length], "stroke-width": 5.6,
+      "stroke-dasharray": `${slice} ${100 - slice}`,
+      "stroke-dashoffset": String(offset),
+    }, svg("title", {}, `${name}: ${fmt(n)} of ${fmt(sum)}`));
+    offset -= slice;
+    return ring;
+  });
+
+  return h("div", { class: "donut" },
+    svg("svg", {
+      viewBox: "0 0 42 42", class: "donut-ring", role: "img",
+      "aria-label": `${fmt(sum)} ${unit || "total"} across ${shown.length} groups`,
+    },
+    svg("circle", {
+      class: "donut-hole", cx: 21, cy: 21, r: RADIUS, fill: "none",
+      stroke: "var(--sunk)", "stroke-width": 5.6,
+    }),
+    rings),
+    h("div", { class: "donut-centre" },
+      h("b", {}, fmt(sum)), unit ? h("span", {}, unit) : null),
+    h("div", { class: "legend" },
+      shown.map(([name, n], index) => h("span", {},
+        h("i", { style: { background: HUES[index % HUES.length] } }),
+        h("b", {}, fmt(n)),
+        name))));
+}
+
+/**
  * Magnitude across nominal categories, as horizontal bars.
  *
  * Horizontal because the categories are long-named words rather than dates;

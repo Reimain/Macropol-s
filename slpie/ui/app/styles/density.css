@@ -29,6 +29,7 @@
   --fs-md: 13px;
   --fs-lg: 15px;
   --fs-xl: 26px;
+  --ring-size: 116px;   /* the analytics ring */
   --fs-2xl: 22px;   /* the page title */
 
   --lh: 1.45;
@@ -80,6 +81,7 @@
   --fs-md: 15px;
   --fs-lg: 18px;
   --fs-xl: 34px;
+  --ring-size: 148px;
   --fs-2xl: 28px;
 
   --lh: 1.65;

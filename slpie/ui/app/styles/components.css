@@ -75,6 +75,9 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
   line-height: 1.1;
+  /* Not every metric is a number. A ledger digest is forty hex characters with
+     no natural break, and left alone it set the width of its whole column. */
+  overflow-wrap: anywhere;
 }
 .metric small {
   font-size: var(--fs-md);
@@ -98,6 +101,40 @@
 .bar > .warn { background: var(--warn); }
 .bar > .bad { background: var(--bad); }
 .bar > .rest { background: var(--line); }
+
+/* --- the ring ----------------------------------------------------------- */
+
+/* Laid out as a grid so the total sits *in* the hole rather than being
+   positioned over it: absolute centring inside a scaling SVG is where this
+   kind of chart usually drifts a pixel or two off in one theme. */
+.donut {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "ring centre" "ring legend";
+  align-items: center;
+  gap: var(--sp-2) var(--sp-5);
+}
+.donut-ring { grid-area: ring; width: var(--ring-size); height: var(--ring-size); }
+.donut-slice { transition: opacity 120ms; }
+.donut:hover .donut-slice { opacity: .82; }
+.donut-slice:hover { opacity: 1; }
+.donut-centre { grid-area: centre; align-self: end; }
+.donut-centre b {
+  display: block;
+  font-size: var(--fs-xl);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+.donut-centre span { font-size: var(--fs-sm); color: var(--muted); }
+.donut .legend { grid-area: legend; align-self: start; }
+@media (prefers-reduced-motion: reduce) { .donut-slice { transition: none; } }
+/* On a phone the ring goes above its own numbers rather than beside them. The
+   size is the register's, not a third one — a chart that shrinks on mobile and
+   a chart that is smaller in the calm register are two different decisions and
+   only one of them belongs here. */
+@media (max-width: 640px) {
+  .donut { grid-template-columns: 1fr; grid-template-areas: "ring" "centre" "legend"; }
+}
 
 .legend { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font-size: var(--fs-sm); }
 .legend span { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--muted); }

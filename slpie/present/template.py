@@ -12,13 +12,14 @@ reader from a menu they have to understand first.
 ── The three axes, and why three ────────────────────────────────────────
 
 A template declares what it is for on three independent axes, because they vary
-independently and a single "type" would collapse them:
+independently and a single "type" would collapse them::
 
     utility   what the reader is doing — monitor · investigate · report ·
               compare · explore
     context   where they are — console · dashboard · document · mobile · api
     domain    what it is about — security · dependencies · architecture ·
               operations · cost · quality
+
 
 `monitor` in a `console` about `security` and `report` in a `document` about
 `security` share a subject and share almost nothing else: one is a live board
