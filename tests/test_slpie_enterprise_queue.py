@@ -21,8 +21,8 @@ pytest.importorskip(
     "celery", reason="the queue adapter needs `pip install -e '.[enterprise]'`",
 )
 
-from slpie.core.tasks import InlineRunner                       # noqa: E402
-from slpie_enterprise.queue import CeleryRunner, application    # noqa: E402
+from slpie.core.tasks import InlineRunner  # noqa: E402
+from slpie_enterprise.queue import CeleryRunner, application  # noqa: E402
 
 
 @pytest.fixture

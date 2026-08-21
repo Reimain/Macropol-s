@@ -15,7 +15,7 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `9e74143bf05617f08fcd06539e207fe15c652541044d911308550c268248560c`
+- **digest** `15d107f38d9a3bbad3c1565f0af12e53d741843da0f74ce460649e1c700c2417`
 - **facets** 713 — 52 component, 21 kind, 297 module, 68 package, 93 route, 35 screen, 17 section, 79 test, 51 verb
 - **anchored** 98.7% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist

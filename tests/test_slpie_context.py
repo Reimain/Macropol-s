@@ -298,7 +298,9 @@ def test_the_disk_cache_makes_a_second_process_fast() -> None:
     Every `slpie context query` is a fresh interpreter, so a memory-only cache
     left the command at 2.7 seconds — which is the surface that needed it most.
     """
-    import subprocess, sys, time
+    import subprocess
+    import sys
+    import time
 
     subprocess.run([sys.executable, "-m", "slpie.cli", "context", "--digest"],
                    capture_output=True, cwd=REPOSITORY, check=True)

@@ -48,11 +48,25 @@ README
 ```
 
 ```{toctree}
+:caption: Build records
+:maxdepth: 1
+:glob:
+
+PHASE*
+```
+
+```{toctree}
 :caption: API reference
 :maxdepth: 2
 
 reference/index
 ```
+
+<!-- The build records glob deliberately. `docs/PHASE15.md` was added and not
+     listed, and the strict build has been red ever since — an orphan page is a
+     warning and `-W` turns a warning into a failure. A pattern picks up the
+     next one on its own, so the phase after this cannot break the build by
+     being written. -->
 
 ## What holds it together
 

@@ -16,7 +16,12 @@ import pytest
 
 from slpie.ui.api import Api
 from slpie.ui.contract import (
-    COMPONENTS, FORMATS, Block, Column, javascript, screens,
+    COMPONENTS,
+    FORMATS,
+    Block,
+    Column,
+    javascript,
+    screens,
 )
 
 from _walk import REPOSITORY

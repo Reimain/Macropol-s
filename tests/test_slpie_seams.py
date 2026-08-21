@@ -15,9 +15,8 @@ from slpie.core.meter import Measurement, ResourceMeter
 from slpie.core.tasks import InlineRunner, RecordingRunner, Result, default_runner
 from slpie.discovery import Scanner
 from slpie.discovery.registry import register_builtins
-from slpie.plugins.registry import Registry
 from slpie.domain.evidence import EvidenceKind
-
+from slpie.plugins.registry import Registry
 
 # -- the runner ----------------------------------------------------------
 
@@ -186,9 +185,9 @@ def test_both_seams_are_stdlib_only() -> None:
     put the queue in the kernel by the back door."""
     import sys
 
-    from _walk import imported_roots
-
     from slpie.core import meter, tasks
+
+    from _walk import imported_roots
 
     for module in (tasks, meter):
         roots = imported_roots(__import__("pathlib").Path(module.__file__))

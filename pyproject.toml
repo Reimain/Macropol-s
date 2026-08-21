@@ -138,7 +138,10 @@ profile = "black"
 # isort's default, fights a house style that puts a module's imports where they
 # can be read at a glance.
 combine_as_imports = true
-known_first_party = ["gratimos", "slpie"]
+# `slpie_enterprise` was missing until phase 17 and isort filed it as
+# third-party, which put ring 1 *above* ring 0 in every file that imports both
+# — the exact inversion of the layering the ring rule exists to state.
+known_first_party = ["gratimos", "slpie", "slpie_enterprise"]
 # The test helpers live beside the tests and are imported by bare name through
 # the path insert in `tests/conftest.py`. Without this isort reads them as
 # third-party and files them above `slpie`, which reverses the actual layering.

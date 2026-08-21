@@ -18,10 +18,10 @@ fastapi = pytest.importorskip(
 )
 pytest.importorskip("httpx", reason="the FastAPI test client needs httpx")
 
-from fastapi.testclient import TestClient          # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
-from slpie.ui.api import Api, Request              # noqa: E402
-from slpie_enterprise.api import create_app, route_set   # noqa: E402
+from slpie.ui.api import Api, Request  # noqa: E402
+from slpie_enterprise.api import create_app, route_set  # noqa: E402
 
 
 @pytest.fixture

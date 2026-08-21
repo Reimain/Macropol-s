@@ -22,9 +22,14 @@ from typing import Any, Callable, Mapping
 
 from ..domain.edge import Edge, EdgeKind
 from ..domain.evidence import Evidence, EvidenceKind, SourceLocation
-from ..domain.lifecycle import ArchitectureClass, ComplianceState, LifecycleState, RiskClass
-from ..domain.node import OPEN, Node, NodeKind
 from ..domain.identity import parse_identity
+from ..domain.lifecycle import (
+    ArchitectureClass,
+    ComplianceState,
+    LifecycleState,
+    RiskClass,
+)
+from ..domain.node import OPEN, Node, NodeKind
 
 Row = Mapping[str, Any]
 Evidences = Callable[[str], tuple[Evidence, ...]]

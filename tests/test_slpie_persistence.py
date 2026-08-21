@@ -20,7 +20,14 @@ import os
 import pytest
 
 from slpie.domain import (
-    Edge, EdgeKind, Evidence, EvidenceKind, Node, NodeKind, Purl, SourceLocation,
+    Edge,
+    EdgeKind,
+    Evidence,
+    EvidenceKind,
+    Node,
+    NodeKind,
+    Purl,
+    SourceLocation,
 )
 from slpie.graph import SqliteGraph
 

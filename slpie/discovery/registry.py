@@ -20,10 +20,10 @@ from typing import Any, Iterable, Mapping, Sequence
 
 from ..binding.connector import Connector
 from ..core.commands import RecordObservation
+from ..core.tasks import default_runner
 from ..domain.edge import Edge, EdgeKind
 from ..domain.evidence import Evidence
 from ..domain.identity import Identity, parse_identity
-from ..core.tasks import default_runner
 from ..domain.node import Node, NodeKind
 from ..errors import BindingError, IdentityError
 from ..plugins.manifest import ExtensionPoint

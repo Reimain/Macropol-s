@@ -13,10 +13,9 @@ inside a read rather than anything a connection test would catch.
 from __future__ import annotations
 
 import os
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
-
-from contextlib import contextmanager
 
 SCHEMA = Path(__file__).resolve().parent / "schema.sql"
 

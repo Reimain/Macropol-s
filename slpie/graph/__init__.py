@@ -7,12 +7,12 @@ and why `graph.clear()` is a safe operation rather than data loss.
 
 from __future__ import annotations
 
+from .interest import Elision, Field, Interest, Signals, Surveyor
 from .query import GraphProjection
 from .schema import SCHEMA, SCHEMA_VERSION
 from .snapshot import GraphDiff, Snapshot, SnapshotStore, root_digest
 from .sqlite_graph import SqliteGraph
 from .store import GraphStore, GraphView, Traversal
-from .interest import Elision, Field, Interest, Signals, Surveyor
 from .traversal import Cycle, Impacted, ImpactResult, Path, Traverser
 
 __all__ = [

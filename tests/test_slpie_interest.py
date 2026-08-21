@@ -12,7 +12,16 @@ from __future__ import annotations
 
 import pytest
 
-from slpie.domain import Edge, EdgeKind, Evidence, EvidenceKind, Node, NodeKind, Purl, SourceLocation
+from slpie.domain import (
+    Edge,
+    EdgeKind,
+    Evidence,
+    EvidenceKind,
+    Node,
+    NodeKind,
+    Purl,
+    SourceLocation,
+)
 from slpie.domain.lifecycle import Severity
 from slpie.graph import SqliteGraph
 from slpie.graph.interest import (

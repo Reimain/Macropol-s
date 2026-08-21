@@ -15,7 +15,10 @@ import pytest
 
 from slpie.context.lexicon import Lexicon, LexiconError, Term, default
 from slpie.context.profile import (
-    ContextProfile, load_profile_file, load_profiles, resolve,
+    ContextProfile,
+    load_profile_file,
+    load_profiles,
+    resolve,
 )
 from slpie.ui.api import Api, Request
 

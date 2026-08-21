@@ -237,8 +237,16 @@ def drive_simulated(run: Run, verbs: Any, workspace: Path) -> None:
         found = drive("search payments", **where)
         if found and found.flow.size:
             drive("search payments | impact --depth 3", **where)
+            # What a reader would actually be shown, ranked. `interest` is the
+            # degree-of-interest survey the graph screen renders from, and it
+            # takes NODES rather than an id — so it belongs on the end of a
+            # search, which is how the screen reaches it too.
+            drive("search payments | interest --horizon 3 --budget 40", **where)
         else:
-            run.note("`search payments` found nothing, so `impact` was not reached")
+            run.note(
+                "`search payments` found nothing, so `impact` and `interest` "
+                "were not reached"
+            )
         # Already simulated, so this is a no-op flip rather than a live binding.
         # The dangerous direction is exercised by the refusal test in the suite,
         # not by an acceptance run that would have to mean it.
