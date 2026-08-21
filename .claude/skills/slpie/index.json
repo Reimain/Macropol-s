@@ -1,9 +1,9 @@
 {
   "generator": "slpie context --skill",
-  "digest": "aae420f66fdc28223d5e6f19203d006fd3f930290740d3e27589f80f9fde79af",
+  "digest": "900741df8cd4d79e9554b037a8b21efb64e254f3496348f2fe334669ba3f14ac",
   "summary": {
-    "digest": "aae420f66fdc28223d5e6f19203d006fd3f930290740d3e27589f80f9fde79af",
-    "facets": 726,
+    "digest": "900741df8cd4d79e9554b037a8b21efb64e254f3496348f2fe334669ba3f14ac",
+    "facets": 727,
     "counts": {
       "component": 8,
       "kind": 21,
@@ -12,7 +12,7 @@
       "route": 102,
       "screen": 38,
       "section": 19,
-      "test": 82,
+      "test": 83,
       "verb": 60
     },
     "coverage": 0.9917,
@@ -14414,7 +14414,7 @@
       "name": "32",
       "title": "\u00a732",
       "summary": "A plan section claimed by at least one module.",
-      "source": "docs/PHASE17.md:136",
+      "source": "docs/AUDIT.md:260",
       "links": [],
       "tags": []
     },
@@ -17015,6 +17015,21 @@
         {
           "relation": "covers",
           "target": "package:gratimos.storage"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "test:test_tools_demo",
+      "kind": "test",
+      "name": "test_tools_demo",
+      "title": "tools demo",
+      "summary": "The published demo \u2014 the one artefact nothing was checking.",
+      "source": "tests/test_tools_demo.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.api"
         }
       ],
       "tags": []

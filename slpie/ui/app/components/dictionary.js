@@ -231,6 +231,9 @@ function runnerBlock(block, data, options) {
   return draw(block);
 }
 
+//: Components that already show `block.title` inside themselves.
+const SELF_LABELLING = new Set(["stat"]);
+
 export const COMPONENTS = {
   auto: autoBlock,
   grid: gridBlock,
@@ -260,6 +263,10 @@ export function render(block, data, options = {}) {
   }
   const body = draw(block, data, options);
   if (body === null || body === undefined) return null;
+  // A stat draws its own label from the same field, so wrapping it in a titled
+  // card printed the word twice, one above the other. Components that label
+  // themselves are not wrapped.
+  if (SELF_LABELLING.has(block.component)) return body;
   const heading = resolveLabel(block.title || "");
   return heading ? card(heading, body) : body;
 }

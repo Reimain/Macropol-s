@@ -137,16 +137,33 @@ def columns(star: Star, *, limit: int = 0) -> list[dict[str, Any]]:
     """
     out: list[dict[str, Any]] = []
     for column in star.fact.columns:
+        # A column that points at a dimension is shown by its *name*, with the
+        # id kept beside it for the dense register. A grid whose subject column
+        # reads `f92e259c841f97b1…` is a table nobody can use — the id is what
+        # the link needs and the name is what the reader needs, and dropping
+        # either one costs something.
+        resolved = column.dimension and LABELS.get(column.dimension)
+        if resolved and resolved != column.name:
+            out.append({
+                "key": f"{column.name}_name",
+                "label": column.name.replace("_", " "),
+                "align": "",
+                "density": "",
+                "format": "",
+                "link": LINKS.get(column.name, ""),
+            })
         out.append({
             "key": column.name,
-            "label": column.name.replace("_", " "),
+            "label": (f"{column.name} id" if resolved else
+                      column.name.replace("_", " ")),
             "align": "right" if column.type in ("real", "integer") else "",
             # The identity columns are what a reader scans past, not what they
             # scan for, so the dense register shows them and the calm one does
             # not. Same data, one attribute.
-            "density": "dense" if column.key else "",
-            "format": FORMATS.get(column.name, "mono" if column.key else ""),
-            "link": LINKS.get(column.name, ""),
+            "density": "dense" if (column.key or resolved) else "",
+            "format": FORMATS.get(column.name,
+                                  "mono" if (column.key or resolved) else ""),
+            "link": "" if resolved else LINKS.get(column.name, ""),
         })
     return out[:limit] if limit > 0 else out
 

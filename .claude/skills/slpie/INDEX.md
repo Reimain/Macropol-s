@@ -15,8 +15,8 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `aae420f66fdc28223d5e6f19203d006fd3f930290740d3e27589f80f9fde79af`
-- **facets** 726 — 8 component, 21 kind, 324 module, 72 package, 102 route, 38 screen, 19 section, 82 test, 60 verb
+- **digest** `900741df8cd4d79e9554b037a8b21efb64e254f3496348f2fe334669ba3f14ac`
+- **facets** 727 — 8 component, 21 kind, 324 module, 72 package, 102 route, 38 screen, 19 section, 83 test, 60 verb
 - **anchored** 99.2% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
@@ -188,6 +188,7 @@ From `docs/AUDIT.md`, by its own numbering. Read there for the command that repr
 | 1.6 | Coverage, and where it is thin |
 | 1.7 | Declared markers, unused |
 | 1.8 | The device tier's principal scoping is dead wiring |
+| 1.9 | The renderer seam ships, is precached, and no screen reaches it |
 | 2.1 | Duplication in the fixtures |
 | 2.2 | One path, three sources of truth |
 | 2.3 | Names that collide |

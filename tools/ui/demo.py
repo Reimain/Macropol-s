@@ -49,6 +49,19 @@ EXCLUDED = ("sw.js", "boot.js", "engine/vendor/")
 #: Where the bundle starts. Everything else is reached from here.
 ENTRY = "shell.js"
 
+#: Ships, is precached for offline, and no screen imports it — measured, and
+#: recorded in `docs/AUDIT.md` rather than quietly bundled. The graph screen
+#: draws through `components/graph.js`'s SVG, so the whole renderer seam is
+#: reachable from its own tests and from nowhere a reader can get to. Bundling
+#: it would put 60KB of unreachable code in the published page and hide the
+#: finding; naming it here keeps `test_the_bundle_reaches_every_file_that_ships`
+#: able to fail on the *next* orphan.
+UNREACHED = (
+    "engine/aggregate.js", "engine/camera.js", "engine/canvas2d.js",
+    "engine/contract.js", "engine/glyph.js", "engine/layout.js",
+    "engine/palette.js", "engine/ride.js",
+)
+
 #: Static import specifiers, as the browser sees them.
 IMPORTS = re.compile(
     r'^\s*import\s+(?:[^"\';]+\s+from\s+)?["\']([^"\']+)["\']', re.M,
@@ -153,63 +166,132 @@ def transform(path: str, source: str) -> str:
     )
 
 
+#: A body, as one string both sides agree on. The browser sends a POST body the
+#: recording has to be keyed by, and key order in JSON is not guaranteed — so
+#: both ends sort and join instead of hashing the serialisation.
+def _key(body: dict) -> str:
+    return "&".join(
+        f"{name}={body[name]}" for name in sorted(body) if not isinstance(
+            body[name], (dict, list))
+    )
+
+
+def _demands() -> list[dict]:
+    """The dashboard demands the recording answers.
+
+    Every single-axis move from the empty demand, and every (utility, domain)
+    pair — which is what the screen produces as a reader works the controls.
+    Contexts are recorded singly rather than crossed: `for` changes the layout
+    of the same subject, so a reader exploring it one axis at a time is served,
+    and the full cube would be 150 scans for a page nobody scrolls that far in.
+    """
+    from slpie.present.template import DOMAINS, UTILITIES
+
+    out: list[dict] = [{}]
+    out += [{"utility": item} for item in UTILITIES]
+    out += [{"domain": item} for item in DOMAINS]
+    out += [{"utility": one, "domain": two} for one in UTILITIES for two in DOMAINS]
+    return out
+
+
+#: What the estate's own root is called in the published page. The world is
+#: materialised into a temporary directory, and a demo whose evidence cites
+#: `/tmp/tmp8f3k/services/payments` reads as a bug rather than as an estate.
+ESTATE = "/acme-production"
+
+
+def scrub(recording: dict, *paths: str) -> dict:
+    """Take the build machine out of the recording.
+
+    Evidence carries `file://` URIs, and the URIs are real absolute paths on
+    whichever machine ran the build. Publishing them leaks the runner's layout
+    and — worse for the reader — makes every citation on the page point at a
+    directory that never existed on theirs.
+
+    Rewritten as text rather than walked as a tree because the paths appear in
+    URIs, in excerpts, in reasoning sentences and in gap details; a structural
+    walk would have to know all four and would miss the fifth.
+    """
+    body = json.dumps(recording)
+    for path in sorted(paths, key=len, reverse=True):
+        if path and path != "/":
+            body = body.replace(path.rstrip("/"), ESTATE)
+    return json.loads(body)
+
+
 def capture() -> dict:
     """A real scan, recorded route by route."""
     from slpie.ui.api import Api, Request
     from tools.ui.world import build
 
-    engine = build(tempfile.mkdtemp())
+    world = tempfile.mkdtemp()
+    engine = build(world)
     api = Api(engine=engine)
 
-    routes = [
-        "/api/status", "/api/graph", "/api/findings", "/api/station",
-        "/api/reconcile", "/api/cycles", "/api/verbs", "/api/manual",
-        "/api/routes", "/api/screens", "/api/integrity", "/api/projections",
-        "/api/scenarios", "/api/manifest", "/api/stream/status",
-        "/api/admin/workspaces", "/api/admin/datasets", "/api/admin/quota",
-        "/api/apim/apis", "/api/apim/gateway", "/api/apim/throttles",
-        "/api/apim/analytics", "/api/apim/subscriptions", "/api/contract",
-    ]
-    recorded = {}
-    for route in routes:
+    def record(method: str, path: str, body: dict | None = None) -> dict:
         try:
-            response = api.handle(Request("GET", route, {}, {}))
+            response = api.handle(Request(method, path, {}, body or {}))
         except Exception as error:                       # noqa: BLE001
-            recorded[route] = {"__status": 500, "error": str(error)}
-            continue
-        body = getattr(response, "body", response)
-        recorded[route] = {
+            return {"__status": 500, "__body": {"error": str(error)}}
+        return {
             "__status": getattr(response, "status", 200),
-            "__body": body,
+            "__body": getattr(response, "body", response),
         }
 
-    # A few POSTs the console makes, so Ask and Run answer in the demo.
-    posts = {}
-    for path, payload in (
-        ("/api/ask", {"question": "what breaks if lodash 5 lands?"}),
-        ("/api/run", {"pipeline": "discover --path . | link | findings"}),
-    ):
-        try:
-            response = api.handle(Request("POST", path, {}, body=payload))
-            posts[path] = {
-                "__status": getattr(response, "status", 200),
-                "__body": getattr(response, "body", response),
-            }
-        except Exception as error:                       # noqa: BLE001
-            posts[path] = {"__status": 500, "__body": {"error": str(error)}}
+    # Every GET the API declares, rather than a list somebody maintains beside
+    # it. The generated inspectors are *most* of the interface — the whole API
+    # management section is one — so a hand-kept list means the screens nobody
+    # authored are the screens the demo cannot show.
+    recorded = {}
+    for method, path in api.routes:
+        if method != "GET" or ":" in path or path == "/api/stream":
+            continue
+        recorded[path] = record("GET", path)
+
+    # Routes that need a subject: recorded for one real node, so the detail
+    # screens have something to open rather than a 404.
+    subject = ""
+    nodes = (recorded.get("/api/graph", {}).get("__body") or {}).get("nodes") or []
+    if nodes:
+        subject = str(nodes[0].get("id") or "")
+    if subject:
+        for path in ("/api/node", "/api/impact"):
+            recorded[f"{path}?id={subject}"] = record("GET", f"{path}?id={subject}")
+
+    posts: dict[str, dict] = {}
+
+    def post(path: str, body: dict) -> None:
+        posts.setdefault(path, {})[_key(body)] = record("POST", path, body)
+
+    post("/api/ask", {"question": "what breaks if lodash 5 lands?"})
+    post("/api/plan", {"question": "what breaks if lodash 5 lands?"})
+    # The *estate*, not this repository. Recording `discover --path .` scanned
+    # whatever tree the build ran in, so the Compose screen answered about the
+    # machine that baked the page while every other screen answered about
+    # `acme-production` — two estates in one console, and the confusing one was
+    # the one with a `Run` button under it.
+    post("/api/run", {"pipeline": f"discover --path {world} | link | findings"})
+    for demand in _demands():
+        pipeline = "scan | dashboard --govern" + "".join(
+            f" --{name} {value}" for name, value in demand.items()
+        )
+        post("/api/run", {"pipeline": pipeline})
 
     events = []
     try:
-        for record in engine.ledger.read(limit=40):
+        for record_ in engine.ledger.read(limit=40):
             events.append({
-                "sequence": getattr(record, "sequence", 0),
-                "kind": getattr(record, "kind", ""),
-                "subject": str(getattr(record, "subject", ""))[:80],
+                "sequence": getattr(record_, "sequence", 0),
+                "kind": getattr(record_, "kind", ""),
+                "subject": str(getattr(record_, "subject", ""))[:80],
             })
     except Exception:                                     # noqa: BLE001
         pass
 
-    return {"get": recorded, "post": posts, "events": events}
+    return scrub(
+        {"get": recorded, "post": posts, "events": events, "node": subject},
+        world, str(ROOT), tempfile.gettempdir(),
+    )
 
 
 SHIM = """
@@ -224,13 +306,15 @@ SHIM = """
  * faked — a bug in any of them is a bug you would see here. */
 const RECORDED = __RECORDING__;
 
-function reply(store, path) {
-  const key = path.split("?")[0];
-  const hit = store[key];
-  if (!hit) {
-    return new Response(JSON.stringify({error: "not recorded in this demo"}),
-      {status: 404, headers: {"content-type": "application/json"}});
-  }
+function missing(what) {
+  return new Response(JSON.stringify({
+    error: `${what} is not in this recording`,
+    detail: "This page replays one scan. A question it was not asked says so "
+      + "rather than answering from something adjacent.",
+  }), {status: 404, headers: {"content-type": "application/json"}});
+}
+
+function answer(hit) {
   return new Response(JSON.stringify(hit.__body === undefined ? hit : hit.__body), {
     status: hit.__status || 200,
     headers: {
@@ -241,11 +325,34 @@ function reply(store, path) {
   });
 }
 
+/* The same key Python wrote, built the same way: sorted names, scalars only.
+ * Hashing the serialised body would have been shorter and wrong — key order in
+ * JSON is not guaranteed, so the two ends would disagree on some browsers and
+ * not on others. */
+function bodyKey(raw) {
+  let body = {};
+  try { body = JSON.parse(raw || "{}"); } catch (error) { body = {}; }
+  return Object.keys(body).sort()
+    .filter((name) => body[name] === null || typeof body[name] !== "object")
+    .map((name) => `${name}=${body[name]}`)
+    .join("&");
+}
+
 window.fetch = async (input, init = {}) => {
   const url = typeof input === "string" ? input : input.url;
   const path = url.replace(/^https?:\\/\\/[^/]+/, "");
   await new Promise((done) => setTimeout(done, 90));   // a plausible latency
-  return reply((init.method || "GET") === "POST" ? RECORDED.post : RECORDED.get, path);
+
+  if ((init.method || "GET") === "POST") {
+    const bucket = RECORDED.post[path.split("?")[0]];
+    if (!bucket) return missing(path);
+    const hit = bucket[bodyKey(init.body)];
+    return hit ? answer(hit) : missing("that request");
+  }
+  // Exact first — `/api/node?id=…` is recorded whole — then the bare path, so
+  // a query the recording ignores still answers.
+  const hit = RECORDED.get[path] || RECORDED.get[path.split("?")[0]];
+  return hit ? answer(hit) : missing(path);
 };
 
 /* A stand-in for the live feed. The console's reconnect logic, sequence
@@ -297,8 +404,8 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     recording = capture()
-    css = "\n".join(f"/* {name} */\n{(APP / name).read_text()}" for name in STYLES)
-    bundle = "".join(transform(name, (APP / name).read_text()) for name in MODULES)
+    css = "\n".join(f"/* {name} */\n{(APP / name).read_text()}" for name in styles())
+    bundle = "".join(transform(name, (APP / name).read_text()) for name in modules())
 
     shim = SHIM.replace("__RECORDING__", json.dumps(recording))
     body = re.search(r"<body>(.*)</body>", (APP / "index.html").read_text(), re.S)
@@ -351,9 +458,11 @@ body {{ grid-template-rows: auto var(--topbar-h) 1fr;
     <code>acme-production</code> estate — 41 nodes, 48 relationships,
     66 pieces of evidence. Try <b>Calm</b> and <b>Dense</b> in the top right — they are two different instruments, not two sizes.</span>
   <span class="try">Start here
+    <a href="#/dashboard">Dashboard</a>
     <a href="#/graph">Graph</a>
-    <a href="#/verbs">Verbs</a>
-    <a href="#/compose">Compose</a></span>
+    <a href="#/findings">Findings</a>
+    <a href="#/compose">Compose</a>
+    <a href="#/portal">API portal</a></span>
 </div>
 {markup}
 <script type="module">

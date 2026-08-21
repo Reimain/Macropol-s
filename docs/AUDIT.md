@@ -236,6 +236,33 @@ this one is not a glob that matches nothing, it is a wipe that nothing triggers.
 **Closing it needs the gateway to report the principal it already resolved**, at which point the
 browser test should drive the wipe through a status change rather than by calling `persist()`.
 
+### 1.9 The renderer seam ships, is precached, and no screen reaches it
+
+Found while deriving the demo's bundle from the import graph rather than from a hand-written
+list — the walk starts at `shell.js` and eight files were never visited:
+
+```
+$ python -c "from tools.ui.demo import modules, APP; from pathlib import Path; \
+    ships={str(p.relative_to(APP)) for p in Path(APP).rglob('*.js')}; \
+    print(sorted(ships - set(modules()) - {'sw.js','boot.js'}))"
+['engine/aggregate.js', 'engine/camera.js', 'engine/canvas2d.js', 'engine/contract.js',
+ 'engine/glyph.js', 'engine/layout.js', 'engine/palette.js', 'engine/ride.js']
+```
+
+`screens/graph.js` imports `engine/condition.js`, `engine/route.js` and `engine/narrate.js` — the
+state machine, the rail and the narration — and draws the estate with `components/graph.js`'s
+SVG `diagram()`. The renderer itself is reached by `tests/test_slpie_ui_engine.py` and by
+`sw.js`'s precache list, and by nothing a reader can navigate to.
+
+That is §24's own drift shape inside the browser tier: a capability the platform has and no
+surface reaches. It is also why `sw.js` precaches 60KB the offline console cannot use.
+
+**Recorded rather than fixed.** Wiring the graph screen through `engine/contract.js` is §32
+steps 6–8, and doing it as a side effect of a demo build would be the wrong place to make a
+rendering decision. The names are pinned in `tools/ui/demo.UNREACHED` so
+`test_the_bundle_reaches_every_file_that_ships` fails on the *next* orphan rather than growing a
+tolerated category.
+
 ---
 
 ## Part 2 — structural

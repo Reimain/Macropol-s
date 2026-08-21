@@ -64,7 +64,11 @@ function pipelineFor(demand) {
     .filter(([, value]) => value)
     .map(([key, value]) => `--${key} ${value}`)
     .join(" ");
-  return `${sourceFor()} | dashboard${flags ? ` ${flags}` : ""}`;
+  // `--govern` always. Half the templates read the findings star, and the
+  // rules are what fills it — a security board that renders three zeros
+  // because nobody ran them is worse than no board, since a zero reads as
+  // "nothing is wrong" rather than as "nothing was checked".
+  return `${sourceFor()} | dashboard --govern${flags ? ` ${flags}` : ""}`;
 }
 
 function controls() {
@@ -165,20 +169,56 @@ function body() {
   }
   if (!held.answer) {
     return h("p", { class: "empty" },
-      "Say what you are doing and it will choose a screen.");
+      "Pick what you are doing, where you are reading it, or what it is "
+      + "about — any one of the three is enough to choose a board.");
   }
 
   const answer = held.answer;
-  const panels = (answer.panels || []).map(drawPanel).filter(Boolean);
+  const drawn = [];
+  let tiles = [];
+
+  // Consecutive stats become one row of tiles rather than three stacked
+  // paragraphs. The grouping is a rendering decision and belongs here rather
+  // than in the template: a template says *what* the panel is, and how three
+  // of them sit next to each other is the screen's business.
+  const flush = () => {
+    if (!tiles.length) return;
+    drawn.push(h("div", { class: "grid" }, tiles));
+    tiles = [];
+  };
+
+  for (const panel of answer.panels || []) {
+    const node = drawPanel(panel);
+    if (!node) continue;
+    if (panel.component === "stat") tiles.push(node);
+    else { flush(); drawn.push(node); }
+  }
+  flush();
+
   return h("div", { class: "stack" },
     chosen(answer),
-    panels.length
-      ? h("div", { class: "stack" }, panels)
+    drawn.length
+      ? h("div", { class: "stack" }, drawn)
       : h("p", { class: "empty" }, "The template filled no panels."),
     gaps(held.gaps));
 }
 
+/** Whether the reader has said anything yet. */
+function stated() {
+  return Object.values(held.demand || {}).some(Boolean);
+}
+
 async function ask() {
+  // Nothing is chosen until something is asked. An empty demand ties across
+  // every template and lands below the floor, so running it would greet a
+  // first-time reader with "no template answers this well" — the engine
+  // correctly reporting that no question was put to it, in the voice of a
+  // failure. The chooser is the answer to an empty demand.
+  if (!stated()) {
+    held = { ...held, state: "idle", answer: null, gaps: [] };
+    redraw();
+    return;
+  }
   held = { ...held, state: "asking" };
   redraw();
 

@@ -903,3 +903,20 @@ def test_a_fact_serialises_with_its_grain():
         payload = item.fact.to_dict()
         assert payload["grain"], f"{item.fact.name} shipped without its grain"
         assert payload["columns"], f"{item.fact.name} shipped without its columns"
+
+
+def test_a_grid_shows_the_name_and_keeps_the_id():
+    """A subject column reading `f92e259c841f97b1…` is a table nobody can use.
+
+    Both travel: the id is what the link needs and the name is what the reader
+    needs, so the name leads and the id stays for the dense register.
+    """
+    from slpie.warehouse import query
+
+    specs = {spec["key"]: spec for spec in query.columns(star("findings"))}
+
+    assert "subject_name" in specs, "the subject arrives as a digest only"
+    assert specs["subject_name"]["link"] == "#/node/:subject"
+    assert specs["subject_name"]["density"] == ""
+    assert specs["subject"]["density"] == "dense"
+    assert specs["subject"]["format"] == "mono"
