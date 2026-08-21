@@ -125,13 +125,91 @@ Things learned the expensive way. Ignore them and the same bug returns.
 - The test suite must pass with **zero third-party packages installed** for the
   kernel job. That is invariant 4, and it is a CI job, not an aspiration.
 
-## Verifying a change
+## Verifying a change — the ladder, not the full suite
+
+**`pytest -q` costs 285 seconds.** Running it after every edit is the single
+largest waste available in this repository: a session that runs it eight times
+has spent forty minutes watching dots. Climb the ladder instead, and run the
+full suite **once, before the commit**.
+
+| Change | Run | Cost |
+|---|---|---|
+| one module | its own test file | < 2s |
+| a verb, a route, a screen | `test_slpie_compose.py test_slpie_contract.py test_slpie_ui_assets.py` | ~100s |
+| anything under `app/` | `test_slpie_ui_assets.py test_slpie_ui_engine.py test_slpie_clients.py` | ~7s |
+| anything that renders | `pytest -q -m browser -k <name>` | ~10s |
+| before committing | `pytest -q` then `pytest -q -m browser` | 285s + 102s |
+
+`-k` on the browser tier is the difference between 10 seconds and 102. Use it
+while iterating; drop it before the commit.
+
+### Regenerate before the full suite, never after
+
+Four artifacts are committed and parity-gated, so a stale one fails the suite
+and costs a second 285-second run. Do this *first*:
 
 ```bash
-pytest -q                        # the whole suite, offline
-slpie context --skill --check    # this skill's generated half is in step
+python -m tools.clients          # client.js, openapi.json, three .ts clients
+python -m slpie.cli context --skill   # this skill's generated half
+python -m tools.vendor --check   # the vendored third-party bytes
+```
+
+### The rest
+
+```bash
 slpie context --digest           # unchanged tree → unchanged digest
 slpie audit --digest             # the architecture has not drifted
 slpie ui --once                  # the front door opens
 python acceptance.py             # the full end-to-end run, offline
 ```
+
+## Operations that block, and what they actually cost
+
+Measured in this environment, not estimated. Knowing which of these is slow is
+what stops a session budgeting its time by accident.
+
+| Operation | Cost | Note |
+|---|---|---|
+| `pytest -q` | 285s | the whole default suite |
+| `pytest -q -m browser` | 102s | opt-in; needs `.[e2e]` |
+| `pytest -q -m browser -k x` | ~10s | use this while iterating |
+| `python -m tools.clients` | ~20s | rebuilds the verb registry |
+| `slpie context --skill` | ~17s | cached on a tree digest (§32 step 0) |
+| `npm install` in `clients/web` | ~11s | registry is reachable |
+| `npm run build` | ~3s | tsc + vite |
+| `npm view` / `npm pack` | works | the proxy allows the npm registry |
+
+**What is *not* blocked, despite looking like it:**
+
+- **The npm registry is reachable.** Node 22 and npm are installed. `clients/web`
+  installs and builds here. The old claim in `clients/README.md` that this
+  environment had no Node toolchain was stale and is corrected.
+- **WebGL works headless.** Chromium at `/opt/pw-browsers` has SwiftShader, so
+  the vendored Three engine is exercised for real by the browser tier.
+- **`pip install -e '.[enterprise]'` works** — once the extra exists. It did not
+  until now: §22 specified `enterprise` and `pyproject.toml` never declared it,
+  so the command failed with *"does not provide the extra"*, which reads like an
+  architectural blocker and was five lines of packaging.
+
+**What genuinely cannot be done here:** reaching hosts the proxy refuses
+(`grok.me` is one, refused at CONNECT with a 403). Record those as gaps rather
+than working around them.
+
+## Where the build actually is
+
+Phases 1–13 are built. §§24–32 are the composition spine, the audit judge, the
+capture firewall, the console and the graph — all inserted **before** the
+enterprise rings, which is why 14–18 look untouched.
+
+| Phase | State |
+|---|---|
+| 14 — seams | done: `TaskRunner`, `ResourceMeter`, `ObjectStore`, `contract.py` |
+| 15 — Postgres persistence | **not started** — `slpie_enterprise/persistence/` absent |
+| 16 — FastAPI, Celery, cloud, frameworks | **not started** — those four packages absent |
+| 17 — clients | **partly done**: `clients/web` builds against the stdlib server |
+| 18 — deployment | not started |
+
+Ring 1 today is `slpie_enterprise/{spawn,storage}` — 8 modules. Nothing blocks
+15 or 16; they are unstarted, not stuck. **Phase 17's web shell does not need
+16**: it talks to the stdlib server over the same generated client, which is why
+it already builds.
