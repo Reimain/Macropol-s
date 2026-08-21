@@ -1,8 +1,8 @@
 {
   "generator": "slpie context --skill",
-  "digest": "d693bfdbf8c100a3475177e09ec5b410bbbdc4937c1fb79f845dbb5b5f950548",
+  "digest": "9e68176322ec30ca0a2baffc15a082604cebcab88b075965f1221849a60bcaa9",
   "summary": {
-    "digest": "d693bfdbf8c100a3475177e09ec5b410bbbdc4937c1fb79f845dbb5b5f950548",
+    "digest": "9e68176322ec30ca0a2baffc15a082604cebcab88b075965f1221849a60bcaa9",
     "facets": 706,
     "counts": {
       "component": 52,
@@ -13790,7 +13790,7 @@
       "name": "23",
       "title": "\u00a723",
       "summary": "A plan section claimed by at least one module.",
-      "source": "docs/UI.md:275",
+      "source": "docs/PHASE15.md:93",
       "links": [],
       "tags": []
     },

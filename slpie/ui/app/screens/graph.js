@@ -22,6 +22,9 @@ import { card, panel } from "../ui/panel.js";
 import { bars, hero, stat } from "../ui/chart.js";
 import { CERTAINTY_FILL, share } from "../ui/chart.js";
 import { diagram, directness, key, spread } from "../ui/graph.js";
+import { CHOOSING, MEANS, machine } from "../engine/condition.js";
+import { rail } from "../engine/route.js";
+import { readout, upto } from "../engine/narrate.js";
 
 const stops = [];
 let picked = "";
@@ -114,7 +117,80 @@ function selection(value) {
         { class: "go quiet" }, "Open as a pipeline")));
 }
 
-export function mount(outlet) {
+/* --- the flight mode: choose, aim, ride ---------------------------------- */
+
+/* The condition model owns what the screen is doing. It lives here rather than
+ * in a loose variable because the *interaction* is the thing three prototypes
+ * got wrong by tuning a scene first — and a machine can be asserted where "it
+ * feels right" cannot. */
+const flight = machine();
+let route = null;
+
+/**
+ * `CHOOSING` draws no scene at all.
+ *
+ * This is the load-bearing rule of §32 and it is enforced here rather than
+ * described: the chooser is a list of what is available and what is worth
+ * looking at, and nothing spatial is rendered until a selection has earned it.
+ * A graph before a question is a picture of an estate nobody asked about.
+ */
+function chooser(value) {
+  const nodes = (value.nodes || []).slice(0, 24);
+  return card("Choose what to look at",
+    h("p", { class: "prose muted" },
+      "Nothing is drawn yet, and that is deliberate. A field of scattered "
+      + "points says only that there is a lot of data. Pick something and the "
+      + "view becomes the answer to that question."),
+    h("p", { class: "muted mono" }, MEANS[CHOOSING]),
+    nodes.length
+      ? h("ul", { class: "choices" }, nodes.map((node) => h("li", {},
+        h("button", {
+          type: "button",
+          class: "chip",
+          onclick: () => {
+            picked = node.id;
+            flight.send("select");
+            redraw();
+          },
+        }, node.name || node.id))))
+      : h("p", { class: "empty" }, "Nothing to choose from yet."));
+}
+
+/** What the ride is worth, in the words the panel shows. */
+function narration(evidenceFor) {
+  if (!route) return null;
+  const lines = upto(route, route.length - 1, evidenceFor);
+  const numbers = readout(route, route.length - 1);
+  return card("The reasoning, in the order it arrives",
+    h("p", { class: "muted mono" },
+      `${numbers.travelled} hop(s), bounded at ${numbers.floor.toFixed(2)}`
+      + (numbers.inferred ? ` — ${numbers.inferred} inferred` : "")),
+    h("ol", { class: "narration" }, lines.map((line) => h("li",
+      { class: `narrate ${line.role}${line.slowing ? " slowing" : ""}` },
+      line.text))));
+}
+
+export function mount(outlet, _params = {}, query = {}) {
+  // The condition model gates the **flight mode**, not this screen.
+  //
+  // `#/graph` on its own is the holistic estate view, and §32 keeps that
+  // deliberately: "show me everything" stays available, stays one control, and
+  // is labelled as what it is — the whole estate, expensive, and rarely the
+  // useful thing. It is a state you *choose*, not the state you land in by
+  // accident, and gating it behind a chooser would remove a view somebody
+  // asked for rather than stopping one nobody did.
+  //
+  // `#/graph?view=flight` is where `CHOOSING` applies, because that is the
+  // view three prototypes opened into as a rendered field of scattered points.
+  const flying = query.view === "flight";
+
+  // A fresh visit starts fresh. The machine is module-level so the screen does
+  // not keep the condition in a loose variable, and that means an old
+  // condition can outlive the visit that produced it — a reader arriving at
+  // the chooser and being shown last visit's scene would be the interface
+  // remembering something they did not ask it to.
+  if (!picked) flight.send("clear");
+
   redraw = () => {
     const held = cell("graph");
 
@@ -132,12 +208,18 @@ export function mount(outlet) {
 
         selection(value),
 
-        card("The estate",
+        // Nothing spatial before a selection — in flight mode. The chooser
+        // replaces the scene rather than sitting beside an empty one.
+        flying && !flight.draws ? chooser(value) : null,
+
+        !flying || flight.draws ? card("The estate",
           key(),
           diagram(value.nodes || [], value.edges || [], {
             selected: picked,
             onPick: (id) => { picked = picked === id ? "" : id; redraw(); },
-          })),
+          })) : null,
+
+        flying ? narration(() => []) : null,
 
         Object.keys(value.by_kind || {}).length
           ? card("By kind",
@@ -159,6 +241,16 @@ export function unmount() {
   while (stops.length) stops.pop()();
   redraw = () => {};
   picked = "";
+  route = null;
+  flight.send("clear");
+}
+
+/** For the ride, once an `impact` answer is in hand. */
+export function aim(payload) {
+  route = rail(payload);
+  flight.send("aim");
+  redraw();
+  return route;
 }
 
 export const needs = ["*"];

@@ -1680,3 +1680,370 @@ def test_the_rail_does_not_offer_what_this_shell_cannot_draw(page, served):
     assert sorted(shells["flight"]) == ["drag", "split-pane", "timeline"]
     assert shells["console"] == []
     assert shells["shells"] == ["stdlib", "web"]
+
+
+# --- choose, aim, ride ---------------------------------------------------------
+
+
+def test_every_condition_is_reachable_and_illegal_moves_refuse_with_a_reason(page, served):
+    """A machine can be asserted; "it feels right when you drag the slider"
+    cannot. Walking the whole table is what stops a seventh behaviour appearing
+    by accident, which is the failure mode of every camera controller written
+    without one."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/condition.js').then((model) => {
+        // Every condition reachable from the start, by some sequence.
+        const seen = new Set([model.CHOOSING]);
+        const queue = [model.CHOOSING];
+        while (queue.length) {
+          const from = queue.shift();
+          for (const event of Object.keys(model.TRANSITIONS[from])) {
+            const to = model.next(from, event).condition;
+            if (!seen.has(to)) { seen.add(to); queue.push(to); }
+          }
+        }
+
+        // Every *illegal* pair refuses and says why. A declared transition onto
+        // itself — re-aiming while already at APPROACH — is legal and
+        // idempotent, and putting a reason on screen for an action that worked
+        // is how people learn to ignore the reasons.
+        const refusals = [];
+        const idempotent = [];
+        for (const from of model.CONDITIONS) {
+          for (const event of ['select', 'aim', 'go', 'hold', 'touch', 'arrive', 'clear']) {
+            const answer = model.next(from, event);
+            if (!answer.legal) refusals.push({from, event, reason: answer.reason});
+            else if (!answer.moved) idempotent.push({from, event, reason: answer.reason});
+          }
+        }
+
+        const m = model.machine();
+        m.send('select'); m.send('aim'); m.send('go');
+        const driving = m.condition;
+        m.touch();
+
+        return {
+          reachable: [...seen].sort(),
+          all: [...model.CONDITIONS].sort(),
+          silent: refusals.filter((r) => !r.reason).length,
+          refused: refusals.length,
+          noisy: idempotent.filter((r) => r.reason).length,
+          idempotent: idempotent.map((r) => `${r.from}+${r.event}`),
+          drawsWhileChoosing: model.draws(model.CHOOSING),
+          drawsWhileAiming: model.draws(model.AIMING),
+          driving,
+          afterTouch: m.condition,
+          nonsense: model.next(model.CHOOSING, 'wat'),
+        };
+      })
+    """)
+
+    assert result["reachable"] == result["all"], "a condition is unreachable"
+    assert result["refused"] > 0, "no illegal move was found — is the table total?"
+    assert result["silent"] == 0, "an illegal move refused without saying why"
+    assert result["noisy"] == 0, "a legal, idempotent move reported a refusal"
+    assert result["idempotent"] == ["approach+aim"], (
+        f"the idempotent set changed: {result['idempotent']}"
+    )
+    # The load-bearing one.
+    assert result["drawsWhileChoosing"] is False
+    assert result["drawsWhileAiming"] is True
+    # Manual input always wins, and is never silently overridden.
+    assert result["driving"] == "traverse"
+    assert result["afterTouch"] == "held"
+    assert result["nonsense"]["moved"] is False
+    assert "does nothing while" in result["nonsense"]["reason"]
+
+
+def test_the_route_is_the_impact_result_and_short_ones_do_not_fly(page, served):
+    """The mock picked a random walk because it had no data. `impact` is reverse
+    reachability in SQL and returns distance and a propagated minimum
+    confidence — that is the rail, and a two-hop answer is a list."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      import('/engine/route.js').then((route) => {
+        const payload = (n) => ({root: 'r', impacted: Array.from(
+          {length: n}, (_, i) => ({
+            node_id: 'n' + i, distance: i + 1, display: 'node-' + i,
+            confidence: i === 1 ? 0.4 : 0.95,
+          }))});
+
+        const long = route.rail(payload(6));
+        const short = route.rail(payload(2));
+        const shuffled = route.rail({root: 'r', impacted:
+          [...payload(6).impacted].reverse()});
+
+        return {
+          animates: long.animates,
+          shortAnimates: short.animates,
+          shortSummary: short.summary,
+          floors: long.hops.map((h) => Number(h.floor.toFixed(2))),
+          answerFloor: Number(long.floor.toFixed(2)),
+          // Speed is the evidence: the inferred hop takes longer to cross.
+          seconds: long.hops.map((h) => Number(h.seconds.toFixed(2))),
+          deterministic:
+            long.hops.map((h) => h.id).join() === shuffled.hops.map((h) => h.id).join(),
+          empty: route.rail({root: 'r', impacted: []}).summary,
+        };
+      })
+    """)
+
+    assert result["animates"] is True
+    assert result["shortAnimates"] is False
+    assert "too short to fly" in result["shortSummary"]
+    assert result["deterministic"], "two runs of one answer travelled different routes"
+    # A chain is exactly as strong as its weakest link, so the floor only falls.
+    assert result["floors"] == sorted(result["floors"], reverse=True)
+    assert result["answerFloor"] == 0.4
+    # And the reader feels the weak hop before reading the number.
+    assert result["seconds"][1] > result["seconds"][0]
+    assert result["empty"] == "nothing depends on this"
+
+
+def test_the_camera_is_never_inside_a_solid(page, served):
+    """The defect that broke the third prototype: eye at y=52, solids 26-143
+    tall standing at y=0, so it rendered from inside the buildings and the
+    horizon never painted. Checked every frame, not once at the start — a route
+    climbing into a dense region is exactly the case that produced it."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      Promise.all([
+        import('/engine/route.js'), import('/engine/ride.js'),
+        import('/engine/layout.js'),
+      ]).then(([route, ride, layout]) => {
+        // A graph where degree — and therefore height — climbs steeply along
+        // the route, so a clearance computed once at the start would sink.
+        const nodes = Array.from({length: 120}, (_, i) => ({
+          id: 'n' + i, name: 'n' + i, kind: 'service',
+        }));
+        const edges = [];
+        for (let i = 0; i < 120; i += 1) {
+          for (let k = 0; k < i % 40; k += 1) {
+            edges.push({src: 'n' + i, dst: 'n' + ((i + k + 1) % 120)});
+          }
+        }
+        const scene = layout.place(nodes, edges);
+
+        const rail = route.rail({root: 'n0', impacted: Array.from(
+          {length: 10}, (_, i) => ({
+            node_id: 'n' + (i * 11), distance: i + 1,
+            confidence: 0.9, display: 'n' + (i * 11),
+          }))});
+        const laid = ride.path(rail, scene.placed);
+
+        const samples = [];
+        for (let t = 0; t <= rail.seconds; t += rail.seconds / 60) {
+          const frame = ride.ride(rail, laid, t, {
+            width: 900, height: 600, placed: scene.placed,
+          });
+          if (!frame) continue;
+          const roof = ride.ceiling(scene.placed, frame.camera.eye);
+          samples.push({
+            eye: frame.camera.eye.y, roof, cleared: frame.camera.eye.y - roof,
+          });
+        }
+        return {
+          frames: samples.length,
+          worst: Math.min(...samples.map((s) => s.cleared)),
+          missing: laid.missing,
+          tallest: Math.max(...samples.map((s) => s.roof)),
+        };
+      })
+    """)
+
+    assert result["frames"] > 30, "too few frames sampled to prove anything"
+    assert result["tallest"] > 20, "no solid was tall enough to test clearance"
+    assert result["missing"] == 0
+    assert result["worst"] > 0, (
+        f"the camera entered a solid — cleared by {result['worst']} at worst"
+    )
+
+
+def test_every_narrated_line_traces_to_something_that_was_computed(page, served):
+    """A sentence with no `derived_from` behind it is a test failure.
+
+    The mock displayed "nodes in frustum" as a formula over the node count — a
+    number presented as a measurement. A surface whose claim is that it
+    separates what was read from what was guessed cannot do that.
+    """
+    _open(page, served)
+
+    result = page.evaluate("""
+      Promise.all([
+        import('/engine/route.js'), import('/engine/narrate.js'),
+      ]).then(([route, narrate]) => {
+        const rail = route.rail({root: 'r', impacted: [
+          {node_id: 'a', distance: 1, confidence: 0.95, display: 'payments-api'},
+          {node_id: 'b', distance: 2, confidence: 0.40, display: 'vault-sdk'},
+          {node_id: 'c', distance: 3, confidence: 0.90, display: 'orders-db'},
+          {node_id: 'd', distance: 4, confidence: 0.90, display: 'queue'},
+        ]});
+
+        const evidence = {
+          a: [
+            {id: 'e1', kind: 'static_import', confidence: 0.90,
+             location: {uri: 'file:///r/services/payments/client.py', line: 41}},
+            {id: 'e2', kind: 'lockfile_pin', confidence: 1.0,
+             location: {uri: 'file:///r/package-lock.json', line: 0}},
+          ],
+          b: [
+            {id: 'e3', kind: 'dynamic_load', confidence: 0.40,
+             location: {uri: 'file:///r/services/vault/loader.py', line: 88}},
+          ],
+          c: [],
+        };
+
+        const lines = narrate.upto(rail, 2, (id) => evidence[id] || []);
+        return {
+          lines: lines.map((l) => ({role: l.role, text: l.text, from: l.from})),
+          untraced: lines.filter((l) => !l.from).length,
+          readout: narrate.readout(rail, 1, {marks: 12, represented: 340}),
+          modelled: narrate.readout(rail, 1, null),
+        };
+      })
+    """)
+
+    assert result["untraced"] == 0, "a narrated line rests on nothing"
+
+    text = " | ".join(line["text"] for line in result["lines"])
+    # The evidence arrives as a citation a reviewer can open.
+    assert "services/payments/client.py:41" in text
+    assert "services/vault/loader.py:88" in text
+    # Two independent observations hold speed; one inference slows and rebounds
+    # the whole answer's bound.
+    assert "2 independent observations agree" in text
+    assert "inferred, not read" in text
+    assert "bounded at 0.40" in text
+    # Nothing recorded is stated as such, not padded with reassurance.
+    assert "reached, and unexplained" in text
+
+    # Counted, never modelled: with no renderer tally there is no number.
+    assert result["readout"]["marks"] == 12
+    assert result["readout"]["represents"] == 340
+    assert result["modelled"]["marks"] is None
+    assert result["readout"]["travelled"] == 2
+    assert result["readout"]["remaining"] == 2
+
+
+def test_reduced_motion_loses_no_information(page, served):
+    """The same hops, in the same order, with the same confidence — stepped
+    rather than flown. A fallback that lost the ordering would be a different
+    answer presented as an accommodation."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      Promise.all([
+        import('/engine/route.js'), import('/engine/ride.js'),
+        import('/engine/layout.js'),
+      ]).then(([route, ride, layout]) => {
+        const nodes = Array.from({length: 30}, (_, i) => ({
+          id: 'n' + i, name: 'n' + i, kind: 'package',
+        }));
+        const edges = Array.from({length: 40}, (_, i) => ({
+          src: 'n' + (i % 30), dst: 'n' + ((i * 3 + 1) % 30),
+        }));
+        const scene = layout.place(nodes, edges);
+
+        const rail = route.rail({root: 'n0', impacted: Array.from(
+          {length: 7}, (_, i) => ({
+            node_id: 'n' + (i * 3), distance: i + 1, display: 'n' + (i * 3),
+            confidence: i === 3 ? 0.35 : 0.9,
+          }))});
+        const laid = ride.path(rail, scene.placed);
+
+        const flown = [];
+        for (let t = 0; t <= rail.seconds + 0.01; t += 0.05) {
+          const frame = ride.ride(rail, laid, t, {placed: scene.placed});
+          if (frame && frame.hop) flown.push(frame.hop.id);
+        }
+        const order = flown.filter((id, i) => id !== flown[i - 1]);
+        const steps = ride.stepped(rail, laid);
+
+        return {
+          flownOrder: order,
+          steppedOrder: steps.map((s) => s.id),
+          confidences: steps.map((s) => s.confidence),
+          floors: steps.map((s) => Number(s.floor.toFixed(2))),
+          last: steps[steps.length - 1].last,
+        };
+      })
+    """)
+
+    # Every hop the flight passes, in the order it passes them.
+    assert result["steppedOrder"][:len(result["flownOrder"])] == result["flownOrder"]
+    assert len(result["steppedOrder"]) == 7
+    assert result["confidences"][3] == 0.35
+    assert result["floors"] == sorted(result["floors"], reverse=True)
+    assert result["last"] is True
+
+
+def test_the_road_narrows_where_the_answer_becomes_inference(page, served):
+    """Evidence in the geometry. The graph screen already says how an edge was
+    learned with its stroke; the road says it with its width, so the reader
+    slows down before reading the number."""
+    _open(page, served)
+
+    result = page.evaluate("""
+      Promise.all([
+        import('/engine/route.js'), import('/engine/ride.js'),
+        import('/engine/layout.js'),
+      ]).then(([route, ride, layout]) => {
+        const nodes = Array.from({length: 20}, (_, i) => ({
+          id: 'n' + i, name: 'n' + i, kind: 'service',
+        }));
+        const scene = layout.place(nodes, []);
+        const rail = route.rail({root: 'n0', impacted: [
+          {node_id: 'n1', distance: 1, confidence: 1.0, display: 'a'},
+          {node_id: 'n2', distance: 2, confidence: 1.0, display: 'b'},
+          {node_id: 'n3', distance: 3, confidence: 0.3, display: 'c'},
+          {node_id: 'n4', distance: 4, confidence: 0.9, display: 'd'},
+        ]});
+        const laid = ride.path(rail, scene.placed);
+        const rails = ride.edges(laid);
+        return rails.left.map((point, index) => {
+          const other = rails.right[index];
+          return Number(Math.hypot(point.x - other.x, point.z - other.z).toFixed(2));
+        });
+      })
+    """)
+
+    # Wide across attested ground, narrow once the floor drops, and it stays
+    # narrow — the floor cannot recover.
+    assert result[0] > result[2], f"the road did not narrow at the weak hop: {result}"
+    assert result[3] <= result[2] + 0.01, "the road widened after the floor fell"
+
+
+def test_flight_mode_draws_no_scene_before_a_selection(page, served, populated):
+    """The rule three prototypes broke, checked where it applies.
+
+    `#/graph` on its own is the holistic estate view and §32 keeps it: "show me
+    everything" stays available and stays labelled as what it is. What must not
+    happen is *landing* in a rendered field of scattered points without having
+    asked anything — so the chooser gates the flight mode, and only that.
+    """
+    _open(page, populated, "#/graph")
+    assert page.eval_on_selector_all(".node", "els => els.length") > 5, (
+        "the holistic estate view was gated — that is a view somebody chose"
+    )
+
+    _open(page, populated, "#/graph?view=flight")
+    page.wait_for_timeout(200)
+    assert page.eval_on_selector_all(".node", "els => els.length") == 0, (
+        "flight mode rendered a scene before anything was selected"
+    )
+
+    body = page.inner_text("#outlet")
+    assert "Choose what to look at" in body
+    assert "nothing selected" in body
+    assert not _faults(page)
+
+    # And choosing one is what earns the scene.
+    page.click(".choices button")
+    page.wait_for_timeout(200)
+    assert page.eval_on_selector_all(".node", "els => els.length") > 5, (
+        "selecting something did not produce a scene"
+    )

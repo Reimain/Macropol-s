@@ -442,3 +442,71 @@ def test_shape_and_colour_are_separate_channels():
     assert "SHAPE" not in palette and "outline" not in palette, (
         "palette.js decides a shape"
     )
+
+
+# --- the ride: pure modules, checked without a browser ------------------------
+
+RIDE = ("condition.js", "route.js", "ride.js", "narrate.js")
+
+
+def test_the_ride_modules_ship_and_are_pure():
+    """No DOM in any of them, for the reason `camera.js` has none.
+
+    An interaction bug and a rendering bug look identical on a moving canvas.
+    Keeping the state machine, the rail, the camera path and the narration free
+    of the DOM is what lets each one be exercised with nothing running, so a
+    wrong answer names which of the four is wrong.
+    """
+    for name in RIDE:
+        path = ENGINE / name
+        assert path.is_file(), f"engine/{name} is missing"
+        body = _uncommented(path.read_text(encoding="utf-8"))
+        for forbidden in ("document", "window", "getContext", "requestAnimationFrame"):
+            assert not re.search(rf"\b{forbidden}\b", body), (
+                f"{name} reaches {forbidden} — the ride's logic must stay pure"
+            )
+
+
+def test_the_condition_model_draws_nothing_before_a_selection():
+    """The rule three prototypes broke, stated where a reader will find it.
+
+    Each one opened into a rendered field of scattered points, which says *there
+    is a lot of data* and nothing else. A condition that renders nothing is the
+    mechanism that stops the fourth doing the same.
+    """
+    body = (ENGINE / "condition.js").read_text(encoding="utf-8")
+    assert re.search(r"BLANK = new Set\(\[CHOOSING\]\)", body), (
+        "CHOOSING is no longer the condition that draws nothing"
+    )
+
+
+def test_the_camera_clearance_rule_is_checked_every_frame():
+    """The defect that broke the third prototype, made structurally impossible.
+
+    Its eye sat at y=52 while the solids were 26-143 tall at y=0, so it rendered
+    from inside the buildings. Nothing failed — it just looked wrong, and
+    looking wrong is not something a test catches unless a rule is stated.
+    """
+    body = _uncommented((ENGINE / "ride.js").read_text(encoding="utf-8"))
+    assert "CLEARANCE" in body and "ceiling(" in body
+    # Inside `ride()`, not in a setup path that runs once.
+    frame = body[body.index("export function ride("):]
+    assert "ceiling(" in frame, (
+        "the clearance is not computed inside the per-frame function, so a "
+        "route that climbs into a dense region would sink the camera mid-flight"
+    )
+
+
+def test_the_narration_never_invents_a_number():
+    """`nodes in frustum = NODE_COUNT * (1 - zoom * 0.88)` — a formula presented
+    as a measurement, in the mock this descends from. A surface whose whole
+    claim is that it separates a known thing from a guessed one cannot display a
+    figure nobody computed."""
+    body = _uncommented((ENGINE / "narrate.js").read_text(encoding="utf-8"))
+    assert "drawn.marks" in body and "drawn.represented" in body, (
+        "the readout no longer reads the renderer's own tally"
+    )
+    assert "km/h" not in body and "speed" not in body.lower().split("holding speed")[0], (
+        "the readout reports a speed — there is no distance and no time in a "
+        "dependency graph, so any such number is decoration"
+    )
