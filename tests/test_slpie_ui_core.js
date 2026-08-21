@@ -18,6 +18,7 @@ import { begin, cell, commit, LOADING, READY, reset, subscribe }
 import { classify, describe, REFUSAL, FAULT, THROTTLED, TYPE_ERROR }
   from "../slpie/ui/app/core/result.js";
 import { cite, confidence, short } from "../slpie/ui/app/core/format.js";
+import { at, rail } from "../slpie/ui/app/engine/route.js";
 
 let ran = 0;
 
@@ -171,6 +172,63 @@ test("a citation renders as file:line", () => {
   assert.equal(cite({ uri: "file:///r/app.py", line: 7 }), "/r/app.py:7");
   assert.equal(cite({ uri: "file:///r/app.py" }), "/r/app.py");
   assert.equal(cite(null), "");
+});
+
+/* --- the ride, which two shells now drive -------------------------------- */
+
+/* One `impact` payload, deliberately out of order, so the ordering is being
+ * tested rather than the input's arrangement. Both shells call `rail` on
+ * exactly this shape — it is `ImpactResult.to_dict()` — so what this pins is
+ * the sequence the stdlib console narrates and the built one flies. */
+const PAYLOAD = {
+  root: "urn:slpie:package:npm/lodash",
+  impacted: [
+    { node_id: "d", distance: 2, confidence: 0.90, display: "billing", kind: "service" },
+    { node_id: "b", distance: 1, confidence: 0.40, display: "vault-sdk", kind: "package" },
+    { node_id: "a", distance: 1, confidence: 0.90, display: "payments", kind: "service" },
+    { node_id: "c", distance: 2, confidence: 0.90, display: "audit", kind: "service" },
+  ],
+};
+
+test("the rail is ordered by distance, then confidence, then id", () => {
+  // A total order, so one query is one ride every time. Without the id the two
+  // hops sharing a distance and a confidence would sort arbitrarily and two
+  // runs of one question would travel two different routes.
+  const route = rail(PAYLOAD);
+  assert.deepEqual(route.hops.map((hop) => hop.id), ["a", "b", "c", "d"]);
+});
+
+test("the floor falls to the weakest hop and never recovers", () => {
+  // A chain is exactly as strong as its weakest link — the same rule L7
+  // applies when it propagates a minimum rather than a product. A floor that
+  // climbed back after a 0.40 hop would be claiming the inference was undone.
+  const route = rail(PAYLOAD);
+  assert.deepEqual(route.hops.map((hop) => hop.floor), [0.9, 0.4, 0.4, 0.4]);
+  assert.equal(route.floor, 0.4);
+});
+
+test("scrubbing lands on the same hop the ride would be on", () => {
+  // The scrubber and the played ride are one mechanism: both do nothing but
+  // choose a moment, and `at()` turns a moment into a hop. If a shell computed
+  // the index itself, dragging the timeline would disagree with playing it —
+  // by a rounding error per frame, which is the kind of drift nobody reports
+  // and everybody distrusts.
+  const route = rail(PAYLOAD);
+  let elapsed = 0;
+  route.hops.forEach((hop, index) => {
+    assert.equal(at(route, elapsed + hop.seconds / 2).index, index);
+    elapsed += hop.seconds;
+  });
+  assert.equal(at(route, elapsed + 1).done, true);
+});
+
+test("a short answer is not flown", () => {
+  // Below the flight floor the animation has not earned its place: a two-hop
+  // answer travelled cinematically is a list wearing a 3D scene.
+  const short_route = rail({ root: "r", impacted: PAYLOAD.impacted.slice(0, 2) });
+  assert.equal(short_route.animates, false);
+  assert.ok(short_route.summary.includes("too short to fly"));
+  assert.equal(rail(PAYLOAD).animates, true);
 });
 
 console.log(`\n${ran} checks`);

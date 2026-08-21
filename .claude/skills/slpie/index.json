@@ -1,9 +1,9 @@
 {
   "generator": "slpie context --skill",
-  "digest": "33508e3e8b38c84f03c4f7ccf4a24caa51e4a3cb824aacefd68c64c801e541cf",
+  "digest": "9e74143bf05617f08fcd06539e207fe15c652541044d911308550c268248560c",
   "summary": {
-    "digest": "33508e3e8b38c84f03c4f7ccf4a24caa51e4a3cb824aacefd68c64c801e541cf",
-    "facets": 712,
+    "digest": "9e74143bf05617f08fcd06539e207fe15c652541044d911308550c268248560c",
+    "facets": 713,
     "counts": {
       "component": 52,
       "kind": 21,
@@ -12,21 +12,19 @@
       "route": 93,
       "screen": 35,
       "section": 17,
-      "test": 78,
+      "test": 79,
       "verb": 51
     },
-    "coverage": 0.9846,
+    "coverage": 0.9874,
     "unanchored": [
       "section:12",
       "section:14",
-      "section:15",
       "section:16",
       "section:18",
       "section:19",
       "section:25",
       "section:26",
       "section:27",
-      "section:32",
       "section:6"
     ],
     "dangling": []
@@ -12762,7 +12760,7 @@
       "name": "actions",
       "title": "Actions",
       "summary": "Which permission each route demands \u2014 the question an operator writing a grant actually has.",
-      "source": "slpie/ui/contract.py:1023",
+      "source": "slpie/ui/contract.py:1119",
       "links": [
         {
           "relation": "reads",
@@ -12785,7 +12783,7 @@
       "name": "analytics",
       "title": "Analytics",
       "summary": "",
-      "source": "slpie/ui/contract.py:994",
+      "source": "slpie/ui/contract.py:1090",
       "links": [
         {
           "relation": "reads",
@@ -12808,7 +12806,7 @@
       "name": "catalog",
       "title": "Catalog",
       "summary": "Tenants, realms, datasets and objects \u2014 everything the platform has catalogued, with its lineage.",
-      "source": "slpie/ui/contract.py:933",
+      "source": "slpie/ui/contract.py:1029",
       "links": [
         {
           "relation": "reads",
@@ -12843,7 +12841,7 @@
       "name": "compose",
       "title": "Compose",
       "summary": "Build a pipeline from typed verbs. Invalid compositions are refused before anything runs.",
-      "source": "slpie/ui/contract.py:851",
+      "source": "slpie/ui/contract.py:947",
       "links": [
         {
           "relation": "reads",
@@ -12870,7 +12868,7 @@
       "name": "console",
       "title": "Console",
       "summary": "Ask about this environment and get the answer with the reasoning that produced it and the gaps that limit it.",
-      "source": "slpie/ui/contract.py:845",
+      "source": "slpie/ui/contract.py:941",
       "links": [
         {
           "relation": "reads",
@@ -12921,7 +12919,7 @@
       "name": "cycles",
       "title": "Cycles",
       "summary": "",
-      "source": "slpie/ui/contract.py:875",
+      "source": "slpie/ui/contract.py:971",
       "links": [
         {
           "relation": "reads",
@@ -12944,7 +12942,7 @@
       "name": "findings",
       "title": "Findings",
       "summary": "Everything the rules raised, ranked by severity, each with its evidence and a remediation.",
-      "source": "slpie/ui/contract.py:856",
+      "source": "slpie/ui/contract.py:952",
       "links": [
         {
           "relation": "reads",
@@ -12979,7 +12977,7 @@
       "name": "flight",
       "title": "Flight",
       "summary": "Fly the traversal an `impact` returned, with the reasoning for each hop arriving as you reach it.",
-      "source": "slpie/ui/contract.py:890",
+      "source": "slpie/ui/contract.py:986",
       "links": [
         {
           "relation": "reads",
@@ -13014,7 +13012,7 @@
       "name": "gateway",
       "title": "Gateway",
       "summary": "The live route table and the policy chain in front of it \u2014 which rule admitted or refused each call, and why.",
-      "source": "slpie/ui/contract.py:963",
+      "source": "slpie/ui/contract.py:1059",
       "links": [
         {
           "relation": "reads",
@@ -13037,7 +13035,7 @@
       "name": "graph",
       "title": "Graph",
       "summary": "Nodes and edges as the platform observed them, shaded by the confidence of the evidence behind each one.",
-      "source": "slpie/ui/contract.py:863",
+      "source": "slpie/ui/contract.py:959",
       "links": [
         {
           "relation": "reads",
@@ -13072,7 +13070,7 @@
       "name": "group-analysis",
       "title": "Analysis",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13107,7 +13105,7 @@
       "name": "group-artifacts",
       "title": "Artifacts",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13142,7 +13140,7 @@
       "name": "group-audit",
       "title": "Audit",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13169,7 +13167,7 @@
       "name": "group-capture",
       "title": "Capture",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13200,7 +13198,7 @@
       "name": "group-context",
       "title": "Context",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13227,7 +13225,7 @@
       "name": "group-dispatch",
       "title": "Dispatch",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13254,7 +13252,7 @@
       "name": "group-incremental",
       "title": "Incremental",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13277,7 +13275,7 @@
       "name": "group-rivals",
       "title": "Rivals",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13300,7 +13298,7 @@
       "name": "group-shaping",
       "title": "Shaping",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "runs",
@@ -13347,7 +13345,7 @@
       "name": "history",
       "title": "History",
       "summary": "",
-      "source": "slpie/ui/contract.py:915",
+      "source": "slpie/ui/contract.py:1011",
       "links": [
         {
           "relation": "reads",
@@ -13378,7 +13376,7 @@
       "name": "impact",
       "title": "Impact",
       "summary": "",
-      "source": "slpie/ui/contract.py:872",
+      "source": "slpie/ui/contract.py:968",
       "links": [
         {
           "relation": "reads",
@@ -13409,7 +13407,7 @@
       "name": "keys",
       "title": "Applications and keys",
       "summary": "Applications, their subscriptions, and the credentials issued to them.",
-      "source": "slpie/ui/contract.py:1039",
+      "source": "slpie/ui/contract.py:1135",
       "links": [
         {
           "relation": "reads",
@@ -13428,7 +13426,7 @@
       "name": "ledger",
       "title": "Ledger",
       "summary": "The append-only record every answer is derived from: chain integrity, projection lag, and the live feed's own health.",
-      "source": "slpie/ui/contract.py:909",
+      "source": "slpie/ui/contract.py:1005",
       "links": [
         {
           "relation": "reads",
@@ -13455,7 +13453,7 @@
       "name": "node",
       "title": "Node",
       "summary": "",
-      "source": "slpie/ui/contract.py:869",
+      "source": "slpie/ui/contract.py:965",
       "links": [
         {
           "relation": "reads",
@@ -13478,7 +13476,7 @@
       "name": "portal",
       "title": "Developer portal",
       "summary": "The APIs this platform publishes, their operations, and a console to try them.",
-      "source": "slpie/ui/contract.py:945",
+      "source": "slpie/ui/contract.py:1041",
       "links": [
         {
           "relation": "reads",
@@ -13505,7 +13503,7 @@
       "name": "publisher",
       "title": "Publisher",
       "summary": "Every API this platform publishes, where it stands in its life, and which moves are legal from there.",
-      "source": "slpie/ui/contract.py:997",
+      "source": "slpie/ui/contract.py:1093",
       "links": [
         {
           "relation": "reads",
@@ -13528,7 +13526,7 @@
       "name": "reconcile",
       "title": "Reconciliation",
       "summary": "",
-      "source": "slpie/ui/contract.py:904",
+      "source": "slpie/ui/contract.py:1000",
       "links": [
         {
           "relation": "reads",
@@ -13559,7 +13557,7 @@
       "name": "route-lexicon",
       "title": "Lexicon",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "reads",
@@ -13582,7 +13580,7 @@
       "name": "route-screens",
       "title": "Screens",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "reads",
@@ -13605,7 +13603,7 @@
       "name": "route-shells",
       "title": "Shells",
       "summary": "",
-      "source": "slpie/ui/contract.py:1064",
+      "source": "slpie/ui/contract.py:1160",
       "links": [
         {
           "relation": "reads",
@@ -13628,7 +13626,7 @@
       "name": "simulator",
       "title": "Simulator",
       "summary": "Materialise the declared world as real files, fire a scenario at it, and watch the platform react.",
-      "source": "slpie/ui/contract.py:920",
+      "source": "slpie/ui/contract.py:1016",
       "links": [
         {
           "relation": "reads",
@@ -13659,7 +13657,7 @@
       "name": "station",
       "title": "Environment",
       "summary": "What is attached, which capabilities each element granted or refused, and the gaps those refusals put on every answer.",
-      "source": "slpie/ui/contract.py:898",
+      "source": "slpie/ui/contract.py:994",
       "links": [
         {
           "relation": "reads",
@@ -13690,7 +13688,7 @@
       "name": "throttling",
       "title": "Throttling",
       "summary": "",
-      "source": "slpie/ui/contract.py:975",
+      "source": "slpie/ui/contract.py:1071",
       "links": [
         {
           "relation": "reads",
@@ -13713,7 +13711,7 @@
       "name": "verbs",
       "title": "Verbs",
       "summary": "Every capability this build has, as a typed verb. Each one is reachable from the CLI, the API and a pipeline.",
-      "source": "slpie/ui/contract.py:940",
+      "source": "slpie/ui/contract.py:1036",
       "links": [
         {
           "relation": "reads",
@@ -13736,7 +13734,7 @@
       "name": "workspaces",
       "title": "Workspaces",
       "summary": "Tenancy, quotas and headroom, and the grants that decide who may read which dataset.",
-      "source": "slpie/ui/contract.py:1044",
+      "source": "slpie/ui/contract.py:1140",
       "links": [
         {
           "relation": "reads",
@@ -13783,7 +13781,7 @@
       "name": "15",
       "title": "\u00a715",
       "summary": "A plan section claimed by at least one module.",
-      "source": "",
+      "source": "docs/PHASE17.md:86",
       "links": [],
       "tags": []
     },
@@ -13913,7 +13911,7 @@
       "name": "32",
       "title": "\u00a732",
       "summary": "A plan section claimed by at least one module.",
-      "source": "",
+      "source": "docs/PHASE17.md:136",
       "links": [],
       "tags": []
     },
@@ -14618,8 +14616,34 @@
         {
           "relation": "covers",
           "target": "module:slpie.ui.contract"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.api"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.contract"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.contract"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.contract"
         }
       ],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_clients_browser",
+      "kind": "test",
+      "name": "test_slpie_clients_browser",
+      "title": "slpie clients browser",
+      "summary": "The built shell, in a real browser, over the bundle that actually ships.",
+      "source": "tests/test_slpie_clients_browser.py:1",
+      "links": [],
       "tags": []
     },
     {

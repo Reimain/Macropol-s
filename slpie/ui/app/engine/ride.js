@@ -104,6 +104,18 @@ export function byDegree(point) {
  * Returns the camera plus the numbers the panel shows, so a caller never has to
  * recompute what the ride already knows: which hop, how far in, the confidence
  * floor so far, and whether the clearance rule had to lift the eye.
+ *
+ * The `@param` line is not decoration. A shell that type-checks this module
+ * infers its signature from the JSDoc, and a default of `null` alone infers as
+ * *only* null — so the placement a caller must pass for the clearance rule to
+ * work would be rejected by its own type. Stating the type is what keeps the
+ * inferred contract the same as the real one.
+ *
+ * @param {any} route
+ * @param {any} laid
+ * @param {number} seconds
+ * @param {{width?: number, height?: number, clearance?: number,
+ *          lookahead?: number, placed?: Map<string, any> | null}} [options]
  */
 export function ride(route, laid, seconds, {
   width = 1, height = 1, clearance = CLEARANCE, lookahead = LOOKAHEAD, placed = null,

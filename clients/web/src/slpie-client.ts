@@ -135,15 +135,58 @@ export function producedKind(pipeline: VerbName[]): Kind {
 export interface ClientOptions {
   baseUrl?: string;
   fetch?: typeof fetch;
+  /** The credential the gateway identifies this caller by.
+    *
+    * A string is sent as-is; a function is called per request, which is
+    * what lets a token be refreshed without rebuilding the client. It
+    * is emitted here rather than written per shell because the gateway
+    * reads one header and there is no second way to authenticate — a
+    * shell that rolled its own would be a second identity path, which
+    * is exactly what §16 refuses to build for FastAPI. */
+  token?: string | (() => string | null | undefined);
+}
+
+/** `?a=1&b=2`, skipping anything empty — a query string with a blank
+  * value is a filter nobody asked for, and the server would apply it. */
+function withQuery(path: string, params: Record<string, string | number>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, String(value));
+    }
+  }
+  const suffix = query.toString();
+  return suffix ? `${path}?${suffix}` : path;
 }
 
 export class SlpieClient {
   private readonly baseUrl: string;
   private readonly doFetch: typeof fetch;
+  private readonly token: ClientOptions["token"];
 
   constructor(options: ClientOptions = {}) {
     this.baseUrl = (options.baseUrl ?? "").replace(/\/$/, "");
-    this.doFetch = options.fetch ?? fetch;
+    // Bound, not merely referenced. `fetch` is a method of the global
+    // object and throws `Illegal invocation` the moment it is called
+    // with any other receiver — which is exactly what happens once it
+    // is held on an instance and called as `this.doFetch(...)`. Every
+    // structural test passed with the unbound form because none of
+    // them ran a request in a browser; the built shell's browser tier
+    // failed on its first read, which is the argument for that tier.
+    const given = options.fetch;
+    this.doFetch = given
+      ? (...args: Parameters<typeof fetch>) => given(...args)
+      : (...args: Parameters<typeof fetch>) => fetch(...args);
+    this.token = options.token;
+  }
+
+  /** The headers every request carries, credential included when there
+    * is one. Absent a token nothing is sent — an empty `Authorization`
+    * is not anonymity, it is a malformed credential, and the gateway
+    * would be right to refuse it differently. */
+  private headers(extra: Record<string, string> = {}): Record<string, string> {
+    const held = typeof this.token === "function" ? this.token() : this.token;
+    return held ? { ...extra, authorization: `Bearer ${held}` } : { ...extra };
   }
 
   /** Run a whole composition server-side. The primary entry point. */
@@ -424,15 +467,187 @@ export class SlpieClient {
     return this.post(`/api/v/verdicts`, params);
   }
 
+  /** `GET /api/admin/datasets` */
+  async readAdminDatasets(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/admin/datasets`, params));
+  }
+
+  /** `GET /api/admin/quota` */
+  async readAdminQuota(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/admin/quota`, params));
+  }
+
+  /** `GET /api/admin/workspaces` */
+  async readAdminWorkspaces(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/admin/workspaces`, params));
+  }
+
+  /** `GET /api/apim/actions` */
+  async readApimActions(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/apim/actions`, params));
+  }
+
+  /** `GET /api/apim/analytics` */
+  async readApimAnalytics(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/apim/analytics`, params));
+  }
+
+  /** `GET /api/apim/apis` */
+  async readApimApis(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/apim/apis`, params));
+  }
+
+  /** `GET /api/apim/gateway` */
+  async readApimGateway(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/apim/gateway`, params));
+  }
+
+  /** `GET /api/apim/lifecycle` */
+  async readApimLifecycle(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/apim/lifecycle`, params));
+  }
+
+  /** `GET /api/apim/subscriptions` */
+  async readApimSubscriptions(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/apim/subscriptions`, params));
+  }
+
+  /** `GET /api/apim/throttles` */
+  async readApimThrottles(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/apim/throttles`, params));
+  }
+
+  /** `GET /api/causation` */
+  async readCausation(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/causation`, params));
+  }
+
+  /** `GET /api/contract` */
+  async readContract(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/contract`, params));
+  }
+
+  /** `GET /api/cycles` */
+  async readCycles(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/cycles`, params));
+  }
+
+  /** `GET /api/findings` */
+  async readFindings(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/findings`, params));
+  }
+
+  /** `GET /api/graph` */
+  async readGraph(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/graph`, params));
+  }
+
+  /** `GET /api/history` */
+  async readHistory(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/history`, params));
+  }
+
+  /** `GET /api/impact` */
+  async readImpact(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/impact`, params));
+  }
+
+  /** `GET /api/integrity` */
+  async readIntegrity(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/integrity`, params));
+  }
+
+  /** `GET /api/lexicon` */
+  async readLexicon(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/lexicon`, params));
+  }
+
+  /** `GET /api/manifest` */
+  async readManifest(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/manifest`, params));
+  }
+
+  /** `GET /api/manual` */
+  async readManual(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/manual`, params));
+  }
+
+  /** `GET /api/node` */
+  async readNode(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/node`, params));
+  }
+
+  /** `GET /api/projections` */
+  async readProjections(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/projections`, params));
+  }
+
+  /** `GET /api/reconcile` */
+  async readReconcile(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/reconcile`, params));
+  }
+
+  /** `GET /api/routes` */
+  async readRoutes(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/routes`, params));
+  }
+
+  /** `GET /api/scenarios` */
+  async readScenarios(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/scenarios`, params));
+  }
+
+  /** `GET /api/screens` */
+  async readScreens(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/screens`, params));
+  }
+
+  /** `GET /api/search` */
+  async readSearch(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/search`, params));
+  }
+
+  /** `GET /api/shells` */
+  async readShells(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/shells`, params));
+  }
+
+  /** `GET /api/station` */
+  async readStation(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/station`, params));
+  }
+
+  /** `GET /api/status` */
+  async readStatus(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/status`, params));
+  }
+
+  /** `GET /api/stream` */
+  async readStream(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/stream`, params));
+  }
+
+  /** `GET /api/stream/status` */
+  async readStreamStatus(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/stream/status`, params));
+  }
+
+  /** `GET /api/verbs` */
+  async readVerbs(params: Record<string, string | number> = {}): Promise<any> {
+    return this.get(withQuery(`/api/verbs`, params));
+  }
+
   private async get(path: string): Promise<any> {
-    const response = await this.doFetch(`${this.baseUrl}${path}`);
+    const response = await this.doFetch(`${this.baseUrl}${path}`, {
+      headers: this.headers(),
+    });
     return this.unwrap(response);
   }
 
   private async post(path: string, body: unknown): Promise<any> {
     const response = await this.doFetch(`${this.baseUrl}${path}`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: this.headers({ "content-type": "application/json" }),
       body: JSON.stringify(body ?? {}),
     });
     return this.unwrap(response);
@@ -442,9 +657,21 @@ export class SlpieClient {
     const body = await response.json();
     if (!response.ok) {
       // A refusal is an answer with a reason, not a generic failure.
+      //
+      // `stage`, `obligation` and `retryAfter` are carried through
+      // unedited so a shell can render *what would allow the call*
+      // rather than only that it was refused. The gateway already
+      // computed all three; dropping them here would make every
+      // consumer ask the operator instead.
       throw Object.assign(
         new Error(body?.error ?? `HTTP ${response.status}`),
-        { status: response.status, refused: body?.refused === true },
+        {
+          status: response.status,
+          refused: body?.refused === true,
+          stage: body?.stage ?? "",
+          obligation: body?.obligation ?? "",
+          retryAfter: response.headers.get("retry-after") ?? "",
+        },
       );
     }
     return body;

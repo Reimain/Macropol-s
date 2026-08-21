@@ -52,7 +52,13 @@ export type SceneState = {
   reason: string;
   drawn: Tally | null;
   shortfall: string;
+  /** The placement, so a caller can put a route through the same space. */
+  placed: Map<string, any> | null;
 };
+
+/** What the caller draws from, when it wants a camera of its own. */
+export type Surface = { width: number; height: number };
+export type View = (extent: any, surface: Surface, placed: Map<string, any>) => any;
 
 /**
  * Build the scene once per graph, and draw it every frame.
@@ -68,13 +74,24 @@ export function useScene(
   canvas: React.RefObject<HTMLCanvasElement | null>,
   nodes: Node[],
   edges: Edge[],
-  wanted: string = "three",
+  { wanted = "three", view }: { wanted?: string; view?: View } = {},
 ) {
   const [state, setState] = useState<SceneState>({
     engine: DEFAULT, native: true, label: "native",
-    fallback: false, reason: "", drawn: null, shortfall: "",
+    fallback: false, reason: "", drawn: null, shortfall: "", placed: null,
   });
   const running = useRef(0);
+
+  /* The caller's camera, held in a ref rather than in the dependency list.
+   *
+   * A ride camera is a function of the moment, so it is a new closure every
+   * render — depending on it would tear down the renderer and rebuild the scene
+   * sixty times a second. The frame loop reads the *current* one instead, which
+   * is the standard answer and the correct one here: the scene is a function of
+   * the graph, and the camera is a function of time, and only the first should
+   * be able to remount anything. */
+  const camera = useRef<View | undefined>(view);
+  camera.current = view;
 
   useEffect(() => {
     let live = true;
@@ -103,14 +120,21 @@ export function useScene(
       drawing = Object.create(chosen.engine);
       drawing.mount(surface, scene);
 
-      const view = () => frame(scene.extent, {
-        width: surface.clientWidth || 900,
-        height: surface.clientHeight || 600,
-      });
+      const viewport = () => {
+        const size = {
+          width: surface.clientWidth || 900,
+          height: surface.clientHeight || 600,
+        };
+        // The caller may decline for this frame — a route under the flight
+        // floor, or a condition that is not driving — and the survey camera is
+        // what it falls back to. Never a blank canvas.
+        const asked = camera.current?.(scene.extent, size, scene.placed);
+        return asked || frame(scene.extent, size);
+      };
 
       const tick = () => {
         if (!live) return;
-        const drawn = drawing.draw(view());
+        const drawn = drawing.draw(viewport());
         setState((held) => ({ ...held, drawn }));
         running.current = requestAnimationFrame(tick);
       };
@@ -123,6 +147,7 @@ export function useScene(
         reason: chosen.reason,
         drawn: null,
         shortfall: colouring.shortfall,
+        placed: scene.placed,
       });
       tick();
     })();

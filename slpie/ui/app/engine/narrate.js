@@ -172,6 +172,10 @@ export function upto(route, index, evidenceFor = () => []) {
  * plausible-looking number for either would be decoration wearing an
  * instrument's clothes. `drawn` comes from the renderer's own tally, never from
  * a formula over the node count.
+ *
+ * @param {{marks: number, represented: number} | null} [drawn] the renderer's
+ *   own tally, or null when nothing has been drawn yet. Stated rather than left
+ *   to the default, which would infer as only-null and reject a real tally.
  */
 export function readout(route, index, drawn = null) {
   const travelled = Math.min(index + 1, route.length);

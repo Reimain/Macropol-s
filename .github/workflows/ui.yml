@@ -141,6 +141,22 @@ jobs:
           npm --prefix clients/web install --no-audit --no-fund
           npm --prefix clients/web run build
 
+      # The built bundle is what a customer runs, and a bundler is a program
+      # that can be wrong. This tier drives `clients/web/dist` rather than the
+      # source, and it earned its place on its first run: the generated client
+      # held `fetch` unbound, so `this.doFetch(...)` threw `Illegal invocation`
+      # and the shell could not make a single request in a real browser. Every
+      # structural test passed, because none of them ran one.
+      - name: The built shell renders what the platform answered
+        run: |
+          count=$(python -m pytest -q -m browser --co tests/test_slpie_clients_browser.py \
+            2>/dev/null | grep -c '::test_' || true)
+          echo "collected $count built-shell tests"
+          test "$count" -ge 10 \
+            || (echo "the built-shell tier selected $count tests — it is not running" \
+                && exit 1)
+          python -m pytest -q -m browser tests/test_slpie_clients_browser.py
+
       # `--co -q` first, and the count checked, because this suite is opt-in by
       # marker: if the marker were renamed or the module failed to import,
       # `-m browser` would select nothing and the job would go green having

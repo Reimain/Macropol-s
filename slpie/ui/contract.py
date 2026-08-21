@@ -277,7 +277,24 @@ def _operation_id(method: str, path: str) -> str:
 # --- the generated TypeScript client ------------------------------------
 
 
-def typescript(*, verbs: VerbRegistry | None = None) -> str:
+def _read_name(path: str) -> str:
+    """`GET /api/apim/apis` → `readApimApis`.
+
+    Derived from the path rather than hand-mapped, so a route added to the table
+    gets a method with no file edited — the same rule `api.py:347` follows for
+    the routes themselves.
+    """
+    parts = [part for part in path.replace("/api/", "", 1).split("/") if part]
+    return "read" + "".join(
+        segment.capitalize()
+        for part in parts
+        for segment in part.replace("-", " ").replace("_", " ").split()
+    )
+
+
+def typescript(
+    *, verbs: VerbRegistry | None = None, routes: Sequence[tuple[str, str]] = (),
+) -> str:
     """A typed client, generated. A route change becomes a compile error.
 
     That is the whole value: the web, desktop and mobile clients consume this, so a
@@ -369,15 +386,58 @@ def typescript(*, verbs: VerbRegistry | None = None) -> str:
         "export interface ClientOptions {",
         "  baseUrl?: string;",
         "  fetch?: typeof fetch;",
+        "  /** The credential the gateway identifies this caller by.",
+        "    *",
+        "    * A string is sent as-is; a function is called per request, which is",
+        "    * what lets a token be refreshed without rebuilding the client. It",
+        "    * is emitted here rather than written per shell because the gateway",
+        "    * reads one header and there is no second way to authenticate — a",
+        "    * shell that rolled its own would be a second identity path, which",
+        "    * is exactly what §16 refuses to build for FastAPI. */",
+        "  token?: string | (() => string | null | undefined);",
+        "}",
+        "",
+        "/** `?a=1&b=2`, skipping anything empty — a query string with a blank",
+        "  * value is a filter nobody asked for, and the server would apply it. */",
+        "function withQuery(path: string, params: Record<string, string | number>): string {",
+        "  const query = new URLSearchParams();",
+        "  for (const [key, value] of Object.entries(params)) {",
+        '    if (value !== undefined && value !== null && value !== "") {',
+        "      query.set(key, String(value));",
+        "    }",
+        "  }",
+        "  const suffix = query.toString();",
+        "  return suffix ? `${path}?${suffix}` : path;",
         "}",
         "",
         "export class SlpieClient {",
         "  private readonly baseUrl: string;",
         "  private readonly doFetch: typeof fetch;",
+        "  private readonly token: ClientOptions[\"token\"];",
         "",
         "  constructor(options: ClientOptions = {}) {",
         '    this.baseUrl = (options.baseUrl ?? "").replace(/\\/$/, "");',
-        "    this.doFetch = options.fetch ?? fetch;",
+        "    // Bound, not merely referenced. `fetch` is a method of the global",
+        "    // object and throws `Illegal invocation` the moment it is called",
+        "    // with any other receiver — which is exactly what happens once it",
+        "    // is held on an instance and called as `this.doFetch(...)`. Every",
+        "    // structural test passed with the unbound form because none of",
+        "    // them ran a request in a browser; the built shell's browser tier",
+        "    // failed on its first read, which is the argument for that tier.",
+        "    const given = options.fetch;",
+        "    this.doFetch = given",
+        "      ? (...args: Parameters<typeof fetch>) => given(...args)",
+        "      : (...args: Parameters<typeof fetch>) => fetch(...args);",
+        "    this.token = options.token;",
+        "  }",
+        "",
+        "  /** The headers every request carries, credential included when there",
+        "    * is one. Absent a token nothing is sent — an empty `Authorization`",
+        "    * is not anonymity, it is a malformed credential, and the gateway",
+        "    * would be right to refuse it differently. */",
+        "  private headers(extra: Record<string, string> = {}): Record<string, string> {",
+        "    const held = typeof this.token === \"function\" ? this.token() : this.token;",
+        "    return held ? { ...extra, authorization: `Bearer ${held}` } : { ...extra };",
         "  }",
         "",
         "  /** Run a whole composition server-side. The primary entry point. */",
@@ -415,16 +475,40 @@ def typescript(*, verbs: VerbRegistry | None = None) -> str:
             "",
         ]
 
+    # The read routes. Absent until phase 17 needed one, which is how the gap
+    # was found: the browser client emits `ROUTES` as data and fetches by path,
+    # so nothing in ring 0 ever noticed that the *typed* client could reach 59
+    # verbs and none of the 34 GET routes. A generated client that cannot reach
+    # a third of the surface is the drift this module exists to prevent, and it
+    # stayed invisible because no TypeScript consumer had tried.
+    seen: set[str] = set()
+    for method, path in sorted(routes):
+        if method != "GET" or ":" in path:
+            continue
+        name = _read_name(path)
+        if name in seen:
+            continue
+        seen.add(name)
+        lines += [
+            f"  /** `GET {path}` */",
+            f"  async {name}(params: Record<string, string | number> = {{}}): Promise<any> {{",
+            f"    return this.get(withQuery(`{path}`, params));",
+            "  }",
+            "",
+        ]
+
     lines += [
         "  private async get(path: string): Promise<any> {",
-        "    const response = await this.doFetch(`${this.baseUrl}${path}`);",
+        "    const response = await this.doFetch(`${this.baseUrl}${path}`, {",
+        "      headers: this.headers(),",
+        "    });",
         "    return this.unwrap(response);",
         "  }",
         "",
         "  private async post(path: string, body: unknown): Promise<any> {",
         "    const response = await this.doFetch(`${this.baseUrl}${path}`, {",
         '      method: "POST",',
-        '      headers: { "content-type": "application/json" },',
+        '      headers: this.headers({ "content-type": "application/json" }),',
         "      body: JSON.stringify(body ?? {}),",
         "    });",
         "    return this.unwrap(response);",
@@ -434,9 +518,21 @@ def typescript(*, verbs: VerbRegistry | None = None) -> str:
         "    const body = await response.json();",
         "    if (!response.ok) {",
         "      // A refusal is an answer with a reason, not a generic failure.",
+        "      //",
+        "      // `stage`, `obligation` and `retryAfter` are carried through",
+        "      // unedited so a shell can render *what would allow the call*",
+        "      // rather than only that it was refused. The gateway already",
+        "      // computed all three; dropping them here would make every",
+        "      // consumer ask the operator instead.",
         "      throw Object.assign(",
         '        new Error(body?.error ?? `HTTP ${response.status}`),',
-        "        { status: response.status, refused: body?.refused === true },",
+        "        {",
+        "          status: response.status,",
+        "          refused: body?.refused === true,",
+        '          stage: body?.stage ?? "",',
+        '          obligation: body?.obligation ?? "",',
+        '          retryAfter: response.headers.get("retry-after") ?? "",',
+        "        },",
         "      );",
         "    }",
         "    return body;",

@@ -26,13 +26,22 @@ import { dirname, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const scene = resolve(here, "../../slpie/ui/app/engine");
 
+/* `@styles` is the second half of the same decision. The renderer reads
+ * `--flight-surface`, `--flight-hue-*` and the confidence ramp off the computed
+ * style of its own canvas, so a shell that did not ship ring 0's tokens would
+ * silently draw the *fallback* palette baked into `canvas2d.js` — two consoles
+ * showing the same graph in different colours, with nothing failing. Importing
+ * the token files is what makes "one design system" true rather than intended,
+ * and step 3's test forbids a colour literal here so it stays that way. */
+const styles = resolve(here, "../../slpie/ui/app/styles");
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { "@scene": scene },
+    alias: { "@scene": scene, "@styles": styles },
   },
   server: {
-    fs: { allow: [here, scene] },
+    fs: { allow: [here, scene, styles] },
   },
   build: {
     outDir: "dist",

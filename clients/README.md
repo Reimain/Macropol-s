@@ -12,7 +12,29 @@ clients/
   mobile/    React Native. Read-and-approve rather than full administration
 ```
 
-## Status, stated plainly
+## Status, stated plainly — and asserted
+
+<!-- Parsed by tests/test_slpie_clients.py. Edit the table and the tree, or the
+     suite fails: a status claimed here that the tree does not support is the
+     one kind of documentation error nobody notices until a customer clones it. -->
+
+| shell | state | what that means |
+|---|---|---|
+| `web` | **builds** | `npm run build` runs `tsc --noEmit && vite build` and produces `dist/`. The browser tier drives that bundle |
+| `desktop` | **scaffold** | a Tauri config and the generated client. No Rust toolchain here, so nothing has been compiled |
+| `mobile` | **scaffold** | a React Native package and the generated client. No simulator here, so nothing has been run |
+
+**A scaffold is a shell with no build command, and that is checkable rather than
+descriptive.** `test_the_readme_status_matches_the_tree` reads this table and
+holds it against the directories: a shell claiming *builds* must have a build
+script and an entry point, and a shell claiming *scaffold* must have neither. So
+the day somebody adds a Tauri build the README goes red rather than stale.
+
+The reason to state it this way at all: a green tick for something that was
+never compiled is worse than an honest scaffold. It is the same rule the
+platform applies to its own answers — `INDETERMINATE` never passes as upheld
+(§25), a missing binary is a reported gap rather than a silent fallback (§27),
+and a shell that has not been built says so.
 
 **`web` builds. `desktop` and `mobile` are still scaffolds.**
 

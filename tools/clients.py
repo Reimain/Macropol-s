@@ -48,7 +48,7 @@ def targets() -> dict[Path, str]:
         # at request time cannot boot with the network unplugged.
         APP_ROOT / "data" / "client.js": javascript(verbs=verbs, routes=routes),
     }
-    client = typescript(verbs=verbs)
+    client = typescript(verbs=verbs, routes=routes)
     for shell in SHELLS:
         wanted[CLIENTS / shell / "src" / "slpie-client.ts"] = client
     return wanted

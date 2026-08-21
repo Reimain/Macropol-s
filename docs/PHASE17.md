@@ -80,3 +80,59 @@ that looks like an answer, which is the thing this product exists to stop.
 Step 1 replaces it and **deletes** the generator rather than leaving it behind a
 flag — a fallback to fabricated data is exactly how a screen ends up showing
 something plausible when the API is down.
+
+## What the plan got wrong
+
+Written after building it, in the shape §15's post-mortem takes. Three of these
+are defects the plan could not have predicted and one is a gap it created.
+
+**The generated TypeScript client could not reach a single read route.** It
+emitted a method per verb — 59 of them — and none for the 34 `GET` routes, so a
+TypeScript consumer could call `impact` as a verb and could not read
+`/api/graph` at all. Step 1 could not begin until `typescript()` grew
+`_read_name()` and a method per non-parameterised read. Found by trying to use
+it, which is the only way that class of gap is ever found.
+
+**The generated client held `fetch` unbound, and had since it was written.**
+`this.doFetch = options.fetch ?? fetch` stores a method of the global object on
+an instance; calling it as `this.doFetch(...)` throws
+`TypeError: Illegal invocation`. **The shell could not make one request in a
+real browser** — and every structural test passed, because none of them ran
+one. This is the same family as the `max-bytes` defect the last phase found: a
+generator that is total, deterministic, and wrong. Caught on the first run of
+step 6's tier, which is the whole argument for that tier existing.
+
+**Severity is not on a node, so the screen has to join it.** The plan said "read
+`GET /api/graph`" as though the payload carried everything the scene draws.
+`Node.to_dict()` has no severity, and it should not: a finding is what
+governance raised *against* a subject, not a property of it. So the screen reads
+`/api/findings` too and joins by subject, keeping the **worst** severity — a
+join that kept the last one read would make the same estate look different
+depending on the order a query returned.
+
+**A shared scene needs shared tokens, and step 3 was nearly cosmetic.** The plan
+filed "tokens shared, not restated" under drift prevention. It is stronger than
+that: `canvas2d.js` reads `--flight-surface`, `--flight-hue-*` and the
+confidence ramp off the computed style of the canvas it is handed, and falls
+back to constants baked into the module when they are absent. A shell restating
+its own palette would have drawn the *fallback* colours while looking entirely
+fine — one graph, two consoles, different hues, nothing failing. The `@styles`
+alias is what makes "one design system" true rather than intended.
+
+## What was built
+
+| Step | Delivered | Where the gate lives |
+|---|---|---|
+| 1 | `api.ts` + `useApi`, real graph/findings/impact, the generator **deleted** | `test_no_client_fabricates_the_data_it_draws`, `test_the_screen_draws_what_the_api_returned_and_nothing_it_invented` |
+| 2 | `App.tsx` reads `/api/shells`; `screens/` keyed by ring 0's own screen key | `test_the_built_shell_only_holds_screens_the_stdlib_one_declines` |
+| 3 | `@styles` → ring 0's `tokens.css` and `density.css`; no literal in this shell | `test_the_built_shell_declares_no_colour_of_its_own`, `..._no_raw_size` |
+| 4 | `condition` · `route` · `ride` · `narrate` driving the workbench, timeline scrubbing `at()` | `test_both_shells_drive_the_ride_from_the_same_modules`, four checks in the node suite |
+| 5 | `token` on the generated client; `Refusal` renders stage and obligation | `test_a_refusal_is_never_rendered_as_a_fault`, `..._renders_the_way_out_rather_than_a_stack_trace` |
+| 6 | Playwright over `clients/web/dist`, twelve checks, wired into `ui.yml` | `tests/test_slpie_clients_browser.py` |
+| 7 | The README's status table parsed and held against the tree | `test_the_readme_status_matches_the_tree` |
+
+**The one thing deliberately not done:** the road surface, the hop bars and the
+solids beside it are not drawn in three dimensions. The ride moves the camera
+along the real route and the rail counts the real hops, but §32 step 6's
+geometry belongs in ring 0's renderer, where both shells would get it — adding
+it here would put the scene in the one place the two shells do not share.

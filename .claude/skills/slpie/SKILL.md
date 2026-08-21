@@ -204,12 +204,19 @@ enterprise rings, which is why 14–18 look untouched.
 | Phase | State |
 |---|---|
 | 14 — seams | done: `TaskRunner`, `ResourceMeter`, `ObjectStore`, `contract.py` |
-| 15 — Postgres persistence | **not started** — `slpie_enterprise/persistence/` absent |
-| 16 — FastAPI, Celery, cloud, frameworks | **not started** — those four packages absent |
-| 17 — clients | **partly done**: `clients/web` builds against the stdlib server |
+| 15 — Postgres persistence | done: `slpie_enterprise/persistence/`, conformant against a real database in `enterprise.yml` |
+| 16 — FastAPI, Celery, frameworks | done: one route table over two servers, a runner that counts what it could not distribute, routes read with `ast` |
+| 17 — clients | done for `web`: real data, shell capabilities, shared tokens, the ride, auth, a browser tier over the built bundle. `desktop` and `mobile` are scaffolds **and say so, tested** |
 | 18 — deployment | not started |
 
-Ring 1 today is `slpie_enterprise/{spawn,storage}` — 8 modules. Nothing blocks
-15 or 16; they are unstarted, not stuck. **Phase 17's web shell does not need
-16**: it talks to the stdlib server over the same generated client, which is why
-it already builds.
+**Phase 17's web shell never needed 16**: it talks to the stdlib server over the
+same generated client, which is why it built before either ring-1 phase existed.
+
+Two rules govern that shell and both are asserted rather than intended. It holds
+**only screens the stdlib console declines** — `GET /api/shells`'s `cannot` map
+*is* the backlog, and a screen both shells can draw fails
+`tests/test_slpie_clients.py`. And it **shares rather than copies**: the scene
+modules through `@scene`, the design tokens through `@styles`, both digest- or
+import-checked. A copy renamed on the way in still fails.
+
+Ring 1 is `slpie_enterprise/{api,frameworks,persistence,queue,spawn,storage}`.

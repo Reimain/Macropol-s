@@ -195,7 +195,7 @@ class Cli:
             routes = ()
 
         if "--typescript" in arguments or "--ts" in arguments:
-            self._out(typescript(verbs=self.verbs))
+            self._out(typescript(verbs=self.verbs, routes=Api(engine=None).routes))
             return OK
         if "--javascript" in arguments or "--js" in arguments:
             self._out(javascript(verbs=self.verbs, routes=routes))
