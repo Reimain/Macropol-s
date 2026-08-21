@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `9e68176322ec30ca0a2baffc15a082604cebcab88b075965f1221849a60bcaa9`
-- **facets** 706 — 52 component, 21 kind, 296 module, 68 package, 93 route, 35 screen, 16 section, 74 test, 51 verb
-- **anchored** 98.4% resolve to a file and a line
+- **digest** `15ab01ff1b42c1a79ec57a719ddcc4761781511efab11b077c45750420706cb0`
+- **facets** 709 — 52 component, 21 kind, 297 module, 68 package, 93 route, 35 screen, 17 section, 75 test, 51 verb
+- **anchored** 98.5% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -102,6 +102,7 @@ Derived from the `§NN` references modules write in their own docstrings — nev
 | §18 | 1 | `slpie.context` |
 | §19 | 1 | `slpie.demo` |
 | §2 | 1 | `slpie.workspace` |
+| §22 | 1 | `slpie.graph` |
 | §23 | 2 | `slpie.core` |
 | §24 | 7 | `slpie.compose`, `slpie.compose.verbs`, `slpie.dispatch`, `slpie.ui` |
 | §25 | 4 | `slpie.compose.verbs`, `slpie.context` |

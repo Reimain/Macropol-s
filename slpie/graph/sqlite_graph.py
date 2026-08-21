@@ -37,6 +37,7 @@ from ..domain.lifecycle import (
 )
 from ..domain.node import OPEN, Node, NodeKind
 from ..errors import GraphError, NodeNotFound
+from . import rows
 from .schema import FTS_SCHEMA, SCHEMA, SCHEMA_VERSION, has_fts5
 
 # Reverse reachability: who breaks if `:root` changes. Follows edges backwards
@@ -629,35 +630,14 @@ class SqliteGraph:
 
     # -- row mapping -----------------------------------------------------
 
+    # The mapping moved to `rows.py` when a second store arrived: a node row is
+    # a node row whichever engine returned it, and two copies would eventually
+    # disagree about what a retired node looks like.
     def _row_to_node(self, row: sqlite3.Row) -> Node:
-        return Node(
-            kind=NodeKind(row["kind"]),
-            identity=parse_identity(row["identity"]),
-            evidence=self.evidence_for(row["id"]) or (_placeholder_evidence(row["identity"]),),
-            properties=json.loads(row["properties"]),
-            lifecycle=LifecycleState(row["lifecycle"]),
-            risk=RiskClass(row["risk"]),
-            compliance=ComplianceState(row["compliance"]),
-            architecture=ArchitectureClass(row["architecture"]),
-            valid_from=row["valid_from"],
-            valid_to=row["valid_to"] or OPEN,
-            observed_at=row["observed_at"],
-            superseded_at=row["superseded_at"] or OPEN,
-        )
+        return rows.to_node(row, self.evidence_for)
 
     def _row_to_edge(self, row: sqlite3.Row) -> Edge:
-        return Edge(
-            kind=EdgeKind(row["kind"]),
-            src=row["src"],
-            dst=row["dst"],
-            evidence=self.evidence_for(row["id"]) or (_placeholder_evidence(row["id"]),),
-            properties=json.loads(row["properties"]),
-            qualifier=row["qualifier"],
-            valid_from=row["valid_from"],
-            valid_to=row["valid_to"] or OPEN,
-            observed_at=row["observed_at"],
-            superseded_at=row["superseded_at"] or OPEN,
-        )
+        return rows.to_edge(row, self.evidence_for)
 
     def __len__(self) -> int:
         return self.counts()["nodes"]
@@ -673,43 +653,8 @@ def _nullable(value: int) -> int | None:
 
 
 def _row_to_evidence(row: sqlite3.Row) -> Evidence:
-    return Evidence(
-        kind=EvidenceKind(row["kind"]),
-        location=SourceLocation(row["uri"], line=row["line"]),
-        extractor=row["extractor"],
-        content_digest=row["content_digest"],
-        excerpt=row["excerpt"],
-        observed_at=row["observed_at"],
-        labels=_labels(row),
-    )
-
-
-def _labels(row: sqlite3.Row) -> dict[str, str]:
-    """Evidence labels, tolerating a row written before the column existed."""
-    try:
-        raw = row["labels"]
-    except (IndexError, KeyError):
-        return {}
-    if not raw:
-        return {}
-    try:
-        decoded = json.loads(raw)
-    except (TypeError, ValueError):
-        return {}
-    return {str(k): str(v) for k, v in decoded.items()} if isinstance(decoded, dict) else {}
+    return rows.to_evidence(row)
 
 
 def _placeholder_evidence(subject: str) -> Evidence:
-    """A marker for a row whose evidence rows are missing.
-
-    Reconstructing a node with no evidence would raise, so a corrupted read model
-    would take the whole platform down on a read. Instead the row comes back
-    carrying a `name_heuristic` marker naming itself — visibly wrong, at the
-    lowest possible confidence, and impossible to mistake for a real observation.
-    """
-    return Evidence(
-        kind=EvidenceKind.NAME_HEURISTIC,
-        location=SourceLocation(f"slpie://graph/orphaned-row/{subject}"),
-        extractor="graph.projection",
-        excerpt="evidence rows missing for this subject; rebuild the projection",
-    )
+    return rows.placeholder_evidence(subject)

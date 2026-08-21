@@ -1,6 +1,8 @@
 # Phase 15 — Postgres persistence (ring 1)
 
-Execution plan. Everything here was checked against the tree, not recalled.
+**Built.** 17 conformance tests pass against a real Postgres 16; the default
+suite still runs offline with zero third-party packages. What follows was the
+plan; the last section records where it was wrong.
 
 ## Why it is small
 
@@ -104,3 +106,81 @@ actually exercised rather than merely unit-tested.
 | `psycopg` connection handling under Celery workers | Not phase 15's problem — `engine.py` exposes a pool and phase 16 owns the fork discipline |
 | Alembic drifting from `schema.py` | One test: build from `schema.py`, build from Alembic head, compare the introspected schema |
 | No Postgres in this environment | The suite skips loudly; CI is where the gate actually runs. Do not simulate a database |
+
+
+---
+
+## What the plan got wrong
+
+Kept rather than edited away, because the corrections are the useful part.
+
+**Three dialect substitutions were four.** `anchors` was not planned and was
+found by running the query. SQLite is untyped; Postgres types a recursive CTE
+from its seed row, so `SELECT :root, 0, '…', 1.0` seeds `numeric` against a
+`double precision` walk and the whole query is refused:
+
+```
+recursive query "reach" column 4 has type numeric in the non-recursive term
+but type double precision overall
+```
+
+A loud failure rather than a wrong answer — the good kind, and only because it
+was executed. Nothing about reading the SQL would have found it.
+
+**`NOTIFY` takes no parameters at all**, not for the payload and not for the
+channel, so building it means interpolating both into SQL. `pg_notify(channel,
+payload)` is an ordinary function and binds both. The send path now reaches SQL
+with no text substitution whatsoever; `LISTEN` remains the only place a name is
+interpolated, and it is validated.
+
+**`verify()` returns `None` and raises.** The first version here returned
+`(ok, reason)`, which reads better at a call site and is a *different protocol*
+— a caller written against the published one would treat the tuple as truthy
+and call every chain intact, including a broken one. Implementing a published
+protocol means implementing that protocol, including the parts you would have
+shaped differently.
+
+**Alembic needs a SQLAlchemy connection**, which is the whole reason SQLAlchemy
+is in the extra. A raw psycopg connection fails with `'Connection' object has
+no attribute 'dialect'`. It touches nothing else: the stores use psycopg
+directly and the traversal is never rewritten into an expression language.
+
+**A shared row mapper was not in the plan and should have been.** Both stores
+build the same tables, so a node row is a node row whichever engine returned
+it. `slpie/graph/rows.py` is that mapping, once, and the SQLite store now
+delegates to it. Two copies would have been faster to write and would
+eventually have disagreed about what a retired node looks like.
+
+**The empty ledger needed a second lock.** `FOR UPDATE` locks a row that
+exists; the first append has no tail, so two processes racing to write sequence
+1 would both find nothing and both claim it. `pg_advisory_xact_lock` covers
+exactly that window and releases with the transaction.
+
+## What the schema parity test caught on its first run
+
+`graph_meta` was missing from the Postgres DDL. That is the test doing its job
+before a human could have noticed, and it is why the comparison is column for
+column rather than table by table.
+
+## Running it here
+
+Postgres 16 is installed in this environment, so the conformance gate runs
+locally rather than only in CI:
+
+```bash
+export PGDATA=/var/lib/pgdata-slpie
+su postgres -c "/usr/lib/postgresql/16/bin/initdb -D $PGDATA -U slpie --auth=trust"
+su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D $PGDATA -o '-p 55432 -k /tmp' -l /tmp/pg.log start"
+psql -h /tmp -p 55432 -U slpie -d postgres -c "CREATE DATABASE slpie_test;"
+
+export SLPIE_DATABASE_URL="postgresql://slpie@/slpie_test?host=/tmp&port=55432"
+python -m pytest -q -m postgres
+```
+
+## Still not in phase 15
+
+Unchanged from the plan: read replicas and `STALE_REPLICA` (§23), FastAPI,
+Celery, cloud object stores and framework discoverers (phase 16). And ring 0
+still does not know this package exists — asserted by import walk, not by grep,
+because a ring-0 module *naming* the ring-1 adapter its protocol is for is the
+seam being legible rather than a violation.

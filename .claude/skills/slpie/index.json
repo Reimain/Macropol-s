@@ -1,21 +1,21 @@
 {
   "generator": "slpie context --skill",
-  "digest": "9e68176322ec30ca0a2baffc15a082604cebcab88b075965f1221849a60bcaa9",
+  "digest": "15ab01ff1b42c1a79ec57a719ddcc4761781511efab11b077c45750420706cb0",
   "summary": {
-    "digest": "9e68176322ec30ca0a2baffc15a082604cebcab88b075965f1221849a60bcaa9",
-    "facets": 706,
+    "digest": "15ab01ff1b42c1a79ec57a719ddcc4761781511efab11b077c45750420706cb0",
+    "facets": 709,
     "counts": {
       "component": 52,
       "kind": 21,
-      "module": 296,
+      "module": 297,
       "package": 68,
       "route": 93,
       "screen": 35,
-      "section": 16,
-      "test": 74,
+      "section": 17,
+      "test": 75,
       "verb": 51
     },
-    "coverage": 0.9844,
+    "coverage": 0.9845,
     "unanchored": [
       "section:12",
       "section:14",
@@ -6367,6 +6367,41 @@
       "tags": []
     },
     {
+      "id": "module:slpie.graph.rows",
+      "kind": "module",
+      "name": "slpie.graph.rows",
+      "title": "rows",
+      "summary": "Rows to domain objects \u2014 the mapping, once.",
+      "source": "slpie/graph/rows.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.edge"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.evidence"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.lifecycle"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.node"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.identity"
+        },
+        {
+          "relation": "claims",
+          "target": "section:22"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "module:slpie.graph.schema",
       "kind": "module",
       "name": "slpie.graph.schema",
@@ -6426,6 +6461,10 @@
         {
           "relation": "imports",
           "target": "module:slpie.graph.schema"
+        },
+        {
+          "relation": "imports",
+          "target": "package:slpie.graph"
         }
       ],
       "tags": []
@@ -10746,6 +10785,10 @@
         },
         {
           "relation": "owns",
+          "target": "module:slpie.graph.rows"
+        },
+        {
+          "relation": "owns",
           "target": "module:slpie.graph.schema"
         },
         {
@@ -13785,6 +13828,16 @@
       "tags": []
     },
     {
+      "id": "section:22",
+      "kind": "section",
+      "name": "22",
+      "title": "\u00a722",
+      "summary": "A plan section claimed by at least one module.",
+      "source": "docs/PHASE15.md:9",
+      "links": [],
+      "tags": []
+    },
+    {
       "id": "section:23",
       "kind": "section",
       "name": "23",
@@ -15477,6 +15530,41 @@
         {
           "relation": "covers",
           "target": "package:slpie.normalize"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_persistence",
+      "kind": "test",
+      "name": "test_slpie_persistence",
+      "title": "slpie persistence",
+      "summary": "Postgres persistence \u2014 the dialect, and the answers it must not change.",
+      "source": "tests/test_slpie_persistence.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.core.events"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.errors"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.graph.schema"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ledger.sqlite_ledger"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.domain"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.graph"
         }
       ],
       "tags": []

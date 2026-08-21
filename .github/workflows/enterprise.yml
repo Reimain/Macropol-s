@@ -1,0 +1,91 @@
+name: enterprise
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: enterprise-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The one that matters, and the one that cannot run in the default suite: a
+  # real Postgres, the same graph in both stores, compared row for row.
+  #
+  # Two stores that disagree about a blast radius is a platform that answers
+  # differently depending on where it was deployed. That is the failure §22's
+  # conformance rule exists to catch, and it is only catchable with a database.
+  postgres:
+    name: postgres — the same answers from both stores
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: slpie
+          POSTGRES_PASSWORD: slpie
+          POSTGRES_DB: slpie_test
+        ports: ["5432:5432"]
+        # Without this the job races the container and fails on a connection
+        # refused that looks like a code fault.
+        options: >-
+          --health-cmd "pg_isready -U slpie"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      SLPIE_DATABASE_URL: postgresql://slpie:slpie@localhost:5432/slpie_test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -e '.[dev,enterprise]'
+
+      # Opt-in by marker, so a renamed marker or a module that failed to import
+      # would select nothing and the job would go green having checked no
+      # store at all. Counting first is the vacuous-pass guard §29 established,
+      # applied to the mechanism that would hide the absence.
+      - name: The conformance suite is not empty
+        run: |
+          count=$(python -m pytest -q -m postgres --co 2>/dev/null \
+            | grep -c '::test_' || true)
+          echo "collected $count conformance tests"
+          test "$count" -ge 12 \
+            || (echo "only $count selected — the conformance suite is not running" \
+                && exit 1)
+
+      - name: Both stores agree
+        run: python -m pytest -q -rs -m postgres
+
+      - name: A migrated database and a built one are the same shape
+        working-directory: slpie_enterprise/persistence
+        run: |
+          python -m alembic upgrade head
+          python -m alembic downgrade base
+          python -m alembic upgrade head
+
+  # Invariant 4, asserted rather than assumed: the kernel installs and passes
+  # with **zero** third-party packages. This job exists because the one above
+  # installs seven of them, and a dependency that quietly became required would
+  # otherwise be invisible until somebody tried an air-gapped install.
+  kernel:
+    name: kernel — still zero third-party packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -e '.[dev]'
+
+      - name: Nothing outside the standard library is importable by the kernel
+        run: python -m pytest -q tests/test_slpie_boundaries.py tests/test_enterprise_boundaries.py
+
+      - name: The default suite runs offline and without Postgres
+        run: python -m pytest -q

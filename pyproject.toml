@@ -82,6 +82,14 @@ include = ["gratimos*", "slpie*", "slpie_enterprise*"]
     # wheel does not keep.
     "app/**/*.md",
 ]
+# The Postgres store reads its DDL from disk at build time, and Alembic reads
+# its migrations the same way. Without these a wheel installs a persistence
+# package that cannot create its own schema — the packaging failure §30 already
+# caught once for the interface's nested modules.
+"slpie_enterprise.persistence" = [
+    "schema.sql", "alembic.ini",
+    "migrations/*.py", "migrations/*.mako", "migrations/versions/*.py",
+]
 
 # --- tooling ---------------------------------------------------------------
 #
@@ -100,10 +108,11 @@ markers = [
     "slow: materializes a large tree or runs a real subprocess",
     "corpus: needs the fetched corpus tier; skipped when the cache is cold",
     "network: needs outbound access — never run in the default suite",
+    "postgres: needs a real Postgres; set SLPIE_DATABASE_URL and select with -m postgres",
 ]
 # The browser tier is opt-in. `-m browser` selects it; the default run skips it,
 # so a machine with no Chromium still gets a green suite that means something.
-addopts = "-m 'not browser'"
+addopts = "-m 'not browser and not postgres'"
 filterwarnings = ["error::DeprecationWarning:slpie.*"]
 
 [tool.coverage.run]
