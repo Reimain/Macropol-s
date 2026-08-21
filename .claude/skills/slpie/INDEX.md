@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `0c898162cfb3761fce844b7e6e5be6e4a4cd51106c3c107f4ee5b92fa4540cd7`
-- **facets** 744 — 52 component, 21 kind, 311 module, 70 package, 98 route, 36 screen, 19 section, 81 test, 56 verb
-- **anchored** 99.2% resolve to a file and a line
+- **digest** `54f491c1d1d4692987d3c11f36bfea524a637b5e050686c8a6c53cc8b61554db`
+- **facets** 700 — 7 component, 21 kind, 312 module, 70 package, 98 route, 36 screen, 19 section, 81 test, 56 verb
+- **anchored** 99.1% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -87,10 +87,11 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 
 ## Where no test names the code
 
-8 module(s) under `slpie/` that no test file imports, directly or through their package. Not a coverage number — `pytest --cov` measures what *ran*, this measures what is *named* — but it is the cheap question a reader actually has: where would I look for a test of this.
+9 module(s) under `slpie/` that no test file imports, directly or through their package. Not a coverage number — `pytest --cov` measures what *ran*, this measures what is *named* — but it is the cheap question a reader actually has: where would I look for a test of this.
 
 | module | source |
 |---|---|
+| `slpie.deploy.emitters.ansible` | slpie/deploy/emitters/ansible.py:1 |
 | `slpie.deploy.emitters.compose` | slpie/deploy/emitters/compose.py:1 |
 | `slpie.deploy.emitters.helm` | slpie/deploy/emitters/helm.py:1 |
 | `slpie.deploy.emitters.kubernetes` | slpie/deploy/emitters/kubernetes.py:1 |
@@ -149,21 +150,11 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 
 ## The browser vocabulary
 
-52 component(s), read from the exports of the app's own modules. This is the dictionary a screen block indexes into: a block naming something absent from this list is a dangling link, caught in Python rather than found as a blank area in a browser.
+7 component(s), read from the exports of the app's own modules. This is the dictionary a screen block indexes into: a block naming something absent from this list is a dangling link, caught in Python rather than found as a blank area in a browser.
 
 | module | exports |
 |---|---|
-| `ui/chart.js` | `bars`, `hero`, `share`, `spark`, `stat` |
-| `ui/components.js` | `compose`, `render`, `select` |
-| `ui/density.js` | `apply`, `control`, `density`, `setDensity`, `setTheme`, `theme` |
-| `ui/graph.js` | `diagram`, `directness`, `key`, `spread` |
-| `ui/grid.js` | `grid` |
-| `ui/nav.js` | `crumbs`, `nav`, `pageHead`, `tabs` |
-| `ui/opener.js` | `opener`, `pipelineFor` |
-| `ui/panel.js` | `bar`, `card`, `claim`, `empty`, `fault`, `freshness`, `loading`, `metric`, `panel`, `refusal`, `staleness`, `status`, `unsurveyed` |
-| `ui/pill.js` | `chip`, `connection`, `pill`, `severity`, `target` |
 | `ui/screen.js` | `screen-catalog`, `screen-compose`, `screen-console`, `screen-findings`, `screen-graph`, `screen-verbs`, `screen-workspaces` |
-| `ui/table.js` | `scrolling`, `table` |
 
 ## What could not be anchored
 

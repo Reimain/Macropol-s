@@ -42,7 +42,15 @@ PLATFORMS = ("kubernetes", "compose", "nomad", "systemd")
 CLOUDS = ("aws", "gcp", "azure", "onprem")
 
 #: Engines a persistence entry may name.
-ENGINES = ("postgres", "sqlite", "s3", "gcs", "azure-blob", "filesystem", "redis")
+ENGINES = (
+    "postgres", "sqlite", "s3", "gcs", "azure-blob", "filesystem",
+    # `rabbitmq` before `redis` because it is what the task runner is built
+    # for: a broker with acknowledgements, so a worker killed mid-scan returns
+    # its unit to the queue instead of leaving it in a list nobody is watching.
+    # Redis stays declarable — it is the right *result backend*, and plenty of
+    # estates already run one — but a queue is not what it is good at.
+    "rabbitmq", "redis",
+)
 
 #: Growth curves. `logarithmic` is the default and `linear` must be chosen
 #: deliberately — §23's argument is that linear autoscaling on queue depth

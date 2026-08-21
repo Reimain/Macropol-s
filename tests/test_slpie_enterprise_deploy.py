@@ -215,3 +215,166 @@ def test_the_applier_satisfies_the_ring_zero_seam(declared, tmp_path):
     outcome = apply_through(declared, Ctx(), emitter="compose")
     assert outcome.applied
     assert outcome.to_dict()["summary"].startswith("applied acme")
+
+
+# --- the broker the runner is actually built for ------------------------------
+
+
+def test_the_runner_defaults_to_a_real_broker():
+    """An in-memory default distributes nothing and looks perfect doing it.
+
+    That is the same failure as a runner quietly executing everything locally,
+    which this module's docstring already refuses — so the default is a broker
+    that exists, and `SLPIE_BROKER_URL` points it somewhere else.
+    """
+    from slpie_enterprise.queue.celery_runner import (
+        BACKEND_ENV,
+        BROKER_ENV,
+        DEFAULT_BACKEND,
+        DEFAULT_BROKER,
+    )
+
+    assert DEFAULT_BROKER.startswith("amqp://"), "the default is not a real broker"
+    assert "memory://" not in DEFAULT_BROKER
+    # Results go to a store, never back through the broker: RabbitMQ's RPC
+    # backend makes a queue per client and loses results when it disconnects,
+    # which is wrong for a scan somebody reads an hour later.
+    assert DEFAULT_BACKEND.startswith("redis://")
+    assert BROKER_ENV == "SLPIE_BROKER_URL" and BACKEND_ENV == "SLPIE_RESULT_BACKEND"
+
+
+def test_the_environment_overrides_the_default(monkeypatch):
+    from slpie_enterprise.queue.celery_runner import BROKER_ENV, application
+
+    monkeypatch.setenv(BROKER_ENV, "amqp://elsewhere:5672//")
+    assert application(eager=True).conf.broker_url == "amqp://elsewhere:5672//"
+
+
+def test_a_worker_that_dies_returns_its_unit_to_the_queue():
+    """The line that makes RabbitMQ's guarantee reach a scan.
+
+    `task_acks_late` holds the message unacknowledged while the unit runs, so a
+    worker killed mid-scan requeues rather than losing it. That is §23's
+    deallocation protocol getting its guarantee from the broker instead of from
+    a timer, and it is one configuration flag away from not happening.
+    """
+    from slpie_enterprise.queue.celery_runner import application
+
+    conf = application(eager=True).conf
+    assert conf.task_acks_late is True
+    assert conf.task_reject_on_worker_lost is True
+    # And a started task says so, rather than being PENDING for six minutes —
+    # "queued" and "running" are the two states an operator needs to separate.
+    assert conf.task_track_started is True
+    assert conf.worker_send_task_events is True
+
+
+def test_results_do_not_accumulate_forever():
+    from slpie_enterprise.queue.celery_runner import RESULT_TTL, application
+
+    assert application(eager=True).conf.result_expires == RESULT_TTL
+    assert RESULT_TTL >= 3600, "too short to read a scan started before a weekend"
+
+
+def test_pickle_is_still_refused():
+    """The one setting that must not drift: it is the RCE surface."""
+    from slpie_enterprise.queue.celery_runner import application
+
+    conf = application(eager=True).conf
+    assert conf.task_serializer == "json"
+    assert list(conf.accept_content) == ["json"]
+
+
+# --- the job board ------------------------------------------------------------
+
+
+def test_a_pending_state_is_reported_as_uncertain():
+    """Celery answers PENDING for a queued task *and* for a task id it has never
+    heard of. Rendering the two the same way lets a typo look like a job that is
+    about to run."""
+    from slpie_enterprise.queue.jobs import Job
+
+    assert not Job(unit="scan", task_id="x").certain
+    assert Job(unit="scan", task_id="x", state="STARTED").certain
+    assert "no such task" in str(Job(unit="scan", task_id="x"))
+
+
+def test_terminal_and_attention_states_are_separate():
+    from slpie_enterprise.queue.jobs import Job
+
+    assert Job(unit="a", task_id="1", state="SUCCESS").terminal
+    assert not Job(unit="a", task_id="1", state="RETRY").terminal
+    # Retrying is working as designed *and* is evidence something it depends on
+    # is not, so it wants attention without being terminal.
+    assert Job(unit="a", task_id="1", state="RETRY").to_dict()["attention"]
+
+
+def test_a_queue_nobody_consumes_is_starved_rather_than_busy():
+    from slpie_enterprise.queue.jobs import Board, Health, Queue
+
+    starved = Board(queues=(Queue(name="scan", depth=400, consumers=0),))
+    assert starved.health is Health.STARVED
+    assert starved.health.wants_attention
+
+    idle = Board(queues=(Queue(name="scan", depth=0, consumers=2),), workers=("w1",))
+    assert idle.health is Health.IDLE
+
+
+def test_an_unreachable_broker_is_never_rendered_as_an_idle_one():
+    """The worst possible answer: a starved queue shown as an empty one."""
+    from slpie_enterprise.queue.jobs import Board, Health
+
+    blind = Board(reachable=False, gaps=("the broker did not answer",))
+    assert blind.health is Health.UNREACHABLE
+    assert "nothing below is current" in blind.summary()
+
+
+def test_the_board_says_depth_is_missing_rather_than_showing_zero():
+    """Celery's inspection reports what workers hold, never what waits in a
+    queue. A depth taken from `reserved` reads zero for ten thousand waiting
+    messages with no consumers — exactly the case somebody is looking for."""
+    from slpie_enterprise.queue.jobs import board
+
+    class Silent:
+        class control:
+            @staticmethod
+            def inspect(**_):
+                class Empty:
+                    active = staticmethod(lambda: {})
+                    ping = staticmethod(lambda: {"worker@host": {"ok": "pong"}})
+                return Empty()
+        conf = {}
+
+    answer = board(Silent(), queues=("scan",))
+    assert answer.workers == ("worker@host",)
+    assert any("queue depth is not shown" in gap for gap in answer.gaps)
+
+
+def test_no_worker_answering_is_not_the_same_as_no_workers():
+    """They lead an operator to opposite actions."""
+    from slpie_enterprise.queue.jobs import inspect_workers
+
+    class Quiet:
+        class control:
+            @staticmethod
+            def inspect(**_):
+                class Nothing:
+                    active = staticmethod(lambda: {})
+                    ping = staticmethod(lambda: {})
+                return Nothing()
+
+    workers, jobs, gaps = inspect_workers(Quiet())
+    assert not workers and not jobs
+    assert any("cannot tell them apart" in gap for gap in gaps)
+
+
+def test_the_runner_exposes_what_is_still_in_flight():
+    from slpie_enterprise.queue.celery_runner import CeleryRunner, application
+
+    runner = CeleryRunner(app=application(eager=True))
+    runner.run([("a", lambda: 1), ("b", lambda: 2)])
+    # Emptied as each unit is collected, so the board shows what is outstanding
+    # rather than a batch that finished an hour ago.
+    assert runner.inflight == {}
+    assert runner.states() == ()
+    assert runner.to_dict()["broker"].startswith("amqp://")

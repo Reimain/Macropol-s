@@ -89,9 +89,19 @@ def _service(deployment: Deployment, component) -> list[str]:
 #: Stores this emitter can actually run as a container, and the image for each.
 #: A store outside this table is a managed service: it is *not* emitted, and
 #: `gaps()` says so rather than a service quietly appearing that nothing backs.
+#: Ports are a *tuple* per engine rather than one number, and that is not
+#: generality for its own sake: RabbitMQ needs two — 5672 for the protocol and
+#: 15672 for the management API — and the first version of this emitted two
+#: `expose:` keys in one service block. Compose keeps the last of a duplicated
+#: key, so the render was valid YAML that silently dropped the broker port.
 CONTAINERISED = {
-    "postgres": ("postgres:16", 5432, "/var/lib/postgresql/data"),
-    "redis": ("redis:7-alpine", 6379, "/data"),
+    "postgres": ("postgres:16", (5432,), "/var/lib/postgresql/data"),
+    "redis": ("redis:7-alpine", (6379,), "/data"),
+    # The management image rather than plain `rabbitmq:3`. It is the same
+    # broker plus the HTTP API that queue depth comes from — and depth is the
+    # number §23's elasticity curve is computed from, so a deployment without
+    # it can run scans and cannot explain its own replica count.
+    "rabbitmq": ("rabbitmq:3-management", (5672, 15672), "/var/lib/rabbitmq"),
 }
 
 
@@ -109,15 +119,25 @@ def _stores(deployment: Deployment) -> dict[str, list[str]]:
         recipe = CONTAINERISED.get(store.engine)
         if recipe is None:
             continue
-        image_name, port, data = recipe
+        image_name, ports, data = recipe
         body = [
             "",
             f"  {store.engine}:",
             f"    image: {image_name}",
             "    restart: unless-stopped",
-            f'    expose: ["{port}"]',
+            "    expose: [" + ", ".join(f'"{port}"' for port in ports) + "]",
             f"    volumes: [\"{store.name}-data:{data}\"]",
         ]
+        if store.engine == "rabbitmq":
+            body += [
+                "    environment:",
+                "      RABBITMQ_DEFAULT_USER: slpie",
+                "      RABBITMQ_DEFAULT_PASS: \"${RABBITMQ_PASSWORD:?set a password}\"",
+                "    healthcheck:",
+                '      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]',
+                "      interval: 10s",
+                "      retries: 10",
+            ]
         if store.engine == "postgres":
             body += [
                 "    environment:",

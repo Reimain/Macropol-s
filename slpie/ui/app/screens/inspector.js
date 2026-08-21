@@ -23,9 +23,9 @@ import { cell, subscribe } from "../core/store.js";
 import { VERBS } from "../data/client.js";
 import { query } from "../data/http.js";
 import { verb as runVerb } from "../data/queries.js";
-import { compose } from "../ui/components.js";
-import { card, fault, loading, panel } from "../ui/panel.js";
-import { pill } from "../ui/pill.js";
+import { compose } from "../components/dictionary.js";
+import { card, fault, loading, panel } from "../components/panel.js";
+import { pill } from "../components/pill.js";
 
 const stops = [];
 

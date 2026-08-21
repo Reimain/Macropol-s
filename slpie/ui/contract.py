@@ -660,7 +660,7 @@ SECTIONS = ("console", "operate", "build", "catalog", "api", "admin")
 #: build — `claim(value, confidence)` wants a number the payload does not carry.
 #: What is addressable here is what can be driven by *data*, and
 #: `test_the_addressable_components_match_the_browser_registry` asserts this set
-#: equals the keys of `COMPONENTS` in `app/ui/components.js`, in both directions:
+#: equals the keys of `COMPONENTS` in `app/components/dictionary.js`, both ways:
 #: a name here with no implementation renders nothing, and an implementation
 #: with no name here is unreachable.
 COMPONENTS = frozenset({

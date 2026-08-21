@@ -249,7 +249,8 @@ def test_a_plan_is_ordered_so_two_runs_compare(declared):
 
 def test_every_emitter_is_registered_and_named():
     assert set(emitters.names()) == {
-        "compose", "helm", "kubernetes", "pipelines", "systemd", "terraform",
+        "ansible", "compose", "helm", "kubernetes", "pipelines", "systemd",
+        "terraform",
     }
     assert emitters.emitter("nonesuch") is None
 
@@ -283,7 +284,7 @@ def test_every_rendered_file_says_it_is_generated(declared, name):
 
 def test_an_unknown_emitter_is_refused_with_the_list(declared):
     with pytest.raises(KeyError) as raised:
-        emitters.render(declared, emitter="ansible")
+        emitters.render(declared, emitter="cloudformation")
     assert "compose" in str(raised.value)
 
 
@@ -722,3 +723,154 @@ def test_a_rendered_kubernetes_manifest_reads_back_as_a_workload(declared):
     # that would reconcile as CONTRADICTED if the emitter and the reader
     # disagreed about what a range means.
     assert workload.properties["replicas"] == declared.component("workers").size
+
+
+# --- the broker, and the two emitters that provision it -----------------------
+
+
+BROKERED = """
+apiVersion: slpie/v1
+kind: Deployment
+environment: acme
+topology:
+  api: { replicas: 2 }
+  workers: { min: 2, max: 20, queues: [scan, reason] }
+persistence:
+  graph: { engine: postgres, size: 50Gi }
+  broker: { engine: rabbitmq, size: 8Gi, replicas: 2 }
+  results: { engine: redis }
+platform: compose
+"""
+
+
+@pytest.fixture()
+def brokered():
+    return loads(BROKERED)
+
+
+def test_rabbitmq_is_declarable(brokered):
+    """The task runner is built for a broker with acknowledgements.
+
+    A manifest that could not name one would leave the enterprise runner
+    pointed at whatever somebody typed into an environment variable, which is
+    the opposite of declare-first.
+    """
+    assert brokered.persistence.get("broker").engine == "rabbitmq"
+
+
+def test_compose_runs_the_broker_with_its_management_api(brokered):
+    """Depth comes from the management API, and depth is what elasticity reads.
+
+    A deployment without it can run scans and cannot explain its own replica
+    count — which makes §23's curve a model rather than a measurement.
+    """
+    text = emitters.render(brokered, emitter="compose")["docker-compose.yaml"]
+    assert "rabbitmq:3-management" in text
+    assert '"5672", "15672"' in text
+
+
+def test_no_service_block_declares_a_key_twice(brokered):
+    """The defect that shipped for one commit, now a test.
+
+    RabbitMQ needs two ports, and the first version emitted a second `expose:`
+    key rather than a second entry. Compose keeps the last of a duplicated key,
+    so the render was valid YAML that silently dropped the broker's own port.
+    """
+    text = emitters.render(brokered, emitter="compose")["docker-compose.yaml"]
+
+    block: list[str] = []
+    for line in text.splitlines() + ["  end:"]:
+        if line.startswith("  ") and not line.startswith("    ") and line.rstrip().endswith(":"):
+            keys = [item.split(":")[0].strip() for item in block]
+            assert len(keys) == len(set(keys)), f"duplicate key in a service: {keys}"
+            block = []
+        elif line.startswith("    ") and not line.startswith("      ") and ":" in line:
+            block.append(line)
+
+
+def test_the_broker_password_never_reaches_the_file(brokered):
+    text = emitters.render(brokered, emitter="compose")["docker-compose.yaml"]
+    assert "${RABBITMQ_PASSWORD" in text
+
+
+def test_terraform_provisions_a_managed_broker_where_one_exists():
+    declared = loads(BROKERED + "cloud: aws\n")
+    files = emitters.render(declared, emitter="terraform")
+    assert "aws_mq_broker" in files["main.tf"]
+    assert '"RabbitMQ"' in files["main.tf"]
+    # Replicas were declared, so it is not a single point of failure for every
+    # scan in flight.
+    assert "CLUSTER_MULTI_AZ" in files["main.tf"]
+    assert "broker_url" in files["outputs.tf"]
+
+
+@pytest.mark.parametrize("cloud", ["gcp", "azure"])
+def test_a_cloud_with_no_managed_rabbitmq_says_so_rather_than_substituting(cloud):
+    """Pub/Sub is not RabbitMQ, and pretending otherwise would break the runner.
+
+    Substituting a queue without acknowledgements would give the task runner
+    something that looks like a broker and loses a unit when a worker dies —
+    which is the exact guarantee the broker was chosen for.
+    """
+    declared = loads(BROKERED + f"cloud: {cloud}\n")
+    assert "aws_mq_broker" not in emitters.render(declared, emitter="terraform")["main.tf"]
+
+    reported = " ".join(emitters.gaps(declared, emitter="terraform"))
+    assert "no managed RabbitMQ" in reported
+    assert "ansible" in reported, "it does not say what to do instead"
+
+
+def test_ansible_installs_the_broker_the_cloud_would_not(brokered):
+    files = emitters.render(brokered, emitter="ansible")
+    assert "roles/rabbitmq/tasks/main.yml" in files
+
+    role = files["roles/rabbitmq/tasks/main.yml"]
+    assert "rabbitmq_management" in role, "no management plugin, so no queue depth"
+    # `guest` is refused over anything but loopback, so a deployment relying on
+    # it works in a container and fails the moment a worker is on another host.
+    assert "user: guest" in role and "state: absent" in role
+
+
+def test_every_ansible_task_is_declarative(brokered):
+    """Idempotent, or it is a shell script with extra steps.
+
+    A `command:` or `shell:` task makes a second run a second install, which is
+    the whole reason to reach for Ansible over the install script the systemd
+    emitter already writes.
+    """
+    for path, text in emitters.render(brokered, emitter="ansible").items():
+        if not path.startswith("roles/") or not path.endswith(".yml"):
+            continue
+        for line in text.splitlines():
+            stripped = line.strip()
+            assert not stripped.startswith(("ansible.builtin.shell", "shell:", "command:")), (
+                f"{path} runs a shell task: {stripped}"
+            )
+
+
+def test_ansible_invents_no_host(brokered):
+    """An emitter that guessed an address would run against somebody else's box."""
+    inventory = emitters.render(brokered, emitter="ansible")["inventory.ini"]
+    for component in brokered.names:
+        assert f"[{component}]" in inventory
+    assert "10.0.0" not in inventory and "localhost" not in inventory
+    assert any("lists groups and no hosts" in gap
+               for gap in emitters.gaps(brokered, emitter="ansible"))
+
+
+def test_ansible_references_secrets_and_writes_none(brokered):
+    files = emitters.render(brokered, emitter="ansible")
+    variables = files["group_vars/all.yml"]
+    assert "vault_rabbitmq_password" in variables
+    for text in files.values():
+        assert "guest:guest" not in text
+
+    role = files["roles/rabbitmq/tasks/main.yml"]
+    assert "no_log: true" in role, "a password would be printed into the run log"
+
+
+def test_the_ansible_playbook_puts_stores_before_the_platform(brokered):
+    """A worker that starts before its broker fills the log with noise that
+    looks like a fault."""
+    play = emitters.render(brokered, emitter="ansible")["site.yml"]
+    assert play.index("hosts: rabbitmq") < play.index("hosts: workers")

@@ -85,7 +85,45 @@ def _resources(deployment: Deployment) -> list[str]:
         lines += _database(deployment, graph)
     if objects and objects.engine in ("s3", "gcs", "azure-blob"):
         lines += _bucket(deployment, objects)
+
+    broker = deployment.persistence.get("broker")
+    if broker and broker.engine == "rabbitmq":
+        lines += _broker(deployment, broker)
     return lines
+
+
+#: Managed RabbitMQ, per cloud. Only AWS has one — Amazon MQ speaks the real
+#: protocol. GCP and Azure do not: Pub/Sub and Service Bus are different
+#: products with different semantics, and substituting one would give the task
+#: runner a queue without the acknowledgement behaviour it was chosen for. So
+#: those two provision nothing and `gaps()` says why, which is the §27
+#: treatment of a capability that is genuinely unavailable rather than merely
+#: inconvenient.
+MANAGED_BROKER = (Cloud.AWS,)
+
+
+def _broker(deployment: Deployment, store) -> list[str]:
+    if deployment.cloud not in MANAGED_BROKER:
+        return []
+    return [
+        'resource "aws_mq_broker" "queue" {',
+        f'  broker_name        = "slpie-{deployment.environment}"',
+        '  engine_type        = "RabbitMQ"',
+        '  engine_version     = var.broker_engine_version',
+        "  host_instance_type = var.broker_instance_type",
+        # Two nodes when the manifest asked for replicas. A single-instance
+        # broker is a single point of failure for every scan in flight, and the
+        # deployment already said whether it wanted to pay for that.
+        f'  deployment_mode    = "{"CLUSTER_MULTI_AZ" if store.replicas else "SINGLE_INSTANCE"}"',
+        "  publicly_accessible = false",
+        "  user {",
+        "    username = var.broker_username",
+        "    password = var.broker_password",
+        "  }",
+        "  logs { general = true }",
+        "}",
+        "",
+    ]
 
 
 def _database(deployment: Deployment, store) -> list[str]:
@@ -184,6 +222,17 @@ def _variables(deployment: Deployment) -> str:
         lines += _variable("database_password", "string", None,
                            "no default, deliberately: a password with a default "
                            "is a password somebody shipped", sensitive=True)
+    broker = deployment.persistence.get("broker")
+    if broker and broker.engine == "rabbitmq" and deployment.cloud in MANAGED_BROKER:
+        lines += _variable("broker_instance_type", "string", "mq.t3.micro",
+                           "the managed broker's size")
+        lines += _variable("broker_engine_version", "string", "3.13",
+                           "pinned: a broker that upgrades itself between plan "
+                           "and apply is a reviewed plan that no longer matches")
+        lines += _variable("broker_username", "string", "slpie", "")
+        lines += _variable("broker_password", "string", None,
+                           "no default, deliberately", sensitive=True)
+
     if deployment.cloud is Cloud.AZURE:
         lines += _variable("resource_group", "string", None, "")
         lines += _variable("storage_account", "string", None, "")
@@ -224,7 +273,18 @@ def _outputs(deployment: Deployment) -> str:
             "}",
             "",
         ]
-    if not graph and not objects:
+
+    broker = deployment.persistence.get("broker")
+    if broker and broker.engine == "rabbitmq" and deployment.cloud in MANAGED_BROKER:
+        lines += [
+            'output "broker_url" {',
+            "  description = \"goes into SLPIE_BROKER_URL\"",
+            "  value       = aws_mq_broker.queue.instances[0].endpoints[0]",
+            "  sensitive   = true",
+            "}",
+            "",
+        ]
+    if not graph and not objects and not broker:
         lines.append("# Nothing is provisioned, so nothing is output.")
     return "\n".join(lines) + "\n"
 
@@ -263,6 +323,15 @@ def _gigabytes(size: str) -> int:
 
 def gaps(deployment: Deployment) -> tuple[str, ...]:
     found = []
+    broker = deployment.persistence.get("broker")
+    if broker and broker.engine == "rabbitmq" and deployment.cloud not in MANAGED_BROKER:
+        found.append(
+            f"{deployment.cloud.value} has no managed RabbitMQ, so the broker is "
+            f"not provisioned here. Pub/Sub and Service Bus are different "
+            f"products with different delivery semantics, and substituting one "
+            f"would give the task runner a queue without the acknowledgements it "
+            f"was chosen for. Run it yourself — the ansible emitter installs one."
+        )
     if deployment.cloud is Cloud.ONPREM:
         found.append(
             "cloud: onprem — nothing is provisioned. The variables and outputs "

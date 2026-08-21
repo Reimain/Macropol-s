@@ -138,6 +138,42 @@ guard gets deleted rather than fixed.
 | 6 | `slpie_enterprise/deploy/apply.py` | a missing binary leaves the render and names the tool |
 | 8 | The round trip: what the platform emits, it can read | the compose and kubernetes discoverers, on our own output |
 
+## Corrections after review
+
+Four defects were raised against what shipped, and all four were real.
+
+**The task runner had no broker worth the name.** It defaulted to `memory://`,
+which distributes nothing and looks perfect doing it — the same failure as a
+runner quietly running everything locally, which the module's own docstring
+refuses. It is RabbitMQ now, and the reason is acknowledgements rather than
+taste: Redis is a data store being used as a queue, and recovering a task from
+a worker that died needs `visibility_timeout`, which is a *guess* at how long a
+scan should take. RabbitMQ holds the delivery unacknowledged until the unit
+finishes, so with `task_acks_late` a killed worker requeues its unit — §23's
+deallocation protocol taking its guarantee from the broker instead of a timer.
+
+**There was no way to ask what the queue was doing.** `slpie_enterprise/queue/jobs.py`
+reports states, workers and health, and it is careful about one thing: Celery
+answers `PENDING` both for a queued task and for an id it has never heard of, so
+`Job.certain` says which case a reader is looking at. Queue *depth* is
+deliberately absent unless a management API supplies it — a depth taken from
+`reserved` would read zero for ten thousand waiting messages with no consumers,
+which is precisely the situation somebody opens a job board to find.
+
+**Nothing provisioned the broker.** Terraform now creates an Amazon MQ RabbitMQ
+on AWS, and on GCP and Azure it creates nothing and *says why*: Pub/Sub and
+Service Bus are different products, and substituting one would hand the runner a
+queue without the acknowledgements it was chosen for. A new **ansible** emitter
+is the answer that gap points at — a playbook, an inventory and roles that
+install RabbitMQ, Postgres and Redis onto hosts. Every task in it is
+declarative; a `shell:` task would make a second run a second install, and
+a test forbids one.
+
+**`slpie/ui/app/ui/` said the word twice and meant two different things by it.**
+The tier is `components/` now, and `components.js` inside it became
+`dictionary.js` — §29's Rule 4, that a stuttering path loses the prefix, applied
+to the directory that most obviously stuttered.
+
 **Step 7, the cost model, is not built.** `ResourceMeter` exists (§31) and the
 `Rule` machinery exists (§11), but wiring spend into findings needs a meter
 reading something real to be worth anything, and this environment has no cloud

@@ -33,7 +33,11 @@ UI = APP_ROOT.parent
 #:
 #: `engine/` sits above `ui/` and below `screens/`: it is a renderer, so a screen
 #: chooses one, and nothing a component draws may depend on which one was chosen.
-TIERS = ("core", "data", "ui", "engine", "screens")
+#: The browser's ring rule, innermost first. `components` was `ui` until it was
+#: pointed out that `slpie/ui/app/ui/` says the word twice and means two
+#: different things by it — the served package and the component tier. The tier
+#: is named for what it holds.
+TIERS = ("core", "data", "components", "engine", "screens")
 
 #: Files at the top of `app/`, which compose the tiers and may import anything.
 ROOTS = frozenset({"app.js", "boot.js", "sw.js", "compose.js"})

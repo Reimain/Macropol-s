@@ -14,9 +14,9 @@ import { fill, h, link } from "../core/dom.js";
 import { cell, subscribe } from "../core/store.js";
 import { confidence, count, short } from "../core/format.js";
 import { datasets as loadDatasets, search as loadSearch } from "../data/queries.js";
-import { card, claim, key, panel, unsurveyed } from "../ui/panel.js";
-import { pill } from "../ui/pill.js";
-import { scrolling, table } from "../ui/table.js";
+import { card, claim, key, panel, unsurveyed } from "../components/panel.js";
+import { pill } from "../components/pill.js";
+import { scrolling, table } from "../components/table.js";
 
 const stops = [];
 

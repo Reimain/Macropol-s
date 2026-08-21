@@ -40,14 +40,14 @@ def manifest(routes):
 
 
 def _js_components() -> set[str]:
-    """The keys of `COMPONENTS` in `app/ui/components.js`.
+    """The keys of `COMPONENTS` in `app/components/dictionary.js`.
 
     Parsed out of the source rather than listed here, for the same reason the
     service-worker test derives the stream path from the `EventSource(...)` call
     instead of pinning the literal: a test that restates what it checks passes
     when both copies are wrong together.
     """
-    source = (APP / "ui" / "components.js").read_text(encoding="utf-8")
+    source = (APP / "components" / "dictionary.js").read_text(encoding="utf-8")
     body = re.search(r"export const COMPONENTS = \{(.*?)\n\};", source, re.S)
     assert body, "components.js no longer exports a COMPONENTS registry"
     return set(re.findall(r"^\s*(\w+):", body.group(1), re.M))
@@ -89,7 +89,7 @@ def test_a_column_asking_for_an_unknown_format_is_refused() -> None:
 
 
 def test_every_declared_format_is_implemented_in_the_browser() -> None:
-    source = (APP / "ui" / "components.js").read_text(encoding="utf-8")
+    source = (APP / "components" / "dictionary.js").read_text(encoding="utf-8")
     body = re.search(r"const FORMATS = \{(.*?)\n\};", source, re.S)
     assert body
     implemented = set(re.findall(r'^\s*(\w+|""):', body.group(1), re.M))
@@ -204,7 +204,7 @@ def test_the_new_modules_are_precached(routes) -> None:
     breaks offline — the failure nobody reproduces until a plane."""
     worker = (APP / "sw.js").read_text(encoding="utf-8")
     assert '"/core/lexicon.js"' in worker
-    assert '"/ui/components.js"' in worker
+    assert '"/components/dictionary.js"' in worker
 
 
 def test_the_component_dictionary_obeys_the_ring_rule() -> None:
@@ -214,7 +214,7 @@ def test_the_component_dictionary_obeys_the_ring_rule() -> None:
     obvious implementation imports the verb forms from `screens/`. It takes them
     as an injected function instead.
     """
-    source = (APP / "ui" / "components.js").read_text(encoding="utf-8")
+    source = (APP / "components" / "dictionary.js").read_text(encoding="utf-8")
     imports = re.findall(r'from\s+"([^"]+)"', source)
     assert imports
     assert not [item for item in imports if "screens/" in item]
@@ -223,5 +223,5 @@ def test_the_component_dictionary_obeys_the_ring_rule() -> None:
 def test_nothing_in_the_dictionary_uses_inner_html() -> None:
     """`script-src 'self'` does not stop DOM injection, and this module renders
     operator-authored labels."""
-    for name in ("ui/components.js", "core/lexicon.js", "screens/inspector.js"):
+    for name in ("components/dictionary.js", "core/lexicon.js", "screens/inspector.js"):
         assert "innerHTML" not in (APP / name).read_text(encoding="utf-8")

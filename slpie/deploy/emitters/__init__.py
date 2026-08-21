@@ -23,7 +23,7 @@ from __future__ import annotations
 from typing import Callable, Mapping, Protocol
 
 from ..manifest import Deployment
-from . import compose, helm, kubernetes, pipelines, systemd, terraform
+from . import ansible, compose, helm, kubernetes, pipelines, systemd, terraform
 
 
 class Emitter(Protocol):
@@ -43,7 +43,7 @@ class Emitter(Protocol):
 #: kernel change, which is invariant 6 applied to deployment.
 EMITTERS: dict[str, Emitter] = {
     module.NAME: module            # type: ignore[misc]
-    for module in (compose, kubernetes, systemd, helm, terraform, pipelines)
+    for module in (compose, kubernetes, systemd, helm, terraform, pipelines, ansible)
 }
 
 

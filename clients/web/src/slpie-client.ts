@@ -283,12 +283,12 @@ export class SlpieClient {
   }
 
   /** make it so — gated by the same guard as `target --to live` */
-  async deployApply(params: { manifest?: string; emitter?: "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; upstream?: Flow; confirmed?: boolean } = {}): Promise<Flow> {
+  async deployApply(params: { manifest?: string; emitter?: "ansible" | "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; upstream?: Flow; confirmed?: boolean } = {}): Promise<Flow> {
     return this.post(`/api/v/deploy-apply`, params);
   }
 
   /** the install document, generated so it cannot drift */
-  async deployManual(params: { manifest?: string; emitter?: "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; out?: string; upstream?: Flow } = {}): Promise<Flow> {
+  async deployManual(params: { manifest?: string; emitter?: "ansible" | "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; out?: string; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/deploy-manual`, params);
   }
 
@@ -298,7 +298,7 @@ export class SlpieClient {
   }
 
   /** emit the deployment artifacts, reviewable before anything runs */
-  async deployRender(params: { manifest?: string; emitter?: "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; write?: boolean; out?: string; upstream?: Flow } = {}): Promise<Flow> {
+  async deployRender(params: { manifest?: string; emitter?: "ansible" | "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; write?: boolean; out?: string; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/deploy-render`, params);
   }
 

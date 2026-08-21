@@ -12,6 +12,6 @@
  * and trading a content-security-policy hole for a single frame is a bad deal.
  */
 
-import { apply } from "./ui/density.js";
+import { apply } from "./components/density.js";
 
 apply();

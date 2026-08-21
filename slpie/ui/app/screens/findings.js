@@ -11,9 +11,9 @@ import { fill, h, link } from "../core/dom.js";
 import { cell, subscribe } from "../core/store.js";
 import { cite, count } from "../core/format.js";
 import { findings as loadFindings } from "../data/queries.js";
-import { card, claim, key, panel, unsurveyed } from "../ui/panel.js";
-import { severity } from "../ui/pill.js";
-import { grid } from "../ui/grid.js";
+import { card, claim, key, panel, unsurveyed } from "../components/panel.js";
+import { severity } from "../components/pill.js";
+import { grid } from "../components/grid.js";
 
 const SEVERITIES = ["", "critical", "high", "medium", "low", "info"];
 

@@ -13,9 +13,9 @@ import { fill, h } from "../core/dom.js";
 import { cell, subscribe } from "../core/store.js";
 import { count } from "../core/format.js";
 import { workspaces as loadWorkspaces } from "../data/queries.js";
-import { card, panel } from "../ui/panel.js";
-import { pill } from "../ui/pill.js";
-import { scrolling, table } from "../ui/table.js";
+import { card, panel } from "../components/panel.js";
+import { pill } from "../components/pill.js";
+import { scrolling, table } from "../components/table.js";
 
 let stop = null;
 

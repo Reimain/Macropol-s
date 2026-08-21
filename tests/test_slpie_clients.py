@@ -104,12 +104,12 @@ def test_every_scene_import_in_the_web_shell_resolves_to_a_real_module():
 def test_the_web_shell_does_not_reach_past_the_scene_into_the_console():
     """It shares the *scene*, not the console.
 
-    `core/`, `ui/` and `screens/` are the stdlib shell's own implementation —
+    `core/`, `components/` and `screens/` are the stdlib shell's own implementation —
     its DOM helpers, its components, its router. A built shell reaching into
     them would be coupling to a rendering strategy rather than to a model, and
     the two would then have to move together forever.
     """
-    reaching = re.compile(r"""from\s+["'][^"']*app/(core|ui|screens|data)/""")
+    reaching = re.compile(r"""from\s+["'][^"']*app/(core|components|screens|data)/""")
     offenders = [
         str(path.relative_to(ROOT)) for path in _sources()
         if path.suffix in {".ts", ".tsx"}

@@ -422,6 +422,7 @@ export const VERBS = Object.freeze({
         "help": "which platform to render for",
         "required": false,
         "choices": [
+          "ansible",
           "compose",
           "helm",
           "kubernetes",
@@ -456,6 +457,7 @@ export const VERBS = Object.freeze({
         "help": "which platform to render for",
         "required": false,
         "choices": [
+          "ansible",
           "compose",
           "helm",
           "kubernetes",
@@ -519,6 +521,7 @@ export const VERBS = Object.freeze({
         "help": "which platform to render for",
         "required": false,
         "choices": [
+          "ansible",
           "compose",
           "helm",
           "kubernetes",

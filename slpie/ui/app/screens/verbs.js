@@ -14,9 +14,9 @@
 
 import { fill, h, link } from "../core/dom.js";
 import { GROUPS, VERBS } from "../data/client.js";
-import { card } from "../ui/panel.js";
-import { grid } from "../ui/grid.js";
-import { stat } from "../ui/chart.js";
+import { card } from "../components/panel.js";
+import { grid } from "../components/grid.js";
+import { stat } from "../components/chart.js";
 
 let redraw = () => {};
 

@@ -12,9 +12,9 @@ import { on } from "../core/bus.js";
 import { cell, subscribe } from "../core/store.js";
 import { cite, confidence } from "../core/format.js";
 import { ask, status as loadStatus } from "../data/queries.js";
-import { card, claim, fault, key, loading, panel, unsurveyed } from "../ui/panel.js";
-import { opener } from "../ui/opener.js";
-import { pill, target } from "../ui/pill.js";
+import { card, claim, fault, key, loading, panel, unsurveyed } from "../components/panel.js";
+import { opener } from "../components/opener.js";
+import { pill, target } from "../components/pill.js";
 
 const stops = [];
 const turns = [];

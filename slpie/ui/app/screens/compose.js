@@ -13,8 +13,8 @@
 import { fill, h } from "../core/dom.js";
 import { GROUPS, VERBS, producedKind, validate } from "../data/client.js";
 import { plan as askPlan, run as runPipeline } from "../data/queries.js";
-import { card, fault, loading } from "../ui/panel.js";
-import { chip, pill } from "../ui/pill.js";
+import { card, fault, loading } from "../components/panel.js";
+import { chip, pill } from "../components/pill.js";
 import { cite } from "../core/format.js";
 
 let stages = [];

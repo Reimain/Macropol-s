@@ -57,21 +57,57 @@ T = TypeVar("T")
 TIMEOUT = 1800.0
 
 
+#: The broker this adapter is built for, and the environment variable that
+#: points at one. RabbitMQ rather than Redis, and the difference is not taste:
+#:
+#: * **Redis is a data store being used as a queue.** A worker that dies holding
+#:   a task leaves it in a list nobody is watching; recovering it needs
+#:   `visibility_timeout`, which is a *guess* at how long a task should take.
+#:   A scan legitimately takes minutes, so the guess is either too short — and
+#:   the task is redelivered while it is still running — or too long, and a dead
+#:   worker's task sits idle for that long.
+#: * **RabbitMQ has acknowledgements.** A task is delivered, held unacknowledged
+#:   while it runs, and requeued the instant the connection drops. With
+#:   `task_acks_late` that is exactly the semantics a scan needs: a worker
+#:   killed mid-unit loses nothing, which is §23's deallocation protocol getting
+#:   its guarantee from the broker rather than from a timer.
+#: * **It can be *asked*.** Queue depth, consumer count and unacknowledged
+#:   counts are first-class, which is what makes §23's elasticity curve
+#:   measurable rather than modelled.
+BROKER_ENV = "SLPIE_BROKER_URL"
+DEFAULT_BROKER = "amqp://guest:guest@localhost:5672//"
+
+#: Results go to a *store*, never back through the broker. RabbitMQ's RPC
+#: backend creates a queue per client and loses results when the client
+#: disconnects, which is the wrong shape for a scan somebody starts and reads
+#: an hour later.
+BACKEND_ENV = "SLPIE_RESULT_BACKEND"
+DEFAULT_BACKEND = "redis://localhost:6379/0"
+
+
 def application(broker: str = "", backend: str = "", *, eager: bool = False) -> Any:
-    """A configured Celery app.
+    """A configured Celery app, pointed at a real broker by default.
 
     `eager` runs everything in-process and is how the *shape* of this adapter is
     exercised without a broker. It is not a substitute for the distributed
     proof: a green test under `task_always_eager` shows the protocol is honoured
     and shows nothing about a worker on another machine. Said here rather than
     left for a tick to imply.
+
+    The defaults are a **local RabbitMQ and a local Redis**, not an in-memory
+    transport. An in-memory default is a broker that works perfectly on one
+    machine and silently distributes nothing, which is the same failure as a
+    runner that quietly ran everything locally — the thing this module's
+    docstring already refuses.
     """
+    import os
+
     from celery import Celery
 
     app = Celery(
         "slpie",
-        broker=broker or "memory://",
-        backend=backend or "cache+memory://",
+        broker=broker or os.environ.get(BROKER_ENV) or DEFAULT_BROKER,
+        backend=backend or os.environ.get(BACKEND_ENV) or DEFAULT_BACKEND,
     )
     app.conf.update(
         task_always_eager=eager,
@@ -85,9 +121,32 @@ def application(broker: str = "", backend: str = "", *, eager: bool = False) -> 
         # Fair dispatch. Without it a worker takes a batch up front and a long
         # unit blocks the short ones queued behind it while another sits idle.
         worker_prefetch_multiplier=1,
+        # Acknowledge *after* the unit finishes, so a worker that dies mid-scan
+        # returns its task to the queue rather than losing it. This is the line
+        # that makes RabbitMQ's delivery guarantee reach the scan.
         task_acks_late=True,
+        task_reject_on_worker_lost=True,
+        # A task that has started is worth knowing about. Without this a unit
+        # is `PENDING` — indistinguishable from one nobody ever queued — right
+        # up until it finishes, and "queued" and "running for six minutes" are
+        # exactly the two states an operator needs to tell apart.
+        task_track_started=True,
+        # Events, so `slpie queue jobs` and Flower see the same worker stream.
+        worker_send_task_events=True,
+        task_send_sent_event=True,
+        # Results are not kept forever. A scan's result is read once and the
+        # ledger is the durable record; a backend that grew without bound would
+        # be a second store nobody prunes.
+        result_expires=RESULT_TTL,
+        broker_connection_retry_on_startup=True,
     )
     return app
+
+
+#: How long a finished unit's result stays readable. A day: long enough that an
+#: operator who started a scan before a weekend can still read it on Monday
+#: morning, short enough that the backend is not a database.
+RESULT_TTL = 86_400
 
 
 def dispatchable(work: Any) -> bool:
@@ -111,6 +170,12 @@ class CeleryRunner:
     #: finding as one that distributed nothing once, and only a total shows it.
     local: int = field(default=0, init=False)
     distributed: int = field(default=0, init=False)
+    #: Live handles, by unit, for the batch currently in flight. Held so the
+    #: queue can be *asked what it is doing* while it does it — which is the
+    #: only time the answer is interesting. `run()` blocks until everything is
+    #: collected, so without this the states would only ever be readable after
+    #: they had all stopped changing.
+    inflight: dict = field(default_factory=dict, init=False)
 
     def run(
         self, units: Sequence[tuple[str, Callable[[], T]]],
@@ -123,9 +188,12 @@ class CeleryRunner:
         # decorative — the mistake that makes a distributed runner slower than
         # the inline one it replaced.
         sent: list[tuple[str, Any, bool]] = []
+        self.inflight = {}
         for unit, work in units:
             if dispatchable(work):
-                sent.append((unit, work.apply_async(), True))
+                handle = work.apply_async()
+                sent.append((unit, handle, True))
+                self.inflight[unit] = handle
                 self.distributed += 1
             else:
                 sent.append((unit, work, False))
@@ -136,7 +204,27 @@ class CeleryRunner:
             results.append(
                 self._collect(unit, handle) if remote else _here(unit, handle)
             )
+            # Dropped as it is collected, so `states()` shows what is *still*
+            # outstanding rather than a batch that finished an hour ago.
+            self.inflight.pop(unit, None)
         return tuple(results)
+
+    def states(self) -> tuple[Any, ...]:
+        """Where each in-flight unit has got to, from the result backend."""
+        from .jobs import states_of
+
+        return states_of(self.app, self.inflight)
+
+    def board(self, *, queues: Sequence[str] = ()) -> Any:
+        """The whole queue: workers, what they are running, and what is missing.
+
+        Asked of the workers rather than inferred from this object's counters.
+        A runner reporting its own view of the world would answer confidently
+        about workers that died ten minutes ago.
+        """
+        from .jobs import board
+
+        return board(self.app, queues=queues, handles=self.inflight)
 
     def _collect(self, unit: str, handle: Any) -> Result[Any]:
         started = time.perf_counter_ns()
@@ -178,6 +266,8 @@ class CeleryRunner:
             "name": self.name,
             "distributed": self.distributed,
             "local": self.local,
+            "inflight": len(self.inflight),
+            "broker": str(getattr(self.app.conf, "broker_url", "") or ""),
             "gaps": list(self.gaps()),
         }
 

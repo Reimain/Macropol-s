@@ -16,9 +16,9 @@ import { LEXICON, SCREENS } from "./data/client.js";
 import { attach, prefix, ref } from "./data/objectstore.js";
 import { status as loadStatus } from "./data/queries.js";
 import { manifest, mount } from "./screens/index.js";
-import { control } from "./ui/density.js";
-import { connection, target } from "./ui/pill.js";
-import { nav, pageHead, tabs } from "./ui/nav.js";
+import { control } from "./components/density.js";
+import { connection, target } from "./components/pill.js";
+import { nav, pageHead, tabs } from "./components/nav.js";
 
 const screens = manifest();
 

@@ -1,13 +1,13 @@
 {
   "generator": "slpie context --skill",
-  "digest": "0c898162cfb3761fce844b7e6e5be6e4a4cd51106c3c107f4ee5b92fa4540cd7",
+  "digest": "54f491c1d1d4692987d3c11f36bfea524a637b5e050686c8a6c53cc8b61554db",
   "summary": {
-    "digest": "0c898162cfb3761fce844b7e6e5be6e4a4cd51106c3c107f4ee5b92fa4540cd7",
-    "facets": 744,
+    "digest": "54f491c1d1d4692987d3c11f36bfea524a637b5e050686c8a6c53cc8b61554db",
+    "facets": 700,
     "counts": {
-      "component": 52,
+      "component": 7,
       "kind": 21,
-      "module": 311,
+      "module": 312,
       "package": 70,
       "route": 98,
       "screen": 36,
@@ -15,7 +15,7 @@
       "test": 81,
       "verb": 56
     },
-    "coverage": 0.9919,
+    "coverage": 0.9914,
     "unanchored": [
       "section:12",
       "section:14",
@@ -27,354 +27,6 @@
     "dangling": []
   },
   "facets": [
-    {
-      "id": "component:apply",
-      "kind": "component",
-      "name": "apply",
-      "title": "apply",
-      "summary": "Exported by ui/density.js.",
-      "source": "slpie/ui/app/ui/density.js:81",
-      "links": [],
-      "tags": [
-        "density"
-      ]
-    },
-    {
-      "id": "component:bar",
-      "kind": "component",
-      "name": "bar",
-      "title": "bar",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:90",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:bars",
-      "kind": "component",
-      "name": "bars",
-      "title": "bars",
-      "summary": "Exported by ui/chart.js.",
-      "source": "slpie/ui/app/ui/chart.js:120",
-      "links": [],
-      "tags": [
-        "chart"
-      ]
-    },
-    {
-      "id": "component:card",
-      "kind": "component",
-      "name": "card",
-      "title": "card",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:178",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:chip",
-      "kind": "component",
-      "name": "chip",
-      "title": "chip",
-      "summary": "Exported by ui/pill.js.",
-      "source": "slpie/ui/app/ui/pill.js:54",
-      "links": [],
-      "tags": [
-        "pill"
-      ]
-    },
-    {
-      "id": "component:claim",
-      "kind": "component",
-      "name": "claim",
-      "title": "claim",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:63",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:compose",
-      "kind": "component",
-      "name": "compose",
-      "title": "compose",
-      "summary": "Exported by ui/components.js.",
-      "source": "slpie/ui/app/ui/components.js:264",
-      "links": [],
-      "tags": [
-        "components"
-      ]
-    },
-    {
-      "id": "component:connection",
-      "kind": "component",
-      "name": "connection",
-      "title": "connection",
-      "summary": "Exported by ui/pill.js.",
-      "source": "slpie/ui/app/ui/pill.js:44",
-      "links": [],
-      "tags": [
-        "pill"
-      ]
-    },
-    {
-      "id": "component:control",
-      "kind": "component",
-      "name": "control",
-      "title": "control",
-      "summary": "Exported by ui/density.js.",
-      "source": "slpie/ui/app/ui/density.js:131",
-      "links": [],
-      "tags": [
-        "density"
-      ]
-    },
-    {
-      "id": "component:crumbs",
-      "kind": "component",
-      "name": "crumbs",
-      "title": "crumbs",
-      "summary": "Exported by ui/nav.js.",
-      "source": "slpie/ui/app/ui/nav.js:148",
-      "links": [],
-      "tags": [
-        "nav"
-      ]
-    },
-    {
-      "id": "component:density",
-      "kind": "component",
-      "name": "density",
-      "title": "density",
-      "summary": "Exported by ui/density.js.",
-      "source": "slpie/ui/app/ui/density.js:49",
-      "links": [],
-      "tags": [
-        "density"
-      ]
-    },
-    {
-      "id": "component:diagram",
-      "kind": "component",
-      "name": "diagram",
-      "title": "diagram",
-      "summary": "Exported by ui/graph.js.",
-      "source": "slpie/ui/app/ui/graph.js:141",
-      "links": [],
-      "tags": [
-        "graph"
-      ]
-    },
-    {
-      "id": "component:directness",
-      "kind": "component",
-      "name": "directness",
-      "title": "directness",
-      "summary": "Exported by ui/graph.js.",
-      "source": "slpie/ui/app/ui/graph.js:284",
-      "links": [],
-      "tags": [
-        "graph"
-      ]
-    },
-    {
-      "id": "component:empty",
-      "kind": "component",
-      "name": "empty",
-      "title": "empty",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:30",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:fault",
-      "kind": "component",
-      "name": "fault",
-      "title": "fault",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:125",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:freshness",
-      "kind": "component",
-      "name": "freshness",
-      "title": "freshness",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:184",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:grid",
-      "kind": "component",
-      "name": "grid",
-      "title": "grid",
-      "summary": "Exported by ui/grid.js.",
-      "source": "slpie/ui/app/ui/grid.js:69",
-      "links": [],
-      "tags": [
-        "grid"
-      ]
-    },
-    {
-      "id": "component:hero",
-      "kind": "component",
-      "name": "hero",
-      "title": "hero",
-      "summary": "Exported by ui/chart.js.",
-      "source": "slpie/ui/app/ui/chart.js:66",
-      "links": [],
-      "tags": [
-        "chart"
-      ]
-    },
-    {
-      "id": "component:key",
-      "kind": "component",
-      "name": "key",
-      "title": "key",
-      "summary": "Exported by ui/graph.js.",
-      "source": "slpie/ui/app/ui/graph.js:247",
-      "links": [],
-      "tags": [
-        "graph"
-      ]
-    },
-    {
-      "id": "component:loading",
-      "kind": "component",
-      "name": "loading",
-      "title": "loading",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:25",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:metric",
-      "kind": "component",
-      "name": "metric",
-      "title": "metric",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:100",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:nav",
-      "kind": "component",
-      "name": "nav",
-      "title": "nav",
-      "summary": "Exported by ui/nav.js.",
-      "source": "slpie/ui/app/ui/nav.js:55",
-      "links": [],
-      "tags": [
-        "nav"
-      ]
-    },
-    {
-      "id": "component:opener",
-      "kind": "component",
-      "name": "opener",
-      "title": "opener",
-      "summary": "Exported by ui/opener.js.",
-      "source": "slpie/ui/app/ui/opener.js:76",
-      "links": [],
-      "tags": [
-        "opener"
-      ]
-    },
-    {
-      "id": "component:pageHead",
-      "kind": "component",
-      "name": "pageHead",
-      "title": "pageHead",
-      "summary": "Exported by ui/nav.js.",
-      "source": "slpie/ui/app/ui/nav.js:170",
-      "links": [],
-      "tags": [
-        "nav"
-      ]
-    },
-    {
-      "id": "component:panel",
-      "kind": "component",
-      "name": "panel",
-      "title": "panel",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:152",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:pill",
-      "kind": "component",
-      "name": "pill",
-      "title": "pill",
-      "summary": "Exported by ui/pill.js.",
-      "source": "slpie/ui/app/ui/pill.js:15",
-      "links": [],
-      "tags": [
-        "pill"
-      ]
-    },
-    {
-      "id": "component:pipelineFor",
-      "kind": "component",
-      "name": "pipelineFor",
-      "title": "pipelineFor",
-      "summary": "Exported by ui/opener.js.",
-      "source": "slpie/ui/app/ui/opener.js:44",
-      "links": [],
-      "tags": [
-        "opener"
-      ]
-    },
-    {
-      "id": "component:refusal",
-      "kind": "component",
-      "name": "refusal",
-      "title": "refusal",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:115",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:render",
-      "kind": "component",
-      "name": "render",
-      "title": "render",
-      "summary": "Exported by ui/components.js.",
-      "source": "slpie/ui/app/ui/components.js:250",
-      "links": [],
-      "tags": [
-        "components"
-      ]
-    },
     {
       "id": "component:screen-catalog",
       "kind": "component",
@@ -457,198 +109,6 @@
       "links": [],
       "tags": [
         "screen"
-      ]
-    },
-    {
-      "id": "component:scrolling",
-      "kind": "component",
-      "name": "scrolling",
-      "title": "scrolling",
-      "summary": "Exported by ui/table.js.",
-      "source": "slpie/ui/app/ui/table.js:41",
-      "links": [],
-      "tags": [
-        "table"
-      ]
-    },
-    {
-      "id": "component:select",
-      "kind": "component",
-      "name": "select",
-      "title": "select",
-      "summary": "Exported by ui/components.js.",
-      "source": "slpie/ui/app/ui/components.js:85",
-      "links": [],
-      "tags": [
-        "components"
-      ]
-    },
-    {
-      "id": "component:setDensity",
-      "kind": "component",
-      "name": "setDensity",
-      "title": "setDensity",
-      "summary": "Exported by ui/density.js.",
-      "source": "slpie/ui/app/ui/density.js:57",
-      "links": [],
-      "tags": [
-        "density"
-      ]
-    },
-    {
-      "id": "component:setTheme",
-      "kind": "component",
-      "name": "setTheme",
-      "title": "setTheme",
-      "summary": "Exported by ui/density.js.",
-      "source": "slpie/ui/app/ui/density.js:64",
-      "links": [],
-      "tags": [
-        "density"
-      ]
-    },
-    {
-      "id": "component:severity",
-      "kind": "component",
-      "name": "severity",
-      "title": "severity",
-      "summary": "Exported by ui/pill.js.",
-      "source": "slpie/ui/app/ui/pill.js:19",
-      "links": [],
-      "tags": [
-        "pill"
-      ]
-    },
-    {
-      "id": "component:share",
-      "kind": "component",
-      "name": "share",
-      "title": "share",
-      "summary": "Exported by ui/chart.js.",
-      "source": "slpie/ui/app/ui/chart.js:90",
-      "links": [],
-      "tags": [
-        "chart"
-      ]
-    },
-    {
-      "id": "component:spark",
-      "kind": "component",
-      "name": "spark",
-      "title": "spark",
-      "summary": "Exported by ui/chart.js.",
-      "source": "slpie/ui/app/ui/chart.js:144",
-      "links": [],
-      "tags": [
-        "chart"
-      ]
-    },
-    {
-      "id": "component:spread",
-      "kind": "component",
-      "name": "spread",
-      "title": "spread",
-      "summary": "Exported by ui/graph.js.",
-      "source": "slpie/ui/app/ui/graph.js:273",
-      "links": [],
-      "tags": [
-        "graph"
-      ]
-    },
-    {
-      "id": "component:staleness",
-      "kind": "component",
-      "name": "staleness",
-      "title": "staleness",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:135",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:stat",
-      "kind": "component",
-      "name": "stat",
-      "title": "stat",
-      "summary": "Exported by ui/chart.js.",
-      "source": "slpie/ui/app/ui/chart.js:75",
-      "links": [],
-      "tags": [
-        "chart"
-      ]
-    },
-    {
-      "id": "component:status",
-      "kind": "component",
-      "name": "status",
-      "title": "status",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:85",
-      "links": [],
-      "tags": [
-        "panel"
-      ]
-    },
-    {
-      "id": "component:table",
-      "kind": "component",
-      "name": "table",
-      "title": "table",
-      "summary": "Exported by ui/table.js.",
-      "source": "slpie/ui/app/ui/table.js:19",
-      "links": [],
-      "tags": [
-        "table"
-      ]
-    },
-    {
-      "id": "component:tabs",
-      "kind": "component",
-      "name": "tabs",
-      "title": "tabs",
-      "summary": "Exported by ui/nav.js.",
-      "source": "slpie/ui/app/ui/nav.js:114",
-      "links": [],
-      "tags": [
-        "nav"
-      ]
-    },
-    {
-      "id": "component:target",
-      "kind": "component",
-      "name": "target",
-      "title": "target",
-      "summary": "Exported by ui/pill.js.",
-      "source": "slpie/ui/app/ui/pill.js:23",
-      "links": [],
-      "tags": [
-        "pill"
-      ]
-    },
-    {
-      "id": "component:theme",
-      "kind": "component",
-      "name": "theme",
-      "title": "theme",
-      "summary": "Exported by ui/density.js.",
-      "source": "slpie/ui/app/ui/density.js:53",
-      "links": [],
-      "tags": [
-        "density"
-      ]
-    },
-    {
-      "id": "component:unsurveyed",
-      "kind": "component",
-      "name": "unsurveyed",
-      "title": "unsurveyed",
-      "summary": "Exported by ui/panel.js.",
-      "source": "slpie/ui/app/ui/panel.js:48",
-      "links": [],
-      "tags": [
-        "panel"
       ]
     },
     {
@@ -4817,6 +4277,25 @@
         {
           "relation": "imports",
           "target": "module:slpie.deploy.manifest"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.emitters.ansible",
+      "kind": "module",
+      "name": "slpie.deploy.emitters.ansible",
+      "title": "ansible",
+      "summary": "A playbook, an inventory and roles \u2014 for the estate with hosts and no cluster.",
+      "source": "slpie/deploy/emitters/ansible.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.emitters._common"
         }
       ],
       "tags": []
@@ -10681,6 +10160,10 @@
         {
           "relation": "imports",
           "target": "package:slpie.deploy"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.emitters.ansible"
         },
         {
           "relation": "owns",
