@@ -17,6 +17,7 @@ import { fill, h } from "../core/dom.js";
 import { CAPABILITIES, SCREENS, SHELL, missingFor } from "../data/client.js";
 import * as consoleScreen from "./console.js";
 import * as composeScreen from "./compose.js";
+import * as dashboardScreen from "./dashboard.js";
 import * as findingsScreen from "./findings.js";
 import * as graphScreen from "./graph.js";
 import * as verbsScreen from "./verbs.js";
@@ -27,6 +28,7 @@ import * as inspector from "./inspector.js";
 export const AUTHORED = {
   console: consoleScreen,
   compose: composeScreen,
+  dashboard: dashboardScreen,
   findings: findingsScreen,
   graph: graphScreen,
   verbs: verbsScreen,

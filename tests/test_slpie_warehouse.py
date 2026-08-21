@@ -830,3 +830,76 @@ def test_an_unnamed_demand_still_chooses_and_says_why(repository):
 
     assert selection["template"] == "security-board"
     assert selection["reason"]
+
+
+# --- the typed pipe, checked where it was lying --------------------------------
+
+
+MANIFEST = """
+apiVersion: slpie/v1
+environment: acme
+target: simulated
+codebase:
+  - root: ./services/payments
+    team: payments
+"""
+
+
+@pytest.fixture()
+def opened(tmp_path):
+    """An engine with a simulated world attached — what `scan` reads."""
+    from slpie.engine import Engine
+
+    engine = Engine.from_text(MANIFEST)
+    engine.declare()
+    engine.simulate(root=str(tmp_path / "world"))
+    engine.attach()
+    yield engine
+    engine.close()
+
+
+def test_scan_carries_observations_rather_than_a_count(opened):
+    """`ScanReport.to_dict()["observations"]` is a number, and the verb was
+    putting it on a flow that declares OBSERVATIONS.
+
+    The composition type-checked and then died at the second stage on
+    `'int' object has no attribute 'evidence'`, which is worse than an untyped
+    pipe: the check passed and the promise did not hold.
+    """
+    from slpie.compose import Composition, Context
+    from slpie.compose.registry import registry
+
+    result = Composition.read("scan", verbs=registry()).run(Context(engine=opened))
+
+    assert result.ok, result.error
+    assert not isinstance(result.flow.value, int), (
+        "scan is carrying a count on a flow that promises observations"
+    )
+    assert result.flow.items, "scan produced no observations to pass on"
+
+
+@pytest.mark.parametrize("downstream", ["warehouse", "govern", "link", "dashboard"])
+def test_everything_that_consumes_observations_can_follow_scan(opened, downstream):
+    """The claim a typed pipe makes, asserted across every consumer rather than
+    spot-checked on the one that happened to be under construction."""
+    from slpie.compose import Composition, Context
+    from slpie.compose.registry import registry
+
+    result = Composition.read(f"scan | {downstream}",
+                              verbs=registry()).run(Context(engine=opened))
+
+    assert result.ok, f"scan | {downstream} failed: {result.error}"
+
+
+def test_a_fact_serialises_with_its_grain():
+    """`slots=True` rebuilds the class, so a zero-argument `super()` inside a
+    dataclass method closes over the wrong one and raises.
+
+    The grain is the first thing anyone reading a fact table needs, so an
+    export that could not serialise one was the whole point of the table lost
+    at the last step.
+    """
+    for item in STARS:
+        payload = item.fact.to_dict()
+        assert payload["grain"], f"{item.fact.name} shipped without its grain"
+        assert payload["columns"], f"{item.fact.name} shipped without its columns"

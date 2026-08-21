@@ -15,8 +15,8 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `d4461a3a8504b1728e0f1bf76a72e6240340cfb2dc2dfaaa0ff0918b23058b83`
-- **facets** 724 — 7 component, 21 kind, 324 module, 72 package, 102 route, 37 screen, 19 section, 82 test, 60 verb
+- **digest** `aae420f66fdc28223d5e6f19203d006fd3f930290740d3e27589f80f9fde79af`
+- **facets** 726 — 8 component, 21 kind, 324 module, 72 package, 102 route, 38 screen, 19 section, 82 test, 60 verb
 - **anchored** 99.2% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
@@ -31,7 +31,7 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `accept` | guidance | any → same | `slpie/compose/verbs/guidance.py:286` | console |
 | `agent-tools` | incremental | nothing → report | `slpie/compose/verbs/incremental.py:187` | group-incremental |
 | `ask` | intelligence | enrichments → guidance | `slpie/compose/verbs/intelligence.py:242` | console |
-| `attach` | environment | nothing → elements | `slpie/compose/verbs/environment.py:387` | station |
+| `attach` | environment | nothing → elements | `slpie/compose/verbs/environment.py:394` | station |
 | `audit` | audit | nothing → judgements | `slpie/compose/verbs/audit.py:154` | group-audit |
 | `c4` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:345` | group-artifacts |
 | `capture` | capture | nothing → observations | `slpie/compose/verbs/capture.py:191` | group-capture |
@@ -40,8 +40,8 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `constraints` | analysis | resolution → solution | `slpie/compose/verbs/analysis.py:459` | group-analysis |
 | `context` | context | nothing → report | `slpie/context/verbs.py:123` | group-context |
 | `count` | shaping | any → same | `slpie/compose/verbs/shaping.py:210` | group-shaping |
-| `dashboard` | warehouse | observations → report | `slpie/compose/verbs/warehouse.py:446` | group-warehouse |
-| `declare` | environment | nothing → elements | `slpie/compose/verbs/environment.py:333` | reconcile |
+| `dashboard` | warehouse | observations → report | `slpie/compose/verbs/warehouse.py:446` | dashboard |
+| `declare` | environment | nothing → elements | `slpie/compose/verbs/environment.py:340` | reconcile |
 | `deploy-apply` | deploy | nothing → report | `slpie/compose/verbs/deploy.py:341` | group-deploy |
 | `deploy-manual` | deploy | nothing → text | `slpie/compose/verbs/deploy.py:311` | group-deploy |
 | `deploy-plan` | deploy | nothing → report | `slpie/compose/verbs/deploy.py:270` | group-deploy |
@@ -53,14 +53,14 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `explain` | shaping | any → same | `slpie/compose/verbs/shaping.py:244` | group-shaping |
 | `filter` | shaping | any → same | `slpie/compose/verbs/shaping.py:226` | group-shaping |
 | `findings` | analysis | any → findings | `slpie/compose/verbs/analysis.py:470` | findings |
-| `fire` | environment | nothing → report | `slpie/compose/verbs/environment.py:365` | simulator |
-| `gaps` | environment | nothing → gaps | `slpie/compose/verbs/environment.py:449` | station |
+| `fire` | environment | nothing → report | `slpie/compose/verbs/environment.py:372` | simulator |
+| `gaps` | environment | nothing → gaps | `slpie/compose/verbs/environment.py:456` | station |
 | `govern` | governance | observations → findings | `slpie/compose/verbs/governance.py:283` | findings |
-| `graph` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:406` | graph |
+| `graph` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:413` | graph |
 | `head` | shaping | any → same | `slpie/compose/verbs/shaping.py:203` | group-shaping |
 | `history` | dispatch | nothing → report | `slpie/compose/verbs/dispatch.py:225` | history |
-| `impact` | environment | nodes → impact | `slpie/compose/verbs/environment.py:423` | flight, impact |
-| `interest` | environment | nodes → report | `slpie/compose/verbs/environment.py:434` | flight, graph |
+| `impact` | environment | nodes → impact | `slpie/compose/verbs/environment.py:430` | flight, impact |
+| `interest` | environment | nodes → report | `slpie/compose/verbs/environment.py:441` | flight, graph |
 | `json` | shaping | any → same | `slpie/compose/verbs/shaping.py:257` | group-shaping |
 | `lexicon` | context | nothing → report | `slpie/context/verbs.py:150` | group-context |
 | `link` | analysis | observations → resolution | `slpie/compose/verbs/analysis.py:449` | group-analysis |
@@ -68,19 +68,19 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `quarantine` | capture | any → report | `slpie/compose/verbs/capture.py:212` | group-capture |
 | `radius` | intelligence | enrichments → impact | `slpie/compose/verbs/intelligence.py:265` | impact |
 | `reason` | analysis | observations → enrichments | `slpie/compose/verbs/analysis.py:441` | group-analysis |
-| `reconcile` | environment | nothing → findings | `slpie/compose/verbs/environment.py:400` | reconcile |
+| `reconcile` | environment | nothing → findings | `slpie/compose/verbs/environment.py:407` | reconcile |
 | `risk` | artifacts | findings → report | `slpie/compose/verbs/artifacts.py:396` | group-artifacts |
 | `rivals` | rivals | nothing → report | `slpie/compose/verbs/rivals.py:60` | group-rivals |
 | `routine` | guidance | nothing → report | `slpie/compose/verbs/guidance.py:315` | compose |
 | `rules` | governance | nothing → report | `slpie/compose/verbs/governance.py:315` | findings |
 | `sbom` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:320` | group-artifacts |
-| `scan` | environment | nothing → observations | `slpie/compose/verbs/environment.py:394` | catalog |
-| `search` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:413` | graph |
-| `simulate` | environment | nothing → elements | `slpie/compose/verbs/environment.py:339` | simulator |
+| `scan` | environment | nothing → observations | `slpie/compose/verbs/environment.py:401` | catalog |
+| `search` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:420` | graph |
+| `simulate` | environment | nothing → elements | `slpie/compose/verbs/environment.py:346` | simulator |
 | `sort` | shaping | any → same | `slpie/compose/verbs/shaping.py:216` | group-shaping |
-| `status` | environment | nothing → report | `slpie/compose/verbs/environment.py:455` | station |
+| `status` | environment | nothing → report | `slpie/compose/verbs/environment.py:462` | station |
 | `suggest` | guidance | any → same | `slpie/compose/verbs/guidance.py:266` | console |
-| `target` | environment | nothing → report | `slpie/compose/verbs/environment.py:461` | simulator |
+| `target` | environment | nothing → report | `slpie/compose/verbs/environment.py:468` | simulator |
 | `tool` | dispatch | any → text | `slpie/compose/verbs/dispatch.py:205` | group-dispatch |
 | `tools` | dispatch | nothing → report | `slpie/compose/verbs/dispatch.py:193` | group-dispatch |
 | `unique` | shaping | any → same | `slpie/compose/verbs/shaping.py:237` | group-shaping |
@@ -140,6 +140,7 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 | `catalog` | catalog | authored | — | 2 |
 | `compose` | operate | authored | — | 1 |
 | `console` | console | authored | — | 3 |
+| `dashboard` | console | authored | — | 0 |
 | `findings` | operate | authored | — | 1 |
 | `gateway` | api | generated | actions, analytics, throttling | 2 |
 | `graph` | operate | authored | cycles, flight, impact, node | 1 |
@@ -154,11 +155,11 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 
 ## The browser vocabulary
 
-7 component(s), read from the exports of the app's own modules. This is the dictionary a screen block indexes into: a block naming something absent from this list is a dangling link, caught in Python rather than found as a blank area in a browser.
+8 component(s), read from the exports of the app's own modules. This is the dictionary a screen block indexes into: a block naming something absent from this list is a dangling link, caught in Python rather than found as a blank area in a browser.
 
 | module | exports |
 |---|---|
-| `ui/screen.js` | `screen-catalog`, `screen-compose`, `screen-console`, `screen-findings`, `screen-graph`, `screen-verbs`, `screen-workspaces` |
+| `ui/screen.js` | `screen-catalog`, `screen-compose`, `screen-console`, `screen-dashboard`, `screen-findings`, `screen-graph`, `screen-verbs`, `screen-workspaces` |
 
 ## What could not be anchored
 

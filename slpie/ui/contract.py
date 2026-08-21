@@ -944,6 +944,22 @@ DESIGNED: tuple[Screen, ...] = (
            events=("*",), action="intelligence.ask",
            summary="Ask about this environment and get the answer with the "
                    "reasoning that produced it and the gaps that limit it."),
+    # The other way in. Console asks a question; this one asks what you are
+    # *doing* and picks the screen — which is the question a reader who does not
+    # yet know the product actually has. Its verbs are one, deliberately: the
+    # three data verbs keep their group inspector, because `warehouse-export`
+    # is a form somebody fills in rather than a board somebody reads.
+    # No `events`, and the absence is the interesting part. This screen's own
+    # refresh runs a source verb that *records observations*, so subscribing it
+    # to `observation_recorded` would make every refresh trigger the next one —
+    # a runaway that looks like a slow console and is actually the board
+    # re-scanning the estate forever. It refreshes when the demand changes and
+    # when the reader asks, which are the two moments it should.
+    Screen("dashboard", "/dashboard", "Dashboard", "console",
+           verbs=("dashboard",),
+           action="warehouse.dashboard",
+           summary="A board chosen for the demand rather than picked from a "
+                   "menu, filled from the warehouse and saying why it chose."),
     Screen("compose", "/compose", "Compose", "operate",
            reads=("GET /api/verbs",), verbs=("routine",),
            action="platform.discover",

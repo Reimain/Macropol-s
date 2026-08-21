@@ -136,7 +136,12 @@ class Fact(Table):
     grain: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {**super().to_dict(), "grain": self.grain}
+        # `Table.to_dict(self)`, not `super().to_dict()`. `slots=True` makes the
+        # decorator build a *new* class, and the `__class__` cell a zero-argument
+        # `super()` closes over still points at the original — so `super()` here
+        # raises `TypeError: obj must be an instance or subtype of type`, and
+        # every export that serialised a fact died on it.
+        return {**Table.to_dict(self), "grain": self.grain}
 
 
 @dataclass(frozen=True, slots=True)

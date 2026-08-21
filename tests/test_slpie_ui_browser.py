@@ -2047,3 +2047,75 @@ def test_flight_mode_draws_no_scene_before_a_selection(page, served, populated):
     assert page.eval_on_selector_all(".node", "els => els.length") > 5, (
         "selecting something did not produce a scene"
     )
+
+
+# --- the dashboard: a screen chosen for the demand ---------------------------
+
+
+def _open_running(page, served, fragment):
+    """Navigate without waiting for the network to fall idle.
+
+    This screen posts a composition as soon as it mounts, and `networkidle`
+    wants 500ms of silence — which it never gets while a run is in flight and
+    the event stream is open. Waiting on the thing the test is actually about
+    is both faster and a better assertion than waiting on the socket.
+    """
+    page.goto(served.url + fragment, wait_until="commit")
+    return page
+
+
+def test_the_dashboard_composes_panels_rather_than_dumping_a_payload(
+    page, populated,
+):
+    """The half a Python test cannot reach.
+
+    Python proves the panels arrive filled. Only a browser proves the dictionary
+    resolved their component keys and drew them — and the failure this catches
+    is the one the whole component registry exists to prevent: a screen that
+    renders `<pre>{...}</pre>` and looks finished.
+    """
+    _open_running(page, populated, "#/dashboard?domain=architecture&utility=explore")
+    page.wait_for_selector("#outlet .stat", timeout=15000)
+
+    body = page.inner_text("#outlet")
+    assert "Architecture" in body, body[:400]
+    # The composition it ran is on screen, because a board nobody can reproduce
+    # is a picture — and it opens with `scan` rather than `discover .` because
+    # an environment is attached, which is a different answer and says so.
+    assert "scan | dashboard" in body
+
+    assert page.eval_on_selector_all(".stat", "els => els.length") > 0, (
+        "no stat tile — the measures did not reach a component"
+    )
+    assert page.eval_on_selector_all("table", "els => els.length") > 0, (
+        "no table — the fact rows did not reach a component"
+    )
+    assert page.eval_on_selector_all("#outlet pre", "els => els.length") == 0, (
+        "the dashboard fell back to a JSON dump"
+    )
+    assert not _faults(page)
+
+
+def test_changing_the_demand_changes_the_board(page, populated):
+    """Reactive means the *template* is re-selected, not that a table re-sorts.
+
+    Two demands, two templates, one screen — which is the whole claim of the
+    three-axis engine and is invisible from Python, where the selection can be
+    asserted but not the fact that a control drives it.
+    """
+    _open_running(page, populated, "#/dashboard?domain=architecture&utility=explore")
+    page.wait_for_selector("#outlet .stat", timeout=15000)
+    first = page.inner_text("#outlet")
+
+    # The third control is `domain` — read off the verb's own parameters, so
+    # this is also a check that the registry reached the screen.
+    page.select_option("#outlet select >> nth=2", "security")
+    page.wait_for_function(
+        "() => document.querySelector('#outlet').innerText.includes('Security')",
+        timeout=15000,
+    )
+    second = page.inner_text("#outlet")
+
+    assert "Security" in second, second[:400]
+    assert first != second, "the demand changed and the board did not"
+    assert not _faults(page)

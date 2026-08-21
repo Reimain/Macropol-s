@@ -40,25 +40,71 @@ sys.path.insert(0, str(ROOT))
 APP = ROOT / "slpie" / "ui" / "app"
 DEFAULT_OUT = ROOT / "docs" / "_build" / "demo" / "index.html"
 
-# Dependency order: core has no imports, then data/ui, then screens, then shell.
-MODULES = [
-    "core/dom.js", "core/format.js", "core/bus.js", "core/store.js",
-    "core/result.js", "core/router.js",
-    "data/client.js", "data/http.js", "data/queries.js", "data/live.js",
-    "ui/pill.js", "ui/panel.js", "ui/table.js", "ui/grid.js", "ui/chart.js",
-    "ui/graph.js",
-    "ui/nav.js", "ui/density.js", "ui/opener.js",
-    "screens/inspector.js", "screens/console.js", "screens/compose.js",
-    "screens/findings.js", "screens/graph.js", "screens/verbs.js",
-    "screens/catalog.js",
-    "screens/workspaces.js", "screens/index.js",
-    "shell.js",
-]
+#: Files that ship but are not part of the bundled page, with the reason.
+#: `engine/vendor/` is deliberate: the demo is the *native* console, and the
+#: vendored renderer's dynamic `import()` fails here exactly as it does in an
+#: air-gapped install — the seam falls back to `canvas2d` and says why.
+EXCLUDED = ("sw.js", "boot.js", "engine/vendor/")
 
-STYLES = [
-    "styles/tokens.css", "styles/density.css", "styles/base.css",
-    "styles/layout.css", "styles/components.css", "styles/screens.css",
-]
+#: Where the bundle starts. Everything else is reached from here.
+ENTRY = "shell.js"
+
+#: Static import specifiers, as the browser sees them.
+IMPORTS = re.compile(
+    r'^\s*import\s+(?:[^"\';]+\s+from\s+)?["\']([^"\']+)["\']', re.M,
+)
+
+
+def _relative(spec: str, origin: str) -> str | None:
+    """A specifier, as a key in the registry — or `None` if it is not ours."""
+    if not spec.startswith("."):
+        return None
+    return resolve(spec, origin)
+
+
+def modules(entry: str = ENTRY) -> list[str]:
+    """Every module the entry reaches, in dependency order.
+
+    Read from the imports rather than restated as a list. The list version went
+    stale the moment `app/ui/` became `app/components/`: the demo referenced
+    seven files that no longer existed, so the published page could not be built
+    at all — and nothing said so until somebody ran the build. A bundler that
+    derives its own order cannot drift from the tree it bundles.
+    """
+    ordered: list[str] = []
+    seen: set[str] = set()
+
+    def visit(name: str, stack: tuple[str, ...] = ()) -> None:
+        if name in seen:
+            return
+        if name in stack:
+            # A cycle is legal in ESM and unbundlable in this registry, so it is
+            # named rather than silently producing a half-initialised module.
+            raise SystemExit(f"import cycle through {name}: {' -> '.join(stack)}")
+        source = (APP / name).read_text(encoding="utf-8")
+        for spec in IMPORTS.findall(source):
+            target = _relative(spec, name)
+            if target and not target.startswith(EXCLUDED):
+                if not (APP / target).is_file():
+                    raise SystemExit(f"{name} imports {spec}, which does not exist")
+                visit(target, stack + (name,))
+        seen.add(name)
+        ordered.append(name)
+
+    visit(entry)
+    return ordered
+
+
+#: The stylesheet's own `@import` order, for the same reason.
+AT_IMPORT = re.compile(r'@import\s+["\']([^"\']+)["\']')
+
+
+def styles() -> list[str]:
+    root = (APP / "styles.css").read_text(encoding="utf-8")
+    found = [spec.lstrip("./") for spec in AT_IMPORT.findall(root)]
+    if not found:
+        raise SystemExit("styles.css declares no @import — has it been replaced?")
+    return found
 
 
 def resolve(spec: str, origin: str) -> str:

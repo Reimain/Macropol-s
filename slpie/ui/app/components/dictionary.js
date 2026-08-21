@@ -177,10 +177,14 @@ function barsBlock(block, data) {
   const rows = rowsOf(select(data, block.select)) || [];
   const labelKey = (block.options && block.options.label) || "label";
   const valueKey = (block.options && block.options.value) || "value";
-  return barList(rows.map((row) => ({
-    label: String(row[labelKey] ?? ""),
-    value: Number(row[valueKey]) || 0,
-  })));
+  // `chart.bars` destructures `[name, value]` pairs. This handed it objects,
+  // so every block naming `bars` threw `object is not iterable` the first time
+  // one was actually declared — the component was in the dictionary and had
+  // never been drawn.
+  return barList(rows.map((row) => [
+    String(row[labelKey] ?? ""),
+    Number(row[valueKey]) || 0,
+  ]));
 }
 
 function proseBlock(block) {

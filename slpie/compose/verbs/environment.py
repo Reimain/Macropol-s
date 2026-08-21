@@ -68,8 +68,15 @@ def _attach(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
 def _scan(flow: Flow, _arguments: Mapping[str, Any], context: Context) -> Flow:
     engine = context.require_engine("scan")
     report = engine.scan(actor=context.actor)
+    # `report["observations"]` is a *count* — `ScanReport.to_dict` says so, and
+    # excludes `captured` on purpose so a status call does not ship ten thousand
+    # rows. Reading it here put an integer on a flow declaring OBSERVATIONS, so
+    # every verb that consumes them and actually reads them — `govern`, `link`,
+    # `warehouse` — died on `'int' object has no attribute 'evidence'`. A typed
+    # pipe whose type is a lie is worse than an untyped one: the composition
+    # checks out and then crashes at the second stage.
     return flow.then(
-        Kind.OBSERVATIONS, report.get("observations", ()), stage="scan",
+        Kind.OBSERVATIONS, tuple(engine.observed or ()), stage="scan",
         steps=[_step(
             f"read {report.get('files_read', 0)} of "
             f"{report.get('files_seen', 0)} files across the attached elements",

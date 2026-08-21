@@ -1998,6 +1998,25 @@ export const SCREENS = Object.freeze([
     "requires": []
   },
   {
+    "key": "dashboard",
+    "path": "/dashboard",
+    "title": "Dashboard",
+    "section": "console",
+    "reads": [],
+    "verbs": [
+      "dashboard"
+    ],
+    "events": [],
+    "action": "warehouse.dashboard",
+    "resource": "*",
+    "crumbs": [],
+    "parent": "",
+    "summary": "A board chosen for the demand rather than picked from a menu, filled from the warehouse and saying why it chose.",
+    "authored": true,
+    "blocks": [],
+    "requires": []
+  },
+  {
     "key": "compose",
     "path": "/compose",
     "title": "Compose",
@@ -2771,7 +2790,6 @@ export const SCREENS = Object.freeze([
     "section": "build",
     "reads": [],
     "verbs": [
-      "dashboard",
       "warehouse",
       "warehouse-export",
       "warehouse-load"
