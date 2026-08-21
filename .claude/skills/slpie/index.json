@@ -1,9 +1,9 @@
 {
   "generator": "slpie context --skill",
-  "digest": "15ab01ff1b42c1a79ec57a719ddcc4761781511efab11b077c45750420706cb0",
+  "digest": "33508e3e8b38c84f03c4f7ccf4a24caa51e4a3cb824aacefd68c64c801e541cf",
   "summary": {
-    "digest": "15ab01ff1b42c1a79ec57a719ddcc4761781511efab11b077c45750420706cb0",
-    "facets": 709,
+    "digest": "33508e3e8b38c84f03c4f7ccf4a24caa51e4a3cb824aacefd68c64c801e541cf",
+    "facets": 712,
     "counts": {
       "component": 52,
       "kind": 21,
@@ -12,10 +12,10 @@
       "route": 93,
       "screen": 35,
       "section": 17,
-      "test": 75,
+      "test": 78,
       "verb": 51
     },
-    "coverage": 0.9845,
+    "coverage": 0.9846,
     "unanchored": [
       "section:12",
       "section:14",
@@ -13833,7 +13833,7 @@
       "name": "22",
       "title": "\u00a722",
       "summary": "A plan section claimed by at least one module.",
-      "source": "docs/PHASE15.md:9",
+      "source": "docs/PHASE15.md:11",
       "links": [],
       "tags": []
     },
@@ -13843,7 +13843,7 @@
       "name": "23",
       "title": "\u00a723",
       "summary": "A plan section claimed by at least one module.",
-      "source": "docs/PHASE15.md:93",
+      "source": "docs/PHASE15.md:95",
       "links": [],
       "tags": []
     },
@@ -15110,6 +15110,63 @@
         {
           "relation": "covers",
           "target": "package:slpie.enterprise"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_enterprise_api",
+      "kind": "test",
+      "name": "test_slpie_enterprise_api",
+      "title": "slpie enterprise api",
+      "summary": "Phase 16 \u2014 the transport, the runner, and the routes read out of source.",
+      "source": "tests/test_slpie_enterprise_api.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.api"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.contract"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.engine"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_enterprise_frameworks",
+      "kind": "test",
+      "name": "test_slpie_enterprise_frameworks",
+      "title": "slpie enterprise frameworks",
+      "summary": "Framework route tables as a second source of evidence.",
+      "source": "tests/test_slpie_enterprise_frameworks.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.discovery.base"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.domain.evidence"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_enterprise_queue",
+      "kind": "test",
+      "name": "test_slpie_enterprise_queue",
+      "title": "slpie enterprise queue",
+      "summary": "Celery as a `TaskRunner`, and the honest limit of that seam.",
+      "source": "tests/test_slpie_enterprise_queue.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.core.tasks"
         }
       ],
       "tags": []

@@ -69,6 +69,29 @@ jobs:
           python -m alembic downgrade base
           python -m alembic upgrade head
 
+  # The transport, the runner and the framework discoverers. No database, so
+  # this is a fast job and it is separate from the Postgres one on purpose: a
+  # single "enterprise" job going red would not say which half broke.
+  adapters:
+    name: adapters — one route table, one execution model
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -e '.[dev,enterprise]' httpx
+
+      - name: The two servers expose one route table and give one answer
+        run: python -m pytest -q tests/test_slpie_enterprise_api.py
+
+      - name: The runner keeps submission order and reports what it could not distribute
+        run: python -m pytest -q tests/test_slpie_enterprise_queue.py
+
+      - name: Routes are read out of source, never imported
+        run: python -m pytest -q tests/test_slpie_enterprise_frameworks.py
+
   # Invariant 4, asserted rather than assumed: the kernel installs and passes
   # with **zero** third-party packages. This job exists because the one above
   # installs seven of them, and a dependency that quietly became required would
