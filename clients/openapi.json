@@ -1746,6 +1746,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -1767,7 +1768,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": true,
@@ -2287,6 +2291,7 @@
           "accept",
           "c4",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -2302,7 +2307,10 @@
           "sort",
           "suggest",
           "tool",
-          "unique"
+          "unique",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -2751,6 +2759,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -2772,7 +2781,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -2781,6 +2793,141 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/dashboard": {
+      "post": {
+        "summary": "a screen chosen for the demand, filled from the warehouse",
+        "description": "A template declares what it is for on three axes \u2014 utility, context, domain \u2014 and one is selected rather than chosen from a menu the reader would have to understand first. The selection explains itself: which axes matched, which did not, and whether the best match was good enough to present as the answer. Below a floor it says so instead of dressing a generic grid up as the right screen.",
+        "operationId": "verb_dashboard",
+        "tags": [
+          "warehouse"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "template": {
+                    "type": "string",
+                    "description": "name one instead of selecting",
+                    "enum": [
+                      "architecture-map",
+                      "dependency-report",
+                      "extract",
+                      "operations",
+                      "reconciliation",
+                      "security-board"
+                    ]
+                  },
+                  "about": {
+                    "type": "string",
+                    "description": "the question, in words"
+                  },
+                  "utility": {
+                    "type": "string",
+                    "description": "what you are doing",
+                    "enum": [
+                      "monitor",
+                      "investigate",
+                      "compare",
+                      "report",
+                      "explore"
+                    ]
+                  },
+                  "for": {
+                    "type": "string",
+                    "description": "where you are reading it",
+                    "enum": [
+                      "console",
+                      "dashboard",
+                      "document",
+                      "mobile",
+                      "api"
+                    ]
+                  },
+                  "domain": {
+                    "type": "string",
+                    "description": "what it is about",
+                    "enum": [
+                      "security",
+                      "dependencies",
+                      "architecture",
+                      "operations",
+                      "cost",
+                      "quality"
+                    ]
+                  },
+                  "govern": {
+                    "type": "boolean",
+                    "description": "run the rules too, for the findings star"
+                  },
+                  "now": {
+                    "type": "integer",
+                    "description": "the build timestamp"
+                  },
                   "upstream": {
                     "$ref": "#/components/schemas/Flow",
                     "description": "the flow to continue from; omit for a source verb"
@@ -3378,6 +3525,7 @@
           "accept",
           "c4",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -3393,7 +3541,10 @@
           "sort",
           "suggest",
           "tool",
-          "unique"
+          "unique",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -3473,6 +3624,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -3494,7 +3646,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": true,
@@ -3687,6 +3842,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -3708,7 +3864,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -3783,6 +3942,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -3804,7 +3964,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -4381,6 +4544,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -4402,7 +4566,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -4750,6 +4917,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -4771,7 +4939,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -5880,6 +6051,7 @@
           "accept",
           "c4",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -5895,7 +6067,10 @@
           "sort",
           "suggest",
           "tool",
-          "unique"
+          "unique",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -6141,6 +6316,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -6162,7 +6338,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -6318,6 +6497,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -6339,7 +6519,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -6674,6 +6857,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -6695,7 +6879,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -6769,6 +6956,7 @@
           "c4",
           "constraints",
           "count",
+          "dashboard",
           "dismiss",
           "enterprise",
           "explain",
@@ -6790,7 +6978,10 @@
           "suggest",
           "tool",
           "unique",
-          "verdicts"
+          "verdicts",
+          "warehouse",
+          "warehouse-export",
+          "warehouse-load"
         ],
         "requestBody": {
           "required": false,
@@ -6815,6 +7006,304 @@
                     "description": "the flow to continue from; omit for a source verb"
                   }
                 }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/warehouse": {
+      "post": {
+        "summary": "the graph as facts and dimensions, with its measures",
+        "description": "Three stars \u2014 elements, relationships, findings \u2014 because every question about an estate is a group-by on one of those grains. Facts carry the confidence and the evidence kind they came from: a count of relationships means something different depending on whether they were read from a lockfile or inferred from a name, and this is the one place in the platform a number could have arrived without that.",
+        "operationId": "verb_warehouse",
+        "tags": [
+          "warehouse"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "star": {
+                    "type": "string",
+                    "description": "one star instead of all three",
+                    "enum": [
+                      "elements",
+                      "relationships",
+                      "findings"
+                    ]
+                  },
+                  "govern": {
+                    "type": "boolean",
+                    "description": "run the rules too, so the findings star is not empty"
+                  },
+                  "now": {
+                    "type": "integer",
+                    "description": "the build timestamp, for a reproducible run"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/warehouse-export": {
+      "post": {
+        "summary": "the warehouse as CSV, JSON or SQL, with its data dictionary",
+        "description": "The schema travels with the data: a JSON extract carries its documented columns, and the dictionary is generated from the same declaration the tables are. A hand-written column list is wrong within two releases and leaves every analyst asking the same person the same question.",
+        "operationId": "verb_warehouse_export",
+        "tags": [
+          "warehouse"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "description": "which form",
+                    "enum": [
+                      "csv",
+                      "json",
+                      "sql"
+                    ],
+                    "default": "csv"
+                  },
+                  "out": {
+                    "type": "string",
+                    "description": "a directory to write into"
+                  },
+                  "dialect": {
+                    "type": "string",
+                    "description": "which SQL",
+                    "enum": [
+                      "sqlite",
+                      "postgres"
+                    ],
+                    "default": "sqlite"
+                  },
+                  "govern": {
+                    "type": "boolean",
+                    "description": "run the rules too, for the findings star"
+                  },
+                  "now": {
+                    "type": "integer",
+                    "description": "the build timestamp"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/warehouse-load": {
+      "post": {
+        "summary": "materialise the warehouse into a database a BI tool can reach",
+        "description": "Into the store the platform already has, so connecting a BI tool needs no new service, no new credential and no new dependency. Tables are dropped and rebuilt rather than migrated: the graph is the source of truth and these are a projection of it, which is the relationship projections have to the ledger everywhere else in this platform.",
+        "operationId": "verb_warehouse_load",
+        "tags": [
+          "warehouse"
+        ],
+        "x-slpie-consumes": "observations",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": true,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "database": {
+                    "type": "string",
+                    "description": "the SQLite file to write"
+                  },
+                  "govern": {
+                    "type": "boolean",
+                    "description": "run the rules too, for the findings star"
+                  },
+                  "now": {
+                    "type": "integer",
+                    "description": "the build timestamp"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  },
+                  "confirmed": {
+                    "type": "boolean",
+                    "description": "required: this verb changes the environment and is refused without it, by the same guard the CLI hits"
+                  }
+                },
+                "required": [
+                  "database"
+                ]
               }
             }
           }
@@ -7011,11 +7500,15 @@
       ],
       "consumed_by": [
         "c4",
+        "dashboard",
         "enterprise",
         "govern",
         "link",
         "reason",
-        "sbom"
+        "sbom",
+        "warehouse",
+        "warehouse-export",
+        "warehouse-load"
       ]
     },
     {
@@ -7126,6 +7619,7 @@
         "chain",
         "changed",
         "context",
+        "dashboard",
         "deploy-apply",
         "deploy-plan",
         "deploy-render",
@@ -7144,7 +7638,10 @@
         "sbom",
         "status",
         "target",
-        "tools"
+        "tools",
+        "warehouse",
+        "warehouse-export",
+        "warehouse-load"
       ],
       "consumed_by": []
     },

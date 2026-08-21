@@ -199,7 +199,7 @@ def risk_view(
             "worst thing wrong with it multiplied by how much depends on it"
         ),
         elements=rows,
-        diagram="graph LR",
+        orientation="left-right",
     )
 
 

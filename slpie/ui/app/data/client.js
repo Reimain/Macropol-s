@@ -388,6 +388,96 @@ export const VERBS = Object.freeze({
       "scan | link | count"
     ]
   },
+  "dashboard": {
+    "group": "warehouse",
+    "summary": "a screen chosen for the demand, filled from the warehouse",
+    "consumes": "observations",
+    "produces": "report",
+    "mutates": false,
+    "source": false,
+    "params": [
+      {
+        "name": "template",
+        "type": "str",
+        "help": "name one instead of selecting",
+        "required": false,
+        "choices": [
+          "architecture-map",
+          "dependency-report",
+          "extract",
+          "operations",
+          "reconciliation",
+          "security-board"
+        ]
+      },
+      {
+        "name": "about",
+        "type": "str",
+        "help": "the question, in words",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "utility",
+        "type": "str",
+        "help": "what you are doing",
+        "required": false,
+        "choices": [
+          "monitor",
+          "investigate",
+          "compare",
+          "report",
+          "explore"
+        ]
+      },
+      {
+        "name": "for",
+        "type": "str",
+        "help": "where you are reading it",
+        "required": false,
+        "choices": [
+          "console",
+          "dashboard",
+          "document",
+          "mobile",
+          "api"
+        ]
+      },
+      {
+        "name": "domain",
+        "type": "str",
+        "help": "what it is about",
+        "required": false,
+        "choices": [
+          "security",
+          "dependencies",
+          "architecture",
+          "operations",
+          "cost",
+          "quality"
+        ]
+      },
+      {
+        "name": "govern",
+        "type": "bool",
+        "help": "run the rules too, for the findings star",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "now",
+        "type": "int",
+        "help": "the build timestamp",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "discover . | dashboard",
+      "discover . | dashboard --about 'what CVEs affect payments'",
+      "discover . | dashboard --template dependency-report"
+    ]
+  },
   "declare": {
     "group": "environment",
     "summary": "build the skeleton graph from the manifest, before reading a file",
@@ -1651,6 +1741,136 @@ export const VERBS = Object.freeze({
     "examples": [
       "audit | verdicts --only indeterminate"
     ]
+  },
+  "warehouse": {
+    "group": "warehouse",
+    "summary": "the graph as facts and dimensions, with its measures",
+    "consumes": "observations",
+    "produces": "report",
+    "mutates": false,
+    "source": false,
+    "params": [
+      {
+        "name": "star",
+        "type": "str",
+        "help": "one star instead of all three",
+        "required": false,
+        "choices": [
+          "elements",
+          "relationships",
+          "findings"
+        ]
+      },
+      {
+        "name": "govern",
+        "type": "bool",
+        "help": "run the rules too, so the findings star is not empty",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "now",
+        "type": "int",
+        "help": "the build timestamp, for a reproducible run",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "discover . | warehouse",
+      "discover . | warehouse --govern",
+      "discover . | warehouse --star relationships"
+    ]
+  },
+  "warehouse-export": {
+    "group": "warehouse",
+    "summary": "the warehouse as CSV, JSON or SQL, with its data dictionary",
+    "consumes": "observations",
+    "produces": "report",
+    "mutates": false,
+    "source": false,
+    "params": [
+      {
+        "name": "format",
+        "type": "str",
+        "help": "which form",
+        "required": false,
+        "choices": [
+          "csv",
+          "json",
+          "sql"
+        ]
+      },
+      {
+        "name": "out",
+        "type": "str",
+        "help": "a directory to write into",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "dialect",
+        "type": "str",
+        "help": "which SQL",
+        "required": false,
+        "choices": [
+          "sqlite",
+          "postgres"
+        ]
+      },
+      {
+        "name": "govern",
+        "type": "bool",
+        "help": "run the rules too, for the findings star",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "now",
+        "type": "int",
+        "help": "the build timestamp",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "discover . | warehouse-export",
+      "discover . | warehouse-export --format sql --out ./warehouse"
+    ]
+  },
+  "warehouse-load": {
+    "group": "warehouse",
+    "summary": "materialise the warehouse into a database a BI tool can reach",
+    "consumes": "observations",
+    "produces": "report",
+    "mutates": true,
+    "source": false,
+    "params": [
+      {
+        "name": "database",
+        "type": "str",
+        "help": "the SQLite file to write",
+        "required": true,
+        "choices": []
+      },
+      {
+        "name": "govern",
+        "type": "bool",
+        "help": "run the rules too, for the findings star",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "now",
+        "type": "int",
+        "help": "the build timestamp",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "discover . | warehouse-load --database ./warehouse.db"
+    ]
   }
 });
 
@@ -1738,6 +1958,12 @@ export const GROUPS = Object.freeze({
     "json",
     "sort",
     "unique"
+  ],
+  "warehouse": [
+    "dashboard",
+    "warehouse",
+    "warehouse-export",
+    "warehouse-load"
   ]
 });
 
@@ -2519,6 +2745,39 @@ export const SCREENS = Object.freeze([
     ],
     "events": [],
     "action": "shaping.*",
+    "resource": "*",
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ],
+    "requires": []
+  },
+  {
+    "key": "group-warehouse",
+    "path": "/inspect/warehouse",
+    "title": "Warehouse",
+    "section": "build",
+    "reads": [],
+    "verbs": [
+      "dashboard",
+      "warehouse",
+      "warehouse-export",
+      "warehouse-load"
+    ],
+    "events": [],
+    "action": "warehouse.*",
     "resource": "*",
     "crumbs": [
       "verbs"
@@ -3449,6 +3708,11 @@ export const LEXICON = Object.freeze({
     "plural": "plugins",
     "gloss": "Everything is a plugin, and built-ins register through the identical path."
   },
+  "present": {
+    "word": "present",
+    "plural": "presents",
+    "gloss": "and the reason it is a tier of its own rather than a method."
+  },
   "rbac": {
     "word": "rbac",
     "plural": "rbacs",
@@ -3563,6 +3827,11 @@ export const LEXICON = Object.freeze({
     "word": "version",
     "plural": "versions",
     "gloss": "Versions and ranges across ecosystems that disagree about both."
+  },
+  "warehouse": {
+    "word": "warehouse",
+    "plural": "warehouses",
+    "gloss": "facts and dimensions, so the numbers are reachable as numbers."
   },
   "workspace": {
     "word": "workspace",
@@ -3844,6 +4113,11 @@ export const ROUTES = Object.freeze([
   },
   {
     "method": "POST",
+    "path": "/api/v/dashboard",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
     "path": "/api/v/declare",
     "transport": "json"
   },
@@ -4060,6 +4334,21 @@ export const ROUTES = Object.freeze([
   {
     "method": "POST",
     "path": "/api/v/verdicts",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/warehouse",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/warehouse-export",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/warehouse-load",
     "transport": "json"
   }
 ]);

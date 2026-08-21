@@ -38,6 +38,31 @@ GROUP = "artifacts"
 ARCHITECTURE_DIR = "architecture"
 
 
+def _drawn(view: Any) -> str:
+    """One view, as Mermaid. The single place a verb reaches the renderer.
+
+    A C4 view goes to the C4 renderer, which draws external systems in their own
+    subgraph and gives each element an outline for its kind. Anything else goes
+    to the generic one. Dispatching on the *view* rather than on a flag keeps
+    the choice where the information is.
+    """
+    from ...present import c4, mermaid
+
+    if hasattr(view, "level") and hasattr(view, "relationships"):
+        return c4.mermaid(view)
+    return mermaid(view.to_diagram())
+
+
+def _documented(view: Any) -> str:
+    """The same render, with the view's own title above it.
+
+    Built on `_drawn` rather than beside it: an earlier version called the
+    generic renderer directly, so a C4 view written to a file lost the subgraph
+    it kept when it was returned. One dispatch, two callers.
+    """
+    return f"%% {view.name}: {view.doc}\n{_drawn(view)}"
+
+
 def _graph_of(flow: Flow):
     """The observations flowing in, as a real graph. Caller closes it."""
     from ...governance.view import view_of
@@ -133,7 +158,7 @@ def _c4(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
             )
 
     rendered = "\n\n".join(
-        f"%% {view.name}: {view.doc}\n{view.to_mermaid()}" for view in views
+        _documented(view) for view in views
     )
     written: list[str] = []
     if arguments.get("out"):
@@ -141,7 +166,7 @@ def _c4(flow: Flow, arguments: Mapping[str, Any], context: Context) -> Flow:
         target.mkdir(parents=True, exist_ok=True)
         for view in views:
             path = target / f"{view.level.value}.mmd"
-            path.write_text(view.to_mermaid(), encoding="utf-8")
+            path.write_text(_drawn(view), encoding="utf-8")
             written.append(str(path))
 
     return flow.then(

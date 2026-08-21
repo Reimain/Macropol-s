@@ -79,6 +79,7 @@ from slpie.errors import ArtifactError
 from slpie.governance.view import view_from_resolution, view_of
 from slpie.graph.sqlite_graph import SqliteGraph
 from slpie.plugins.protocol import Observation
+from slpie.present import c4 as present_c4
 
 from _trees import EXAMPLE_AWS_KEY, write_npm
 
@@ -156,12 +157,39 @@ class Simple:
     def to_dict(self):
         return {"name": self.name, "rows": [dict(row) for row in self.rows_]}
 
-    def to_mermaid(self):
-        return "graph TD\n  A --> B"
+    def to_diagram(self):
+        """The protocol asks for a shape, not a picture.
+
+        This fake states one directly rather than building it from `rows_`,
+        because what it is standing in for is *any* view — and a fake that
+        derived its diagram would be testing the derivation rather than the
+        bridge that consumes it.
+        """
+        from slpie.present.diagram import Diagram, Link, Mark
+
+        return Diagram(
+            name=self.name, orientation="top-down",
+            marks=(Mark(id="A"), Mark(id="B")), links=(Link(source="A", target="B"),),
+        )
 
 
 ONE = ({"id": "PAYMENTS", "label": "Payments", "kind": "service", "team": "billing"},)
 TWO = (*ONE, {"id": "ORDERS", "label": "Orders", "kind": "service"})
+
+
+
+def _render(view):
+    """Render a view exactly as the product does — through `slpie.present`.
+
+    Rendering left the models: a view states its shape and the presentation
+    tier draws it. These tests reach it the same way rather than through a
+    method that no longer exists, which is the point of the split.
+    """
+    from slpie.present import c4, mermaid
+
+    if hasattr(view, "level") and hasattr(view, "relationships"):
+        return c4.mermaid(view)
+    return mermaid(view.to_diagram())
 
 
 def test_the_bridge_generates_importable_python(tmp_path):
@@ -610,7 +638,7 @@ def test_c4_builds_the_levels_the_graph_supports(graph):
     views = c4_views(graph)
 
     assert [view.level for view in views] == [C4Level.CONTEXT, C4Level.CONTAINER]
-    assert all(view.to_mermaid().startswith("%%") or "flowchart" in view.to_mermaid()
+    assert all(_render(view).startswith("%%") or "flowchart" in _render(view)
                for view in views)
 
 
@@ -666,7 +694,7 @@ def drawable():
 
 def test_an_external_provider_is_drawn_inside_its_own_subgraph(drawable):
     """C1's whole point is the line between the system and everything else."""
-    mermaid = c4_views(drawable)[0].to_mermaid()
+    mermaid = _render(c4_views(drawable)[0])
 
     assert 'subgraph external["External"]' in mermaid
     assert mermaid.count("    end") == 1
@@ -674,7 +702,7 @@ def test_an_external_provider_is_drawn_inside_its_own_subgraph(drawable):
 
 def test_a_relationship_is_drawn_once_however_often_it_was_observed(drawable):
     view = c4_views(drawable)[0]
-    mermaid = view.to_mermaid()
+    mermaid = _render(view)
 
     assert mermaid.count("-->") == len(view.relationships)
     assert len([r for r in view.relationships if "webhook" in r.label]) == 1
@@ -776,7 +804,7 @@ def test_an_empty_view_is_kept_rather_than_dropped():
 def test_a_view_renders_relations_that_are_closed_over_it(graph):
     """An arrow to a box not on the diagram reads as a missing element."""
     view = data_view(graph)
-    mermaid = view.to_mermaid()
+    mermaid = _render(view)
 
     for row in view.elements:
         assert row["id"] in mermaid
@@ -810,7 +838,7 @@ def test_a_view_serialises_and_measures_itself(graph):
 def test_a_view_with_no_relations_still_renders_its_boxes():
     view = View(name="x", doc="d", elements=({"id": "A", "label": "A", "kind": "k"},))
 
-    mermaid = view.to_mermaid()
+    mermaid = _render(view)
     assert "A[" in mermaid
     assert "-->" not in mermaid
 
@@ -820,7 +848,7 @@ def test_mermaid_labels_cannot_end_the_label_early():
         name="x", doc="d",
         elements=({"id": "A", "label": 'a "quoted" [thing]', "kind": ""},),
     )
-    mermaid = view.to_mermaid()
+    mermaid = _render(view)
 
     assert '"quoted"' not in mermaid
     assert "[thing]" not in mermaid

@@ -125,7 +125,7 @@ def application_view(graph: Any) -> View:
         ),
         elements=rows,
         relations=relations_between(graph, nodes, kinds=APPLICATION_EDGES),
-        diagram="graph LR",
+        orientation="left-right",
     )
 
 
@@ -150,7 +150,7 @@ def data_view(graph: Any) -> View:
         ),
         elements=rows,
         relations=relations_between(graph, nodes, kinds=DATA_EDGES),
-        diagram="graph TD",
+        orientation="top-down",
     )
 
 
@@ -174,7 +174,7 @@ def technology_view(graph: Any) -> View:
         ),
         elements=rows,
         relations=relations_between(graph, nodes, kinds=TECHNOLOGY_EDGES),
-        diagram="graph TD",
+        orientation="top-down",
     )
 
 
@@ -214,7 +214,7 @@ def standards_view(graph: Any) -> View:
             "version in the estate, and how many things are on it"
         ),
         elements=rows,
-        diagram="graph LR",
+        orientation="left-right",
     )
 
 

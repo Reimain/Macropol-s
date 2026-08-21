@@ -130,8 +130,26 @@ class ArchitectureView(Protocol):
     def to_dict(self) -> dict[str, Any]:
         """The whole view as JSON-ready data."""
 
-    def to_mermaid(self) -> str:
-        """The whole view as a Mermaid diagram."""
+    def to_diagram(self) -> Any:
+        """The view's shape, as data. `slpie.present` turns it into a picture.
+
+        The protocol asks for the *shape* rather than for a rendering, which is
+        what lets this bridge write a Mermaid file today and something else
+        later without every view in the platform learning a second format.
+        """
+
+
+def _drawn(view: Any) -> str:
+    """One view as Mermaid, through the presentation tier.
+
+    A C4 view goes to the C4 renderer — external systems belong in their own
+    subgraph — and anything else to the generic one.
+    """
+    from ..present import c4, mermaid
+
+    if hasattr(view, "level") and hasattr(view, "relationships"):
+        return c4.mermaid(view)
+    return mermaid(view.to_diagram())
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,7 +281,7 @@ class ArchitectureCodegen:
         module_path = self.root / f"{generation.module_name}.py"
         mermaid_path = self.root / f"{generation.module_name}.mmd"
         json_path = self.root / f"{generation.module_name}.json"
-        mermaid_path.write_text(view.to_mermaid(), encoding="utf-8")
+        mermaid_path.write_text(_drawn(view), encoding="utf-8")
         json_path.write_text(
             json.dumps(view.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )

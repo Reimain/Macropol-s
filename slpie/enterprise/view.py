@@ -101,7 +101,11 @@ class View:
     doc: str
     elements: tuple[Row, ...] = ()
     relations: tuple[tuple[str, str, str], ...] = ()
-    diagram: str = "graph LR"
+    #: How this view reads, as *intent* rather than as syntax. It used to hold
+    #: the literal string `"graph LR"`, which put a Mermaid keyword inside every
+    #: view the platform builds and left no way to add a second renderer without
+    #: either parsing that string or ignoring it.
+    orientation: str = "left-right"
 
     def rows(self) -> tuple[Row, ...]:
         return self.elements
@@ -121,22 +125,37 @@ class View:
             },
         }
 
-    def to_mermaid(self) -> str:
-        """The view as a Mermaid diagram.
+    def to_diagram(self) -> Any:
+        """This view's shape, as data a renderer can draw.
 
-        Emitted even when the view has no relations: a diagram of boxes with no
-        arrows is a true statement about an architecture with no recorded
-        relationships, and rendering nothing would look like a broken generator.
+        Returns a `slpie.present.Diagram`, imported here rather than at module
+        scope so the dependency points the right way at import time too:
+        `present` may know about views, and a view must not need `present` to
+        exist in order to be constructed.
         """
-        lines = [self.diagram]
-        for row in self.elements:
-            label = str(row.get("label", row.get("id", "")))
-            kind = str(row.get("kind", ""))
-            text = f"{label}<br/><i>{kind}</i>" if kind else label
-            lines.append(f'  {row["id"]}["{_escape(text)}"]')
-        for source, kind, target in self.relations:
-            lines.append(f"  {source} -->|{_escape(kind)}| {target}")
-        return "\n".join(lines)
+        from ..present.diagram import Diagram, Link, Mark
+
+        return Diagram(
+            name=self.name,
+            doc=self.doc,
+            orientation=self.orientation,
+            marks=tuple(
+                Mark(
+                    id=str(row["id"]),
+                    label=str(row.get("label", row.get("id", ""))),
+                    kind=str(row.get("kind", "")),
+                    facts={
+                        key: value for key, value in row.items()
+                        if key not in ("id", "label", "kind")
+                    },
+                )
+                for row in self.elements
+            ),
+            links=tuple(
+                Link(source=source, target=target, label=kind)
+                for source, kind, target in self.relations
+            ),
+        )
 
     @property
     def empty(self) -> bool:
@@ -150,17 +169,6 @@ class View:
             f"{self.name}: {len(self.elements)} element(s), "
             f"{len(self.relations)} relation(s)"
         )
-
-
-def _escape(text: str) -> str:
-    """Mermaid label text. Quotes and brackets would end the label early."""
-    return (
-        str(text)
-        .replace('"', "'")
-        .replace("[", "(")
-        .replace("]", ")")
-        .replace("\n", " ")
-    )
 
 
 def relations_between(

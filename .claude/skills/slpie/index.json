@@ -1,21 +1,21 @@
 {
   "generator": "slpie context --skill",
-  "digest": "54f491c1d1d4692987d3c11f36bfea524a637b5e050686c8a6c53cc8b61554db",
+  "digest": "d4461a3a8504b1728e0f1bf76a72e6240340cfb2dc2dfaaa0ff0918b23058b83",
   "summary": {
-    "digest": "54f491c1d1d4692987d3c11f36bfea524a637b5e050686c8a6c53cc8b61554db",
-    "facets": 700,
+    "digest": "d4461a3a8504b1728e0f1bf76a72e6240340cfb2dc2dfaaa0ff0918b23058b83",
+    "facets": 724,
     "counts": {
       "component": 7,
       "kind": 21,
-      "module": 312,
-      "package": 70,
-      "route": 98,
-      "screen": 36,
+      "module": 324,
+      "package": 72,
+      "route": 102,
+      "screen": 37,
       "section": 19,
-      "test": 81,
-      "verb": 56
+      "test": 82,
+      "verb": 60
     },
-    "coverage": 0.9914,
+    "coverage": 0.9917,
     "unanchored": [
       "section:12",
       "section:14",
@@ -2541,6 +2541,10 @@
         {
           "relation": "imports",
           "target": "module:slpie.graph.store"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.present.diagram"
         }
       ],
       "tags": []
@@ -2568,6 +2572,10 @@
         {
           "relation": "imports",
           "target": "package:gratimos.meta"
+        },
+        {
+          "relation": "imports",
+          "target": "package:slpie.present"
         }
       ],
       "tags": []
@@ -3247,6 +3255,10 @@
         {
           "relation": "imports",
           "target": "package:slpie.enterprise"
+        },
+        {
+          "relation": "imports",
+          "target": "package:slpie.present"
         }
       ],
       "tags": []
@@ -3659,6 +3671,73 @@
         {
           "relation": "imports",
           "target": "module:slpie.compose.verb"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.compose.verbs.warehouse",
+      "kind": "module",
+      "name": "slpie.compose.verbs.warehouse",
+      "title": "warehouse",
+      "summary": "The warehouse as verbs \u2014 facts out, and a template to read them through.",
+      "source": "slpie/compose/verbs/warehouse.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.compose.flow"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.compose.verb"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.finding"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.reasoning"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.governance.builtins"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.governance.rules"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.governance.view"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.present.template"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.present.templates"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.build"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.export"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.measures"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.schema"
+        },
+        {
+          "relation": "imports",
+          "target": "package:slpie.warehouse"
         }
       ],
       "tags": []
@@ -5686,6 +5765,10 @@
         {
           "relation": "imports",
           "target": "module:slpie.domain.node"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.present.diagram"
         }
       ],
       "tags": []
@@ -6937,6 +7020,71 @@
       "tags": []
     },
     {
+      "id": "module:slpie.present.c4",
+      "kind": "module",
+      "name": "slpie.present.c4",
+      "title": "c4",
+      "summary": "C4 as Mermaid \u2014 a specialised renderer, not a duplicate of the generic one.",
+      "source": "slpie/present/c4.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.node"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.present.diagram",
+      "kind": "module",
+      "name": "slpie.present.diagram",
+      "title": "diagram",
+      "summary": "What a model says about its own shape \u2014 and nothing about how it is drawn.",
+      "source": "slpie/present/diagram.py:1",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.present.mermaid",
+      "kind": "module",
+      "name": "slpie.present.mermaid",
+      "title": "mermaid",
+      "summary": "Mermaid, written once.",
+      "source": "slpie/present/mermaid.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.present.diagram"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.present.template",
+      "kind": "module",
+      "name": "slpie.present.template",
+      "title": "template",
+      "summary": "Templates, and choosing one \u2014 so a reader gets a screen, not a table dump.",
+      "source": "slpie/present/template.py:1",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.present.templates",
+      "kind": "module",
+      "name": "slpie.present.templates",
+      "title": "templates",
+      "summary": "The declared templates. Data, so a new one is an entry rather than a screen.",
+      "source": "slpie/present/templates.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.present.template"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "module:slpie.rbac.audit",
       "kind": "module",
       "name": "slpie.rbac.audit",
@@ -8113,6 +8261,111 @@
         {
           "relation": "imports",
           "target": "module:slpie.core.events"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.warehouse.build",
+      "kind": "module",
+      "name": "slpie.warehouse.build",
+      "title": "build",
+      "summary": "Graph in, tables out. Deterministic, and it invents nothing.",
+      "source": "slpie/warehouse/build.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.evidence"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.model"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.schema"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.environment.loader"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.warehouse.export",
+      "kind": "module",
+      "name": "slpie.warehouse.export",
+      "title": "export",
+      "summary": "Three ways out, from one schema. None of them re-states a column.",
+      "source": "slpie/warehouse/export.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.model"
+        },
+        {
+          "relation": "claims",
+          "target": "section:22"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.warehouse.measures",
+      "kind": "module",
+      "name": "slpie.warehouse.measures",
+      "title": "measures",
+      "summary": "Measures \u2014 the aggregations, named once so two screens cannot disagree.",
+      "source": "slpie/warehouse/measures.py:1",
+      "links": [
+        {
+          "relation": "claims",
+          "target": "section:24"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.warehouse.model",
+      "kind": "module",
+      "name": "slpie.warehouse.model",
+      "title": "model",
+      "summary": "The schema as data \u2014 so the exporters, the DDL and the docs share one truth.",
+      "source": "slpie/warehouse/model.py:1",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.warehouse.query",
+      "kind": "module",
+      "name": "slpie.warehouse.query",
+      "title": "query",
+      "summary": "Grouping \u2014 the one thing a star schema exists to make cheap.",
+      "source": "slpie/warehouse/query.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.measures"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.model"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.warehouse.schema",
+      "kind": "module",
+      "name": "slpie.warehouse.schema",
+      "title": "schema",
+      "summary": "The three stars this platform publishes, declared rather than derived.",
+      "source": "slpie/warehouse/schema.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.model"
         }
       ],
       "tags": []
@@ -9409,6 +9662,10 @@
         },
         {
           "relation": "owns",
+          "target": "package:slpie.present"
+        },
+        {
+          "relation": "owns",
           "target": "package:slpie.rbac"
         },
         {
@@ -9438,6 +9695,10 @@
         {
           "relation": "owns",
           "target": "package:slpie.ui"
+        },
+        {
+          "relation": "owns",
+          "target": "package:slpie.warehouse"
         },
         {
           "relation": "owns",
@@ -9898,6 +10159,10 @@
         {
           "relation": "owns",
           "target": "module:slpie.compose.verbs.shaping"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.compose.verbs.warehouse"
         }
       ],
       "tags": []
@@ -11028,6 +11293,45 @@
       "tags": []
     },
     {
+      "id": "package:slpie.present",
+      "kind": "package",
+      "name": "slpie.present",
+      "title": "present",
+      "summary": "Presentation \u2014 and the reason it is a tier of its own rather than a method.",
+      "source": "slpie/present/__init__.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.present.diagram"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.present.mermaid"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.present.c4"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.present.diagram"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.present.mermaid"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.present.template"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.present.templates"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "package:slpie.rbac",
       "kind": "package",
       "name": "slpie.rbac",
@@ -11494,6 +11798,49 @@
         {
           "relation": "owns",
           "target": "module:slpie.ui.stream"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "package:slpie.warehouse",
+      "kind": "package",
+      "name": "slpie.warehouse",
+      "title": "warehouse",
+      "summary": "The BI layer \u2014 facts and dimensions, so the numbers are reachable as numbers.",
+      "source": "slpie/warehouse/__init__.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.measures"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.warehouse.model"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.warehouse.build"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.warehouse.export"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.warehouse.measures"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.warehouse.model"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.warehouse.query"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.warehouse.schema"
         }
       ],
       "tags": []
@@ -12131,7 +12478,7 @@
       "name": "POST /api/v/c4",
       "title": "POST /api/v/c4",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/artifacts.py:320",
+      "source": "slpie/compose/verbs/artifacts.py:345",
       "links": [],
       "tags": [
         "generated"
@@ -12204,6 +12551,18 @@
       "title": "POST /api/v/count",
       "summary": "Generated from the verb registry.",
       "source": "slpie/compose/verbs/shaping.py:210",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/dashboard",
+      "kind": "route",
+      "name": "POST /api/v/dashboard",
+      "title": "POST /api/v/dashboard",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/warehouse.py:446",
       "links": [],
       "tags": [
         "generated"
@@ -12311,7 +12670,7 @@
       "name": "POST /api/v/enterprise",
       "title": "POST /api/v/enterprise",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/artifacts.py:342",
+      "source": "slpie/compose/verbs/artifacts.py:367",
       "links": [],
       "tags": [
         "generated"
@@ -12551,7 +12910,7 @@
       "name": "POST /api/v/risk",
       "title": "POST /api/v/risk",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/artifacts.py:371",
+      "source": "slpie/compose/verbs/artifacts.py:396",
       "links": [],
       "tags": [
         "generated"
@@ -12599,7 +12958,7 @@
       "name": "POST /api/v/sbom",
       "title": "POST /api/v/sbom",
       "summary": "Generated from the verb registry.",
-      "source": "slpie/compose/verbs/artifacts.py:295",
+      "source": "slpie/compose/verbs/artifacts.py:320",
       "links": [],
       "tags": [
         "generated"
@@ -12732,6 +13091,42 @@
       "title": "POST /api/v/verdicts",
       "summary": "Generated from the verb registry.",
       "source": "slpie/compose/verbs/audit.py:172",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/warehouse",
+      "kind": "route",
+      "name": "POST /api/v/warehouse",
+      "title": "POST /api/v/warehouse",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/warehouse.py:377",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/warehouse-export",
+      "kind": "route",
+      "name": "POST /api/v/warehouse-export",
+      "title": "POST /api/v/warehouse-export",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/warehouse.py:402",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/warehouse-load",
+      "kind": "route",
+      "name": "POST /api/v/warehouse-load",
+      "title": "POST /api/v/warehouse-load",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/warehouse.py:426",
       "links": [],
       "tags": [
         "generated"
@@ -13349,6 +13744,41 @@
         {
           "relation": "runs",
           "target": "verb:unique"
+        },
+        {
+          "relation": "parent",
+          "target": "screen:verbs"
+        }
+      ],
+      "tags": [
+        "build",
+        "generated",
+        "view"
+      ]
+    },
+    {
+      "id": "screen:group-warehouse",
+      "kind": "screen",
+      "name": "group-warehouse",
+      "title": "Warehouse",
+      "summary": "",
+      "source": "slpie/ui/contract.py:1160",
+      "links": [
+        {
+          "relation": "runs",
+          "target": "verb:dashboard"
+        },
+        {
+          "relation": "runs",
+          "target": "verb:warehouse"
+        },
+        {
+          "relation": "runs",
+          "target": "verb:warehouse-export"
+        },
+        {
+          "relation": "runs",
+          "target": "verb:warehouse-load"
         },
         {
           "relation": "parent",
@@ -15226,11 +15656,19 @@
         },
         {
           "relation": "covers",
+          "target": "module:slpie.present.diagram"
+        },
+        {
+          "relation": "covers",
           "target": "package:slpie.compose"
         },
         {
           "relation": "covers",
           "target": "package:slpie.enterprise"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.present"
         }
       ],
       "tags": []
@@ -16394,6 +16832,85 @@
       "tags": []
     },
     {
+      "id": "test:test_slpie_warehouse",
+      "kind": "test",
+      "name": "test_slpie_warehouse",
+      "title": "slpie warehouse",
+      "summary": "The BI layer \u2014 facts, dimensions, measures, and the templates that read them.",
+      "source": "tests/test_slpie_warehouse.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.registry"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.domain.evidence"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.domain.finding"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.domain.lifecycle"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.enterprise.view"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.governance.view"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.present.diagram"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.present.template"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.present.templates"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.ui.contract"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.warehouse.build"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.warehouse.measures"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.warehouse.model"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.warehouse.schema"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.compose"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.present"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.warehouse"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "test:test_slpie_workspace",
       "kind": "test",
       "name": "test_slpie_workspace",
@@ -16643,7 +17160,7 @@
       "name": "c4",
       "title": "c4",
       "summary": "C4 views of the system, as Mermaid",
-      "source": "slpie/compose/verbs/artifacts.py:320",
+      "source": "slpie/compose/verbs/artifacts.py:345",
       "links": [
         {
           "relation": "consumes",
@@ -16814,6 +17331,31 @@
       ],
       "tags": [
         "shaping"
+      ]
+    },
+    {
+      "id": "verb:dashboard",
+      "kind": "verb",
+      "name": "dashboard",
+      "title": "dashboard",
+      "summary": "a screen chosen for the demand, filled from the warehouse",
+      "source": "slpie/compose/verbs/warehouse.py:446",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:observations"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/dashboard"
+        }
+      ],
+      "tags": [
+        "warehouse"
       ]
     },
     {
@@ -17030,7 +17572,7 @@
       "name": "enterprise",
       "title": "enterprise",
       "summary": "TOGAF views and the deployment topology",
-      "source": "slpie/compose/verbs/artifacts.py:342",
+      "source": "slpie/compose/verbs/artifacts.py:367",
       "links": [
         {
           "relation": "consumes",
@@ -17537,7 +18079,7 @@
       "name": "risk",
       "title": "risk",
       "summary": "findings aggregated into a ranked risk register",
-      "source": "slpie/compose/verbs/artifacts.py:371",
+      "source": "slpie/compose/verbs/artifacts.py:396",
       "links": [
         {
           "relation": "consumes",
@@ -17640,7 +18182,7 @@
       "name": "sbom",
       "title": "sbom",
       "summary": "a bill of materials, in CycloneDX or SPDX",
-      "source": "slpie/compose/verbs/artifacts.py:295",
+      "source": "slpie/compose/verbs/artifacts.py:320",
       "links": [
         {
           "relation": "consumes",
@@ -17940,6 +18482,82 @@
       ],
       "tags": [
         "audit"
+      ]
+    },
+    {
+      "id": "verb:warehouse",
+      "kind": "verb",
+      "name": "warehouse",
+      "title": "warehouse",
+      "summary": "the graph as facts and dimensions, with its measures",
+      "source": "slpie/compose/verbs/warehouse.py:377",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:observations"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/warehouse"
+        }
+      ],
+      "tags": [
+        "warehouse"
+      ]
+    },
+    {
+      "id": "verb:warehouse-export",
+      "kind": "verb",
+      "name": "warehouse-export",
+      "title": "warehouse-export",
+      "summary": "the warehouse as CSV, JSON or SQL, with its data dictionary",
+      "source": "slpie/compose/verbs/warehouse.py:402",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:observations"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/warehouse-export"
+        }
+      ],
+      "tags": [
+        "warehouse"
+      ]
+    },
+    {
+      "id": "verb:warehouse-load",
+      "kind": "verb",
+      "name": "warehouse-load",
+      "title": "warehouse-load",
+      "summary": "materialise the warehouse into a database a BI tool can reach",
+      "source": "slpie/compose/verbs/warehouse.py:426",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:observations"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/warehouse-load"
+        }
+      ],
+      "tags": [
+        "warehouse",
+        "mutates"
       ]
     }
   ]

@@ -95,7 +95,7 @@ def topology_view(graph: Any) -> View:
         ),
         elements=rows,
         relations=relations_between(graph, nodes, kinds=TOPOLOGY_EDGES),
-        diagram="graph TD",
+        orientation="top-down",
     )
 
 

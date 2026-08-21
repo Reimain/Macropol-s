@@ -65,6 +65,7 @@ export const VERB_TYPES = {
   "constraints": { consumes: "resolution", produces: "solution", mutates: false },
   "context": { consumes: "nothing", produces: "report", mutates: false },
   "count": { consumes: "any", produces: "same", mutates: false },
+  "dashboard": { consumes: "observations", produces: "report", mutates: false },
   "declare": { consumes: "nothing", produces: "elements", mutates: false },
   "deploy-apply": { consumes: "nothing", produces: "report", mutates: true },
   "deploy-manual": { consumes: "nothing", produces: "text", mutates: false },
@@ -109,6 +110,9 @@ export const VERB_TYPES = {
   "tools": { consumes: "nothing", produces: "report", mutates: false },
   "unique": { consumes: "any", produces: "same", mutates: false },
   "verdicts": { consumes: "judgements", produces: "same", mutates: false },
+  "warehouse": { consumes: "observations", produces: "report", mutates: false },
+  "warehouse-export": { consumes: "observations", produces: "report", mutates: false },
+  "warehouse-load": { consumes: "observations", produces: "report", mutates: true },
 } as const satisfies Record<string, {
   consumes: Kind; produces: Kind; mutates: boolean;
 }>;
@@ -275,6 +279,11 @@ export class SlpieClient {
   /** count what is flowing, without changing it */
   async count(params: { upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/count`, params);
+  }
+
+  /** a screen chosen for the demand, filled from the warehouse */
+  async dashboard(params: { template?: "architecture-map" | "dependency-report" | "extract" | "operations" | "reconciliation" | "security-board"; about?: string; utility?: "monitor" | "investigate" | "compare" | "report" | "explore"; for?: "console" | "dashboard" | "document" | "mobile" | "api"; domain?: "security" | "dependencies" | "architecture" | "operations" | "cost" | "quality"; govern?: boolean; now?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/dashboard`, params);
   }
 
   /** build the skeleton graph from the manifest, before reading a file */
@@ -495,6 +504,21 @@ export class SlpieClient {
   /** keep only judgements with one verdict */
   async verdicts(params: { only?: "upheld" | "violated" | "indeterminate" | "inapplicable"; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/verdicts`, params);
+  }
+
+  /** the graph as facts and dimensions, with its measures */
+  async warehouse(params: { star?: "elements" | "relationships" | "findings"; govern?: boolean; now?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/warehouse`, params);
+  }
+
+  /** the warehouse as CSV, JSON or SQL, with its data dictionary */
+  async warehouseExport(params: { format?: "csv" | "json" | "sql"; out?: string; dialect?: "sqlite" | "postgres"; govern?: boolean; now?: number; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/warehouse-export`, params);
+  }
+
+  /** materialise the warehouse into a database a BI tool can reach */
+  async warehouseLoad(params: { database: string; govern?: boolean; now?: number; upstream?: Flow; confirmed?: boolean }): Promise<Flow> {
+    return this.post(`/api/v/warehouse-load`, params);
   }
 
   /** `GET /api/admin/datasets` */

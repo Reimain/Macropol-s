@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `54f491c1d1d4692987d3c11f36bfea524a637b5e050686c8a6c53cc8b61554db`
-- **facets** 700 — 7 component, 21 kind, 312 module, 70 package, 98 route, 36 screen, 19 section, 81 test, 56 verb
-- **anchored** 99.1% resolve to a file and a line
+- **digest** `d4461a3a8504b1728e0f1bf76a72e6240340cfb2dc2dfaaa0ff0918b23058b83`
+- **facets** 724 — 7 component, 21 kind, 324 module, 72 package, 102 route, 37 screen, 19 section, 82 test, 60 verb
+- **anchored** 99.2% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -33,13 +33,14 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `ask` | intelligence | enrichments → guidance | `slpie/compose/verbs/intelligence.py:242` | console |
 | `attach` | environment | nothing → elements | `slpie/compose/verbs/environment.py:387` | station |
 | `audit` | audit | nothing → judgements | `slpie/compose/verbs/audit.py:154` | group-audit |
-| `c4` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:320` | group-artifacts |
+| `c4` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:345` | group-artifacts |
 | `capture` | capture | nothing → observations | `slpie/compose/verbs/capture.py:191` | group-capture |
 | `chain` | capture | nothing → report | `slpie/compose/verbs/capture.py:223` | group-capture |
 | `changed` | incremental | nothing → report | `slpie/compose/verbs/incremental.py:149` | catalog |
 | `constraints` | analysis | resolution → solution | `slpie/compose/verbs/analysis.py:459` | group-analysis |
 | `context` | context | nothing → report | `slpie/context/verbs.py:123` | group-context |
 | `count` | shaping | any → same | `slpie/compose/verbs/shaping.py:210` | group-shaping |
+| `dashboard` | warehouse | observations → report | `slpie/compose/verbs/warehouse.py:446` | group-warehouse |
 | `declare` | environment | nothing → elements | `slpie/compose/verbs/environment.py:333` | reconcile |
 | `deploy-apply` | deploy | nothing → report | `slpie/compose/verbs/deploy.py:341` | group-deploy |
 | `deploy-manual` | deploy | nothing → text | `slpie/compose/verbs/deploy.py:311` | group-deploy |
@@ -48,7 +49,7 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `deploy-status` | deploy | nothing → report | `slpie/compose/verbs/deploy.py:328` | group-deploy |
 | `discover` | analysis | nothing → observations | `slpie/compose/verbs/analysis.py:424` | group-analysis |
 | `dismiss` | guidance | any → same | `slpie/compose/verbs/guidance.py:300` | console |
-| `enterprise` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:342` | group-artifacts |
+| `enterprise` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:367` | group-artifacts |
 | `explain` | shaping | any → same | `slpie/compose/verbs/shaping.py:244` | group-shaping |
 | `filter` | shaping | any → same | `slpie/compose/verbs/shaping.py:226` | group-shaping |
 | `findings` | analysis | any → findings | `slpie/compose/verbs/analysis.py:470` | findings |
@@ -68,11 +69,11 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `radius` | intelligence | enrichments → impact | `slpie/compose/verbs/intelligence.py:265` | impact |
 | `reason` | analysis | observations → enrichments | `slpie/compose/verbs/analysis.py:441` | group-analysis |
 | `reconcile` | environment | nothing → findings | `slpie/compose/verbs/environment.py:400` | reconcile |
-| `risk` | artifacts | findings → report | `slpie/compose/verbs/artifacts.py:371` | group-artifacts |
+| `risk` | artifacts | findings → report | `slpie/compose/verbs/artifacts.py:396` | group-artifacts |
 | `rivals` | rivals | nothing → report | `slpie/compose/verbs/rivals.py:60` | group-rivals |
 | `routine` | guidance | nothing → report | `slpie/compose/verbs/guidance.py:315` | compose |
 | `rules` | governance | nothing → report | `slpie/compose/verbs/governance.py:315` | findings |
-| `sbom` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:295` | group-artifacts |
+| `sbom` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:320` | group-artifacts |
 | `scan` | environment | nothing → observations | `slpie/compose/verbs/environment.py:394` | catalog |
 | `search` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:413` | graph |
 | `simulate` | environment | nothing → elements | `slpie/compose/verbs/environment.py:339` | simulator |
@@ -84,6 +85,9 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `tools` | dispatch | nothing → report | `slpie/compose/verbs/dispatch.py:193` | group-dispatch |
 | `unique` | shaping | any → same | `slpie/compose/verbs/shaping.py:237` | group-shaping |
 | `verdicts` | audit | judgements → same | `slpie/compose/verbs/audit.py:172` | group-audit |
+| `warehouse` | warehouse | observations → report | `slpie/compose/verbs/warehouse.py:377` | group-warehouse |
+| `warehouse-export` | warehouse | observations → report | `slpie/compose/verbs/warehouse.py:402` | group-warehouse |
+| `warehouse-load` | warehouse | observations → report | `slpie/compose/verbs/warehouse.py:426` | group-warehouse |
 
 ## Where no test names the code
 
@@ -114,9 +118,9 @@ Derived from the `§NN` references modules write in their own docstrings — nev
 | §18 | 5 | `slpie.context`, `slpie.deploy`, `slpie.deploy.emitters` |
 | §19 | 1 | `slpie.demo` |
 | §2 | 1 | `slpie.workspace` |
-| §22 | 1 | `slpie.graph` |
+| §22 | 2 | `slpie.graph`, `slpie.warehouse` |
 | §23 | 2 | `slpie.core` |
-| §24 | 8 | `slpie.compose`, `slpie.compose.verbs`, `slpie.deploy`, `slpie.dispatch`, `slpie.ui` |
+| §24 | 9 | `slpie.compose`, `slpie.compose.verbs`, `slpie.deploy`, `slpie.dispatch`, `slpie.ui` |
 | §25 | 5 | `slpie.compose.verbs`, `slpie.context`, `slpie.deploy` |
 | §26 | 2 | `slpie.apim`, `slpie.compose.verbs` |
 | §27 | 3 | `slpie.compose.verbs`, `slpie.deploy`, `slpie.dispatch` |
@@ -145,7 +149,7 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 | `publisher` | api | generated | — | 2 |
 | `simulator` | operate | generated | — | 1 |
 | `station` | operate | generated | reconcile | 1 |
-| `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-deploy, group-dispatch, group-incremental, group-rivals, group-shaping, route-lexicon, route-screens, route-shells | 1 |
+| `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-deploy, group-dispatch, group-incremental, group-rivals, group-shaping, group-warehouse, route-lexicon, route-screens, route-shells | 1 |
 | `workspaces` | admin | authored | — | 2 |
 
 ## The browser vocabulary
