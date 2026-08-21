@@ -14,7 +14,7 @@
  */
 
 import { fill, h } from "../core/dom.js";
-import { SCREENS } from "../data/client.js";
+import { CAPABILITIES, SCREENS, SHELL, missingFor } from "../data/client.js";
 import * as consoleScreen from "./console.js";
 import * as composeScreen from "./compose.js";
 import * as findingsScreen from "./findings.js";
@@ -47,6 +47,47 @@ export function screenFor(key) {
   return AUTHORED[key] || inspector;
 }
 
+/**
+ * Whether this build can draw that screen, and what it would take.
+ *
+ * The block manifest has a real ceiling. Direct manipulation, panes the reader
+ * arranges and a scrubbable axis over the ledger are code rather than a
+ * declaration, and pretending otherwise turns the manifest into a bad
+ * framework. So a screen names what it *needs* and this shell names what it
+ * *gives*, and the difference is reported.
+ *
+ * **Not omitted — reported.** A screen the console silently left out would be a
+ * capability the platform has and one surface cannot reach, which is exactly
+ * the drift §24 exists to prevent; hidden by the interface rather than by the
+ * registry, but hidden all the same.
+ */
+export function unmeetable(screen) {
+  return missingFor(screen, SHELL);
+}
+
+export function drawable(screen) {
+  return unmeetable(screen).length === 0;
+}
+
+/** The refusal, rendered like every other refusal: accent, never danger. */
+function unavailable(screen) {
+  const missing = unmeetable(screen);
+  return h("div", { class: "refusal", role: "note" },
+    h("h3", {}, `${screen.title} needs a shell this one is not`),
+    h("p", { class: "prose" },
+      `This console is the ${SHELL} shell. It runs with no build step, no `
+      + "package manager and no network, which is what makes it the one that "
+      + "works inside an air-gapped estate — and that is also why it stops "
+      + "here."),
+    h("ul", {}, missing.map((name) => h("li", {},
+      h("code", { class: "mono" }, name),
+      h("span", { class: "muted" }, ` — ${CAPABILITIES[name] || "not described"}`)))),
+    h("p", { class: "prose muted" },
+      "Everything behind this screen is reachable from here as data: its "
+      + "routes answer, its verbs run, and the composition it stands for is "
+      + "one you can type. What is missing is the surface, not the answer."));
+}
+
 let mounted = null;
 
 export function mount(outlet, screen, params, query) {
@@ -57,6 +98,12 @@ export function mount(outlet, screen, params, query) {
       console.error("a screen failed while unmounting", error);
     }
   }
+  if (!drawable(screen)) {
+    mounted = null;
+    fill(outlet, unavailable(screen));
+    return;
+  }
+
   const chosen = screenFor(screen.key);
   mounted = chosen;
   try {

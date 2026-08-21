@@ -31,6 +31,11 @@ from ..compose.registry import VerbRegistry, registry as default_registry
 OPEN = frozenset({
     "/api/routes", "/api/contract", "/api/verbs", "/api/manual", "/api/screens",
     "/api/stream/status",
+    # Which shells exist and what each can draw. Open with the rest of
+    # discovery, and for one reason more: a console that cannot ask this cannot
+    # tell a reader *why* a screen is unavailable, and would fall back to
+    # silently omitting it — which is the drift the route exists to close.
+    "/api/shells",
     # The words the interface renders with (§31). Open for the same reason the
     # rest are, plus one of its own: a console refused its lexicon has no
     # labels, which is a broken product rather than a guarded one. It discloses

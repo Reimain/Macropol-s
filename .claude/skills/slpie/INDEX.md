@@ -15,8 +15,8 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `a585fcdb8bf2d95cf94b2086385868df68202e55578cb25c6760ce5292c370cc`
-- **facets** 702 — 52 component, 21 kind, 296 module, 68 package, 92 route, 33 screen, 16 section, 73 test, 51 verb
+- **digest** `d693bfdbf8c100a3475177e09ec5b410bbbdc4937c1fb79f845dbb5b5f950548`
+- **facets** 706 — 52 component, 21 kind, 296 module, 68 package, 93 route, 35 screen, 16 section, 74 test, 51 verb
 - **anchored** 98.4% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
@@ -53,8 +53,8 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `graph` | environment | nothing → nodes | `slpie/compose/verbs/environment.py:406` | graph |
 | `head` | shaping | any → same | `slpie/compose/verbs/shaping.py:203` | group-shaping |
 | `history` | dispatch | nothing → report | `slpie/compose/verbs/dispatch.py:225` | history |
-| `impact` | environment | nodes → impact | `slpie/compose/verbs/environment.py:423` | impact |
-| `interest` | environment | nodes → report | `slpie/compose/verbs/environment.py:434` | graph |
+| `impact` | environment | nodes → impact | `slpie/compose/verbs/environment.py:423` | flight, impact |
+| `interest` | environment | nodes → report | `slpie/compose/verbs/environment.py:434` | flight, graph |
 | `json` | shaping | any → same | `slpie/compose/verbs/shaping.py:257` | group-shaping |
 | `lexicon` | context | nothing → report | `slpie/context/verbs.py:150` | group-context |
 | `link` | analysis | observations → resolution | `slpie/compose/verbs/analysis.py:449` | group-analysis |
@@ -123,14 +123,14 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 | `console` | console | authored | — | 3 |
 | `findings` | operate | authored | — | 1 |
 | `gateway` | api | generated | actions, analytics, throttling | 2 |
-| `graph` | operate | authored | cycles, impact, node | 1 |
+| `graph` | operate | authored | cycles, flight, impact, node | 1 |
 | `keys` | api | generated | — | 1 |
 | `ledger` | operate | generated | history | 3 |
 | `portal` | api | generated | — | 3 |
 | `publisher` | api | generated | — | 2 |
 | `simulator` | operate | generated | — | 1 |
 | `station` | operate | generated | reconcile | 1 |
-| `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-dispatch, group-incremental, group-rivals, group-shaping, route-lexicon, route-screens | 1 |
+| `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-dispatch, group-incremental, group-rivals, group-shaping, route-lexicon, route-screens, route-shells | 1 |
 | `workspaces` | admin | authored | — | 2 |
 
 ## The browser vocabulary

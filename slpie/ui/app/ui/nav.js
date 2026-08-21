@@ -19,6 +19,7 @@
  */
 
 import { h, link } from "../core/dom.js";
+import { SHELL, missingFor } from "../data/client.js";
 
 const LABELS = {
   console: "Console",
@@ -62,7 +63,12 @@ export function nav(screens, { permitted = null, current = "" } = {}) {
     : screens)
     // Destinations only. Views are reached from their parent's page, which is
     // the whole reason `Screen.parent` exists.
-    .filter((screen) => !screen.parent);
+    .filter((screen) => !screen.parent)
+    // And nothing this shell cannot draw. Hiding is a *convenience* here, never
+    // the control: the screen is still in the manifest, still reachable by its
+    // hash, and answers with a refusal naming the capability it needs — the
+    // same rule the RBAC-filtered nav follows, for the same reason.
+    .filter((screen) => missingFor(screen, SHELL).length === 0);
 
   const node = h("nav", { "aria-label": "sections" });
 

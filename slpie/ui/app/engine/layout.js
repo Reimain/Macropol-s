@@ -52,7 +52,13 @@ export const UNBOUNDED = "estate";
  * takes a predicate: the manifest owns the membership rule, and a second copy
  * of it in the renderer is a copy that will disagree.
  */
-export function place(nodes, edges, { regionOf = () => "", lane = LANE } = {}) {
+/**
+ * @param {Array<{id: string, name?: string, kind: string}>} nodes
+ * @param {Array<{src: string, dst: string}>} edges
+ * @param {{regionOf?: (node: any) => string, lane?: number}} [options]
+ */
+export function place(nodes, edges, options = {}) {
+  const { regionOf = (/** @type {any} */ _node) => "", lane = LANE } = options;
   const degree = new Map();
   for (const edge of edges || []) {
     degree.set(edge.src, (degree.get(edge.src) || 0) + 1);
@@ -124,6 +130,12 @@ export function place(nodes, edges, { regionOf = () => "", lane = LANE } = {}) {
     placed,
     lanes,
     edges: edges || [],
+    // Filled in by the caller once `adjacency()` has something to work with,
+    // and read by every renderer. Declared here rather than attached later so
+    // the scene has one shape: a field a consumer bolts on is a field no
+    // consumer can rely on, and both engines rely on this one.
+    /** @type {null | {assigned: Map<string, string>, overflow: string[], shortfall: string}} */
+    colouring: null,
     regions: order.map((name) => ({
       name,
       count: regions.get(name),

@@ -25,6 +25,7 @@ Stdlib only: this writes text. No `jsonschema`, no code generator, no build step
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -451,11 +452,32 @@ def _ts_name(name: str) -> str:
     return head + "".join(part.capitalize() for part in rest)
 
 
+#: A property name TypeScript will accept unquoted.
+_IDENTIFIER = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
+
+
+def _ts_property(name: str) -> str:
+    """A parameter name, as a property TypeScript can parse.
+
+    **Quoted, never camel-cased.** `changed --max-bytes` really is sent over the
+    wire as `max-bytes`, and the generated client spreads this object straight
+    into the request body — so renaming it to `maxBytes` would compile and then
+    send a key the server refuses. Quoting keeps the wire name and fixes the
+    parse, which is the only change that is correct on both sides.
+
+    This shipped broken: the emitted client had `max-bytes?: number` in a type
+    literal and did not compile at all. Nothing caught it because the suite
+    asserted the output was *deterministic* and *total* and never that it was
+    *valid* — a generator can be perfectly reproducible and reproducibly wrong.
+    """
+    return name if _IDENTIFIER.match(name) else json.dumps(name)
+
+
 def _ts_signature(verb: Verb) -> str:
     fields: list[str] = []
     for param in verb.params:
         optional = "" if param.required else "?"
-        fields.append(f"{param.name}{optional}: {_ts_type(param)}")
+        fields.append(f"{_ts_property(param.name)}{optional}: {_ts_type(param)}")
     fields.append("upstream?: Flow")
     if verb.mutates:
         fields.append("confirmed?: boolean")
@@ -661,6 +683,7 @@ class Screen:
     summary: str = ""                    # one line, shown under the page title
     authored: bool = False               # a hand-built screens/<key>.js exists
     blocks: tuple[Block, ...] = ()       # how to compose it, when nobody wrote it
+    requires: tuple[str, ...] = ()       # what this screen needs from a shell
 
     @property
     def is_destination(self) -> bool:
@@ -692,7 +715,119 @@ class Screen:
             "summary": self.summary,
             "authored": self.authored,
             "blocks": [block.to_dict() for block in self.blocks],
+            "requires": list(self.requires),
         }
+
+    def renders_in(self, shell: "Shell") -> bool:
+        return not self.missing_from(shell)
+
+    def missing_from(self, shell: "Shell") -> tuple[str, ...]:
+        """What this shell would need before it could draw this screen.
+
+        Returned rather than a boolean, because "cannot show it" is not an
+        answer anybody can act on and "cannot show it: no virtual-scroll" is.
+        """
+        return tuple(
+            name for name in self.requires if name not in shell.provides
+        )
+
+
+#: What a screen can ask of the shell that draws it.
+#:
+#: **A capability, never a tier.** The first shape this took was
+#: `tier: "minimal" | "enterprise"`, and it was wrong in the way that matters:
+#: it named *where* a screen runs instead of *why*, so the console could say
+#: "you cannot see this here" and nothing more, and a third shell would have
+#: needed a kernel change to exist at all. A capability set answers both — the
+#: console names the thing it lacks, and a new shell is a data entry.
+#:
+#: The vocabulary is closed for the same reason `FindingKind` is: an open one
+#: becomes a place people write sentences, and then nothing can be compared.
+#: Adding a capability is a deliberate line here, and the test below refuses one
+#: that no shell provides — an unmeetable requirement is a screen nobody can
+#: ever see, which is drift wearing a feature's clothes.
+CAPABILITIES: Mapping[str, str] = {
+    # what the stdlib console already is
+    "blocks": "compose a screen from the block manifest",
+    "table": "a column-spec table with a density axis",
+    "grid": "a card grid",
+    "chart": "bars, sparks and stat tiles",
+    "diagram": "the deterministic SVG graph",
+    "canvas": "a 2D canvas surface",
+    "sse": "a live event stream",
+    "router": "hash routes with parameters",
+    # what a built shell adds, and the stdlib one deliberately does not have
+    "webgl": "a 3D rendering context",
+    "virtual-scroll": "a list of a hundred thousand rows that stays smooth",
+    "drag": "direct manipulation — reorder, connect, drop",
+    "split-pane": "resizable panes the reader arranges",
+    "timeline": "a scrubbable time axis over the ledger",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class Shell:
+    """One thing that can draw screens, and what it can draw.
+
+    Registered as data, so a Tauri portal or a phone client joins by adding an
+    entry rather than by teaching the kernel a third name. That is the plugin
+    doctrine (invariant 6) applied to surfaces: the built-ins are declared
+    through the identical path a third party would use.
+    """
+
+    name: str
+    title: str
+    provides: frozenset[str]
+    native: bool = False        # runs with nothing outside this repository
+    built: bool = False         # needs a toolchain before it exists
+    summary: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name, "title": self.title,
+            "provides": sorted(self.provides),
+            "native": self.native, "built": self.built,
+            "summary": self.summary,
+        }
+
+
+#: Every shell this platform knows how to be. Ordered: the one that always works
+#: first.
+SHELLS: tuple[Shell, ...] = (
+    Shell(
+        name="stdlib",
+        title="The console",
+        provides=frozenset({
+            "blocks", "table", "grid", "chart", "diagram", "canvas", "sse",
+            "router", "webgl",
+        }),
+        native=True,
+        built=False,
+        summary="Stdlib-served, no build step, no CDN. Inside an air-gapped "
+                "network it is the only one that runs. `webgl` is provided "
+                "through the renderer seam, which falls back and says so when "
+                "the device cannot.",
+    ),
+    Shell(
+        name="web",
+        title="The enterprise console",
+        provides=frozenset(CAPABILITIES),
+        native=False,
+        built=True,
+        summary="React over the generated client and the same scene modules, "
+                "for the screens a block manifest genuinely cannot express: "
+                "direct manipulation, arranged panes, a scrubbable timeline, "
+                "a hundred thousand rows.",
+    ),
+)
+
+
+def shells() -> tuple[Shell, ...]:
+    return SHELLS
+
+
+def shell(name: str) -> Shell | None:
+    return next((item for item in SHELLS if item.name == name), None)
 
 
 #: The screens with a designed identity. Everything else is generated below as an
@@ -740,6 +875,25 @@ DESIGNED: tuple[Screen, ...] = (
     Screen("cycles", "/cycles", "Cycles", "operate", parent="graph",
            reads=("GET /api/cycles",), action="environment.graph",
            crumbs=("graph",)),
+    # The first screen a block manifest genuinely cannot express, and the reason
+    # `requires` exists. Not "the 3D one" — the console draws 3D perfectly well
+    # through the renderer seam. What it cannot do is the *workbench* around it:
+    # panes the reader arranges, a scrubbable axis over the ledger, and a route
+    # you drag to re-aim. Those are direct manipulation and arranged layout,
+    # which is where declarative blocks stop and code starts.
+    #
+    # It is declared here rather than only in the built shell so the console
+    # *knows about it and says so*. A screen the stdlib build silently omitted
+    # would be a capability the platform has and one surface cannot reach, which
+    # is the drift §24 exists to prevent — hidden by the interface rather than by
+    # the registry, but hidden all the same.
+    Screen("flight", "/flight/:id?", "Flight", "operate", parent="graph",
+           reads=("GET /api/impact", "GET /api/graph"),
+           verbs=("impact", "interest"),
+           action="environment.impact", crumbs=("graph",),
+           requires=("webgl", "split-pane", "timeline", "drag"),
+           summary="Fly the traversal an `impact` returned, with the reasoning "
+                   "for each hop arriving as you reach it."),
 
     Screen("station", "/station", "Environment", "operate",
            reads=("GET /api/station",), verbs=("attach", "gaps", "status"),
@@ -1096,6 +1250,25 @@ def javascript(
         block("GROUPS", {group: sorted(names) for group, names in sorted(groups.items())}),
         "",
         block("SCREENS", manifest),
+        "",
+        "/** Which shell this build is, and what it can draw.",
+        "  * A screen names what it needs (`requires`); a shell names what it",
+        "  * gives. The console can therefore say *which capability* it lacks",
+        "  * rather than \"not available here\", and a third shell joins by",
+        "  * adding a row rather than by teaching the kernel a third name. */",
+        f'export const SHELL = "stdlib";',
+        block("SHELLS", [item.to_dict() for item in shells()]),
+        "",
+        block("CAPABILITIES", dict(CAPABILITIES)),
+        "",
+        "/** What would have to exist before this shell could draw that screen.",
+        "  * Empty means it can. Never a boolean: \"cannot show it\" is not an",
+        "  * answer anybody can act on, and \"cannot show it: no timeline\" is. */",
+        "export function missingFor(screen, name = SHELL) {",
+        "  const found = SHELLS.find((item) => item.name === name);",
+        "  if (!found) return screen.requires || [];",
+        "  return (screen.requires || []).filter((need) => !found.provides.includes(need));",
+        "}",
         "",
         "/** The platform's own words, baked so the first frame paints in them.",
         "  * `core/lexicon.js` swaps in a context's vocabulary from",

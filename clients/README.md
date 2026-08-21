@@ -14,21 +14,74 @@ clients/
 
 ## Status, stated plainly
 
-These are **scaffolded, not built**. The generated client and the type
-definitions are real code; the shells are structured and their entry points are
-written, but no `npm install`, no `cargo build` and no bundling has been run —
-this repository's development environment has neither a Node nor a Rust
-toolchain, so building them here would be a claim nobody had verified.
+**`web` builds. `desktop` and `mobile` are still scaffolds.**
 
-What *is* verified, by `tests/test_slpie_contract.py`:
+This paragraph used to say that the environment had no Node toolchain and that
+building here would be a claim nobody had verified. That is no longer true —
+Node 22 is present — and the first thing running the build did was find a
+defect the whole test suite had missed: the generated TypeScript client did not
+compile, and never had. It emitted `max-bytes?: number` into a type literal,
+which is not a property name TypeScript can parse.
 
-- the generated TypeScript covers every verb, and is byte-identical across runs;
-- the contract's route set matches the stdlib server's exactly;
-- the type graph the client checks against is the server's own.
+Nothing caught it because every test around the emitter asserted the output was
+**total** (every verb present) and **deterministic** (byte-identical across
+runs) and none asserted it was **valid**. A generator can be perfectly
+reproducible and reproducibly wrong. `tests/test_slpie_clients.py` now checks
+the property names in pure Python, and the opt-in job actually compiles.
 
-So the seam these shells attach to is proven even though the shells are not
-compiled. That is the honest division: the contract is tested, the bundling is
-not.
+## `web` — and the rule that keeps two shells one product
+
+The stdlib console is deliberately minimal, and it has a real ceiling. Blocks
+as data render tables, grids, metrics and the composed inspector. What they
+cannot express is a screen whose behaviour *is* the interaction — panes the
+reader drags to size, a scrubbable axis over the ledger, a route you re-aim by
+dragging. That is code, and pretending otherwise turns the manifest into a bad
+framework.
+
+So `web` exists, and it holds exactly those screens. What it does **not** do is
+hold a second copy of anything:
+
+```
+clients/web/src/scene/  →  @scene/*  →  slpie/ui/app/engine/*
+```
+
+The alias points at ring 0's renderer tier, and the shells share the *scene* —
+projection, deterministic layout, region colouring, glyph geometry,
+aggregation — verbatim. Not a port kept in step by discipline: the same files.
+`test_no_scene_module_is_copied_into_a_client` compares content digests, so a
+copy made under a new name still fails.
+
+It shares the scene and **not the console**: `core/`, `ui/` and `screens/` are
+the stdlib shell's own DOM helpers, components and router, and reaching into
+them would couple a built shell to a rendering strategy rather than to a model.
+That is asserted too.
+
+TypeScript checks this package against the ring-0 JavaScript directly
+(`allowJs`), so there is no `.d.ts` to go stale — a declaration file would be a
+build artifact in a directory that deliberately has no build step.
+
+## Which screens land here, and why
+
+Not a tier. A screen declares what it **needs** (`Screen.requires`) and a shell
+declares what it **gives** (`contract.SHELLS`), so the console can name the
+missing capability instead of saying "not available here", and a third shell
+joins by adding a row. `GET /api/shells` reports both sides.
+
+Today: 33 of 34 screens render in the stdlib console. `flight` does not, and
+the console says so — it needs `split-pane`, `timeline` and `drag`.
+
+## Building it
+
+```bash
+cd clients/web
+npm install
+npm run build        # tsc --noEmit && vite build
+npm run dev
+```
+
+Three code-splits into its own chunk and is fetched on demand, because the seam
+resolves it through a dynamic import rather than a static one — the same
+mechanism that lets the stdlib console run without it at all.
 
 ## The stdlib UI is not one of these
 

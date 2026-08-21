@@ -210,7 +210,7 @@ export class SlpieClient {
   }
 
   /** what has moved since the last scan, and what it would cost */
-  async changed(params: { path?: string; baseline?: string; commit?: boolean; strict?: boolean; lenient?: boolean; limit?: number; max-bytes?: number; upstream?: Flow } = {}): Promise<Flow> {
+  async changed(params: { path?: string; baseline?: string; commit?: boolean; strict?: boolean; lenient?: boolean; limit?: number; "max-bytes"?: number; upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/changed`, params);
   }
 

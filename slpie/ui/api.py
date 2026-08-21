@@ -432,6 +432,38 @@ class Api:
                 return {"attached": False, "calls": 0}
             return {"attached": True, **self.gateway.analytics.summary()}
 
+        @self.route("GET", "/api/shells")
+        def shells(_request: Request) -> Any:
+            """Every shell this platform knows how to be, and what each can draw.
+
+            The honest half of the block-manifest model. Screens-as-data has a
+            real ceiling — direct manipulation, arranged panes and a scrubbable
+            axis are code, not a declaration — and the failure mode is a console
+            that quietly does not mention the screens above that line. This
+            route is what stops that: each screen names what it *needs*, each
+            shell names what it *gives*, and anything one cannot draw is
+            reported with the missing capability named rather than omitted.
+            """
+            from .contract import CAPABILITIES, screens as manifest, shells as known
+
+            rows = manifest(verbs=self.verbs, routes=self.routes)
+            return {
+                "capabilities": dict(CAPABILITIES),
+                "shells": [
+                    {
+                        **item.to_dict(),
+                        "renders": sorted(
+                            screen.key for screen in rows if screen.renders_in(item)
+                        ),
+                        "cannot": {
+                            screen.key: list(screen.missing_from(item))
+                            for screen in rows if not screen.renders_in(item)
+                        },
+                    }
+                    for item in known()
+                ],
+            }
+
         @self.route("GET", "/api/screens")
         def screens(_request: Request) -> Any:
             """The screen manifest, so the shell does not restate the routing.

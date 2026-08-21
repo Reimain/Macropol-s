@@ -1591,7 +1591,8 @@ export const SCREENS = Object.freeze([
     "parent": "",
     "summary": "Ask about this environment and get the answer with the reasoning that produced it and the gaps that limit it.",
     "authored": true,
-    "blocks": []
+    "blocks": [],
+    "requires": []
   },
   {
     "key": "compose",
@@ -1611,7 +1612,8 @@ export const SCREENS = Object.freeze([
     "parent": "",
     "summary": "Build a pipeline from typed verbs. Invalid compositions are refused before anything runs.",
     "authored": true,
-    "blocks": []
+    "blocks": [],
+    "requires": []
   },
   {
     "key": "findings",
@@ -1636,7 +1638,8 @@ export const SCREENS = Object.freeze([
     "parent": "",
     "summary": "Everything the rules raised, ranked by severity, each with its evidence and a remediation.",
     "authored": true,
-    "blocks": []
+    "blocks": [],
+    "requires": []
   },
   {
     "key": "graph",
@@ -1662,7 +1665,8 @@ export const SCREENS = Object.freeze([
     "parent": "",
     "summary": "Nodes and edges as the platform observed them, shaded by the confidence of the evidence behind each one.",
     "authored": true,
-    "blocks": []
+    "blocks": [],
+    "requires": []
   },
   {
     "key": "cycles",
@@ -1691,6 +1695,54 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
+    ],
+    "requires": []
+  },
+  {
+    "key": "flight",
+    "path": "/flight/:id?",
+    "title": "Flight",
+    "section": "operate",
+    "reads": [
+      "GET /api/impact",
+      "GET /api/graph"
+    ],
+    "verbs": [
+      "impact",
+      "interest"
+    ],
+    "events": [],
+    "action": "environment.impact",
+    "resource": "*",
+    "crumbs": [
+      "graph"
+    ],
+    "parent": "graph",
+    "summary": "Fly the traversal an `impact` returned, with the reasoning for each hop arriving as you reach it.",
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/impact",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      },
+      {
+        "component": "auto",
+        "source": "GET /api/graph",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ],
+    "requires": [
+      "webgl",
+      "split-pane",
+      "timeline",
+      "drag"
     ]
   },
   {
@@ -1724,7 +1776,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "node",
@@ -1756,7 +1809,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "ledger",
@@ -1801,7 +1855,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "history",
@@ -1841,7 +1896,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "simulator",
@@ -1892,7 +1948,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "station",
@@ -1926,7 +1983,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "reconcile",
@@ -1960,7 +2018,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "verbs",
@@ -1978,7 +2037,8 @@ export const SCREENS = Object.freeze([
     "parent": "",
     "summary": "Every capability this build has, as a typed verb. Each one is reachable from the CLI, the API and a pipeline.",
     "authored": true,
-    "blocks": []
+    "blocks": [],
+    "requires": []
   },
   {
     "key": "group-analysis",
@@ -2010,7 +2070,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "group-artifacts",
@@ -2042,7 +2103,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "group-audit",
@@ -2072,7 +2134,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "group-capture",
@@ -2103,7 +2166,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "group-context",
@@ -2133,7 +2197,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "group-dispatch",
@@ -2163,7 +2228,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "group-incremental",
@@ -2192,7 +2258,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "group-rivals",
@@ -2221,7 +2288,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "group-shaping",
@@ -2256,7 +2324,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "route-lexicon",
@@ -2285,7 +2354,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "route-screens",
@@ -2314,7 +2384,38 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
+  },
+  {
+    "key": "route-shells",
+    "path": "/inspect/shells",
+    "title": "Shells",
+    "section": "build",
+    "reads": [
+      "GET /api/shells"
+    ],
+    "verbs": [],
+    "events": [],
+    "action": "platform.discover",
+    "resource": "*",
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
+    "authored": false,
+    "blocks": [
+      {
+        "component": "auto",
+        "source": "GET /api/shells",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ],
+    "requires": []
   },
   {
     "key": "catalog",
@@ -2339,7 +2440,8 @@ export const SCREENS = Object.freeze([
     "parent": "",
     "summary": "Tenants, realms, datasets and objects \u2014 everything the platform has catalogued, with its lineage.",
     "authored": true,
-    "blocks": []
+    "blocks": [],
+    "requires": []
   },
   {
     "key": "gateway",
@@ -2384,7 +2486,8 @@ export const SCREENS = Object.freeze([
         ],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "actions",
@@ -2454,7 +2557,8 @@ export const SCREENS = Object.freeze([
         ],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "analytics",
@@ -2483,7 +2587,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "throttling",
@@ -2569,7 +2674,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "keys",
@@ -2596,7 +2702,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "portal",
@@ -2674,7 +2781,8 @@ export const SCREENS = Object.freeze([
         ],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "publisher",
@@ -2800,7 +2908,8 @@ export const SCREENS = Object.freeze([
         "columns": [],
         "options": {}
       }
-    ]
+    ],
+    "requires": []
   },
   {
     "key": "workspaces",
@@ -2819,9 +2928,84 @@ export const SCREENS = Object.freeze([
     "parent": "",
     "summary": "Tenancy, quotas and headroom, and the grants that decide who may read which dataset.",
     "authored": true,
-    "blocks": []
+    "blocks": [],
+    "requires": []
   }
 ]);
+
+/** Which shell this build is, and what it can draw.
+  * A screen names what it needs (`requires`); a shell names what it
+  * gives. The console can therefore say *which capability* it lacks
+  * rather than "not available here", and a third shell joins by
+  * adding a row rather than by teaching the kernel a third name. */
+export const SHELL = "stdlib";
+export const SHELLS = Object.freeze([
+  {
+    "name": "stdlib",
+    "title": "The console",
+    "provides": [
+      "blocks",
+      "canvas",
+      "chart",
+      "diagram",
+      "grid",
+      "router",
+      "sse",
+      "table",
+      "webgl"
+    ],
+    "native": true,
+    "built": false,
+    "summary": "Stdlib-served, no build step, no CDN. Inside an air-gapped network it is the only one that runs. `webgl` is provided through the renderer seam, which falls back and says so when the device cannot."
+  },
+  {
+    "name": "web",
+    "title": "The enterprise console",
+    "provides": [
+      "blocks",
+      "canvas",
+      "chart",
+      "diagram",
+      "drag",
+      "grid",
+      "router",
+      "split-pane",
+      "sse",
+      "table",
+      "timeline",
+      "virtual-scroll",
+      "webgl"
+    ],
+    "native": false,
+    "built": true,
+    "summary": "React over the generated client and the same scene modules, for the screens a block manifest genuinely cannot express: direct manipulation, arranged panes, a scrubbable timeline, a hundred thousand rows."
+  }
+]);
+
+export const CAPABILITIES = Object.freeze({
+  "blocks": "compose a screen from the block manifest",
+  "table": "a column-spec table with a density axis",
+  "grid": "a card grid",
+  "chart": "bars, sparks and stat tiles",
+  "diagram": "the deterministic SVG graph",
+  "canvas": "a 2D canvas surface",
+  "sse": "a live event stream",
+  "router": "hash routes with parameters",
+  "webgl": "a 3D rendering context",
+  "virtual-scroll": "a list of a hundred thousand rows that stays smooth",
+  "drag": "direct manipulation \u2014 reorder, connect, drop",
+  "split-pane": "resizable panes the reader arranges",
+  "timeline": "a scrubbable time axis over the ledger"
+});
+
+/** What would have to exist before this shell could draw that screen.
+  * Empty means it can. Never a boolean: "cannot show it" is not an
+  * answer anybody can act on, and "cannot show it: no timeline" is. */
+export function missingFor(screen, name = SHELL) {
+  const found = SHELLS.find((item) => item.name === name);
+  if (!found) return screen.requires || [];
+  return (screen.requires || []).filter((need) => !found.provides.includes(need));
+}
 
 /** The platform's own words, baked so the first frame paints in them.
   * `core/lexicon.js` swaps in a context's vocabulary from
@@ -3310,6 +3494,11 @@ export const ROUTES = Object.freeze([
   {
     "method": "GET",
     "path": "/api/search",
+    "transport": "json"
+  },
+  {
+    "method": "GET",
+    "path": "/api/shells",
     "transport": "json"
   },
   {

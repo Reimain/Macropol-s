@@ -1615,3 +1615,68 @@ def test_the_vendored_engine_draws_the_same_marks_as_the_native_one(page, served
         f"\\n  {result['nodes']} nodes, {native['marks']} marks:"
         f"  canvas2d {native['fps']}fps   three {vendored['fps']}fps",
     )
+
+
+# --- what this shell cannot draw, and what it says about it --------------------
+
+
+def test_a_screen_this_shell_cannot_draw_says_which_capability_it_needs(page, served):
+    """The honest half of the block-manifest model.
+
+    Screens-as-data has a real ceiling — direct manipulation, arranged panes and
+    a scrubbable axis are code, not a declaration — and the failure mode is a
+    console that quietly omits the screens above that line. A screen the
+    interface silently left out would be a capability the platform has and one
+    surface cannot reach, which is the drift §24 exists to prevent; hidden by
+    the interface rather than by the registry, but hidden all the same.
+
+    So it is *reported*, with the missing capability named, and rendered as a
+    refusal — accent, never the danger colour, because needing a different
+    shell is a policy fact and not a fault.
+    """
+    _open(page, served, "#/flight")
+    page.wait_for_timeout(300)
+
+    body = page.inner_text("#outlet")
+    assert "Flight" in body
+    for capability in ("split-pane", "timeline", "drag"):
+        assert capability in body, f"the refusal does not name {capability}"
+
+    kind = page.eval_on_selector_all(
+        "#outlet .refusal, #outlet .fault", "els => els.map(e => e.className)",
+    )
+    assert kind and all("refusal" in name for name in kind), (
+        f"a shell mismatch rendered as a fault rather than a refusal: {kind}"
+    )
+    assert not _faults(page)
+
+
+def test_the_rail_does_not_offer_what_this_shell_cannot_draw(page, served):
+    """Hiding is a convenience, never the control.
+
+    The same rule the RBAC-filtered nav follows: the screen stays in the
+    manifest, stays reachable by its hash, and answers with a reason. What the
+    rail does is decline to advertise a door that opens onto an explanation.
+    """
+    _open(page, served)
+
+    listed = page.eval_on_selector_all(
+        ".rail nav a", "els => els.map(e => e.textContent.trim())",
+    )
+    assert listed, "the rail rendered nothing"
+    assert "Flight" not in listed
+
+    shells = page.evaluate("""
+      import('/data/client.js').then((client) => ({
+        shell: client.SHELL,
+        flight: client.missingFor(
+          client.SCREENS.find((s) => s.key === 'flight'), client.SHELL),
+        console: client.missingFor(
+          client.SCREENS.find((s) => s.key === 'console'), client.SHELL),
+        shells: client.SHELLS.map((s) => s.name),
+      }))
+    """)
+    assert shells["shell"] == "stdlib"
+    assert sorted(shells["flight"]) == ["drag", "split-pane", "timeline"]
+    assert shells["console"] == []
+    assert shells["shells"] == ["stdlib", "web"]
