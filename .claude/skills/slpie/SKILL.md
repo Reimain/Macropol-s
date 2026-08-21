@@ -207,7 +207,7 @@ enterprise rings, which is why 14–18 look untouched.
 | 15 — Postgres persistence | done: `slpie_enterprise/persistence/`, conformant against a real database in `enterprise.yml` |
 | 16 — FastAPI, Celery, frameworks | done: one route table over two servers, a runner that counts what it could not distribute, routes read with `ast` |
 | 17 — clients | done for `web`: real data, shell capabilities, shared tokens, the ride, auth, a browser tier over the built bundle. `desktop` and `mobile` are scaffolds **and say so, tested** |
-| 18 — deployment | not started |
+| 18 — deployment | done except the cost model: `slpie/deploy/` (manifest, plan, six emitters, generated `INSTALL.md`, five verbs) with `slpie_enterprise/deploy/` applying. `deploy-apply` needs **both** `target: apply` in the manifest and `--confirm`, refused by `binding/guard.py` |
 
 **Phase 17's web shell never needed 16**: it talks to the stdlib server over the
 same generated client, which is why it built before either ring-1 phase existed.

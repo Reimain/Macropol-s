@@ -12,6 +12,7 @@ Eleven families, split by what they need rather than by what they are about:
 * `intelligence` — what L5–L8 concluded, and the guidance assembled from it.
 * `governance` — the rule plane: many findings, never one verdict.
 * `artifacts` — what a release ships: SBOM, C4, architecture as code.
+* `deploy` — the topology as a declaration: plan, render, manual, status, apply.
 * `incremental` — what moved since last time, and the agent tool set.
 * `shaping` — the polymorphic shell filters.
 * `environment` — needs a manifest, a ledger and a graph.
@@ -33,6 +34,7 @@ from . import (
     audit,
     capture,
     context,
+    deploy,
     dispatch,
     environment,
     governance,
@@ -60,6 +62,7 @@ FAMILIES = (
     _Family(artifacts), _Family(capture), _Family(audit), _Family(shaping),
     _Family(guidance), _Family(incremental), _Family(dispatch),
     _Family(environment), _Family(rivals), _Family(context),
+    _Family(deploy),
 )
 
 

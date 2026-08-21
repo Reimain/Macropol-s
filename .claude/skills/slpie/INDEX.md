@@ -15,9 +15,9 @@ stale — regenerate it with `slpie context --skill`. It cannot disagree for lon
 
 ## At a glance
 
-- **digest** `15d107f38d9a3bbad3c1565f0af12e53d741843da0f74ce460649e1c700c2417`
-- **facets** 713 — 52 component, 21 kind, 297 module, 68 package, 93 route, 35 screen, 17 section, 79 test, 51 verb
-- **anchored** 98.7% resolve to a file and a line
+- **digest** `0c898162cfb3761fce844b7e6e5be6e4a4cd51106c3c107f4ee5b92fa4540cd7`
+- **facets** 744 — 52 component, 21 kind, 311 module, 70 package, 98 route, 36 screen, 19 section, 81 test, 56 verb
+- **anchored** 99.2% resolve to a file and a line
 - **dangling** 0 link(s) point at a facet that does not exist
 
 A dangling link is drift with an address attached — a screen reading a route nobody serves, or a test covering a module that was deleted. The number above is meant to be zero, and when it is not, `slpie context --json` names each one.
@@ -41,6 +41,11 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 | `context` | context | nothing → report | `slpie/context/verbs.py:123` | group-context |
 | `count` | shaping | any → same | `slpie/compose/verbs/shaping.py:210` | group-shaping |
 | `declare` | environment | nothing → elements | `slpie/compose/verbs/environment.py:333` | reconcile |
+| `deploy-apply` | deploy | nothing → report | `slpie/compose/verbs/deploy.py:341` | group-deploy |
+| `deploy-manual` | deploy | nothing → text | `slpie/compose/verbs/deploy.py:311` | group-deploy |
+| `deploy-plan` | deploy | nothing → report | `slpie/compose/verbs/deploy.py:270` | group-deploy |
+| `deploy-render` | deploy | nothing → report | `slpie/compose/verbs/deploy.py:286` | group-deploy |
+| `deploy-status` | deploy | nothing → report | `slpie/compose/verbs/deploy.py:328` | group-deploy |
 | `discover` | analysis | nothing → observations | `slpie/compose/verbs/analysis.py:424` | group-analysis |
 | `dismiss` | guidance | any → same | `slpie/compose/verbs/guidance.py:300` | console |
 | `enterprise` | artifacts | observations → report | `slpie/compose/verbs/artifacts.py:342` | group-artifacts |
@@ -82,10 +87,16 @@ Every verb, its type signature, where it is declared, and the screen that runs i
 
 ## Where no test names the code
 
-2 module(s) under `slpie/` that no test file imports, directly or through their package. Not a coverage number — `pytest --cov` measures what *ran*, this measures what is *named* — but it is the cheap question a reader actually has: where would I look for a test of this.
+8 module(s) under `slpie/` that no test file imports, directly or through their package. Not a coverage number — `pytest --cov` measures what *ran*, this measures what is *named* — but it is the cheap question a reader actually has: where would I look for a test of this.
 
 | module | source |
 |---|---|
+| `slpie.deploy.emitters.compose` | slpie/deploy/emitters/compose.py:1 |
+| `slpie.deploy.emitters.helm` | slpie/deploy/emitters/helm.py:1 |
+| `slpie.deploy.emitters.kubernetes` | slpie/deploy/emitters/kubernetes.py:1 |
+| `slpie.deploy.emitters.pipelines` | slpie/deploy/emitters/pipelines.py:1 |
+| `slpie.deploy.emitters.systemd` | slpie/deploy/emitters/systemd.py:1 |
+| `slpie.deploy.emitters.terraform` | slpie/deploy/emitters/terraform.py:1 |
 | `slpie.governance.security.advisories` | slpie/governance/security/advisories.py:1 |
 | `slpie.artifacts` | slpie/artifacts/__init__.py:1 |
 
@@ -98,17 +109,19 @@ Derived from the `§NN` references modules write in their own docstrings — nev
 | §12 | 2 | `slpie.context`, `slpie.reasoning` |
 | §14 | 1 | `slpie.core` |
 | §15 | 2 | `slpie.compose`, `slpie.dispatch` |
-| §16 | 1 | `slpie.context` |
-| §18 | 1 | `slpie.context` |
+| §16 | 3 | `slpie.compose.verbs`, `slpie.context`, `slpie.deploy` |
+| §18 | 5 | `slpie.context`, `slpie.deploy`, `slpie.deploy.emitters` |
 | §19 | 1 | `slpie.demo` |
 | §2 | 1 | `slpie.workspace` |
 | §22 | 1 | `slpie.graph` |
 | §23 | 2 | `slpie.core` |
-| §24 | 7 | `slpie.compose`, `slpie.compose.verbs`, `slpie.dispatch`, `slpie.ui` |
-| §25 | 4 | `slpie.compose.verbs`, `slpie.context` |
+| §24 | 8 | `slpie.compose`, `slpie.compose.verbs`, `slpie.deploy`, `slpie.dispatch`, `slpie.ui` |
+| §25 | 5 | `slpie.compose.verbs`, `slpie.context`, `slpie.deploy` |
 | §26 | 2 | `slpie.apim`, `slpie.compose.verbs` |
-| §27 | 2 | `slpie.compose.verbs`, `slpie.dispatch` |
-| §30 | 2 | `slpie.context`, `slpie.core` |
+| §27 | 3 | `slpie.compose.verbs`, `slpie.deploy`, `slpie.dispatch` |
+| §29 | 1 | `slpie.deploy` |
+| §3 | 1 | `slpie.deploy` |
+| §30 | 3 | `slpie.context`, `slpie.core`, `slpie.deploy` |
 | §31 | 4 | `slpie.compose.verbs`, `slpie.context` |
 | §32 | 1 | `slpie.graph` |
 | §6 | 1 | `slpie.compose` |
@@ -131,7 +144,7 @@ Destinations only. A screen with a parent is a *view of* something and renders a
 | `publisher` | api | generated | — | 2 |
 | `simulator` | operate | generated | — | 1 |
 | `station` | operate | generated | reconcile | 1 |
-| `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-dispatch, group-incremental, group-rivals, group-shaping, route-lexicon, route-screens, route-shells | 1 |
+| `verbs` | build | authored | group-analysis, group-artifacts, group-audit, group-capture, group-context, group-deploy, group-dispatch, group-incremental, group-rivals, group-shaping, route-lexicon, route-screens, route-shells | 1 |
 | `workspaces` | admin | authored | — | 2 |
 
 ## The browser vocabulary
@@ -160,12 +173,9 @@ Kept and counted, never dropped. An index that silently omitted what it could no
 |---|---|
 | `section:12` | section |
 | `section:14` | section |
-| `section:16` | section |
-| `section:18` | section |
 | `section:19` | section |
 | `section:25` | section |
 | `section:26` | section |
-| `section:27` | section |
 | `section:6` | section |
 
 ## Open findings

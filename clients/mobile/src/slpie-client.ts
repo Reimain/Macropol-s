@@ -66,6 +66,11 @@ export const VERB_TYPES = {
   "context": { consumes: "nothing", produces: "report", mutates: false },
   "count": { consumes: "any", produces: "same", mutates: false },
   "declare": { consumes: "nothing", produces: "elements", mutates: false },
+  "deploy-apply": { consumes: "nothing", produces: "report", mutates: true },
+  "deploy-manual": { consumes: "nothing", produces: "text", mutates: false },
+  "deploy-plan": { consumes: "nothing", produces: "report", mutates: false },
+  "deploy-render": { consumes: "nothing", produces: "report", mutates: false },
+  "deploy-status": { consumes: "nothing", produces: "report", mutates: false },
   "discover": { consumes: "nothing", produces: "observations", mutates: false },
   "dismiss": { consumes: "any", produces: "same", mutates: false },
   "enterprise": { consumes: "observations", produces: "report", mutates: false },
@@ -275,6 +280,31 @@ export class SlpieClient {
   /** build the skeleton graph from the manifest, before reading a file */
   async declare(params: { upstream?: Flow } = {}): Promise<Flow> {
     return this.post(`/api/v/declare`, params);
+  }
+
+  /** make it so — gated by the same guard as `target --to live` */
+  async deployApply(params: { manifest?: string; emitter?: "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; upstream?: Flow; confirmed?: boolean } = {}): Promise<Flow> {
+    return this.post(`/api/v/deploy-apply`, params);
+  }
+
+  /** the install document, generated so it cannot drift */
+  async deployManual(params: { manifest?: string; emitter?: "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; out?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/deploy-manual`, params);
+  }
+
+  /** the diff between the declared topology and the running one */
+  async deployPlan(params: { manifest?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/deploy-plan`, params);
+  }
+
+  /** emit the deployment artifacts, reviewable before anything runs */
+  async deployRender(params: { manifest?: string; emitter?: "compose" | "helm" | "kubernetes" | "pipelines" | "systemd" | "terraform"; write?: boolean; out?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/deploy-render`, params);
+  }
+
+  /** what is declared, and whether anything is running to match */
+  async deployStatus(params: { manifest?: string; upstream?: Flow } = {}): Promise<Flow> {
+    return this.post(`/api/v/deploy-status`, params);
   }
 
   /** read a tree and record what every discoverer finds */

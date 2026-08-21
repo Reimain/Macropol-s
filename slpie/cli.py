@@ -129,6 +129,29 @@ class Cli:
 
         return self._run(arguments)
 
+    def _joined(self, arguments: list[str]) -> list[str]:
+        """`deploy plan` → `deploy-plan`, when that is a verb and `deploy` is not.
+
+        A general rule rather than a special case for one family. Verb names are
+        globally unique, so a family with a common name — `status`, `plan`,
+        `apply` — has to carry its group, exactly as `agent-tools` does. Typing
+        the hyphen is a poor thing to require of somebody who has just read
+        `slpie deploy plan` in the install manual, and joining a two-token head
+        costs one lookup.
+
+        It cannot shadow anything: the join happens only when the *first* token
+        is not itself a verb, so a real verb followed by a positional argument
+        is never rewritten. Applied after `_split`, because before it the first
+        token can still be a global flag — `slpie --root /x deploy plan` would
+        otherwise try to join `--root` to a path.
+        """
+        if len(arguments) < 2 or arguments[0] in self.verbs:
+            return arguments
+        candidate = f"{arguments[0]}-{arguments[1]}"
+        if candidate in self.verbs:
+            return [candidate, *arguments[2:]]
+        return arguments
+
     def _routine_key(self, head: str) -> str | None:
         """A claimed key to its composition.
 
@@ -422,6 +445,7 @@ class Cli:
 
     def _run(self, arguments: Sequence[str]) -> int:
         options, rest = self._split(arguments)
+        rest = self._joined(rest)
         if not rest:
             self._err("nothing to run. `slpie help` lists every verb")
             return USAGE

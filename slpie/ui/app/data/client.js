@@ -401,6 +401,173 @@ export const VERBS = Object.freeze({
       "declare | count"
     ]
   },
+  "deploy-apply": {
+    "group": "deploy",
+    "summary": "make it so \u2014 gated by the same guard as `target --to live`",
+    "consumes": "nothing",
+    "produces": "report",
+    "mutates": true,
+    "source": true,
+    "params": [
+      {
+        "name": "manifest",
+        "type": "str",
+        "help": "a deployment manifest elsewhere than ./slpie.deployment.yaml",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "emitter",
+        "type": "str",
+        "help": "which platform to render for",
+        "required": false,
+        "choices": [
+          "compose",
+          "helm",
+          "kubernetes",
+          "pipelines",
+          "systemd",
+          "terraform"
+        ]
+      }
+    ],
+    "examples": [
+      "deploy-apply"
+    ]
+  },
+  "deploy-manual": {
+    "group": "deploy",
+    "summary": "the install document, generated so it cannot drift",
+    "consumes": "nothing",
+    "produces": "text",
+    "mutates": false,
+    "source": true,
+    "params": [
+      {
+        "name": "manifest",
+        "type": "str",
+        "help": "a deployment manifest elsewhere than ./slpie.deployment.yaml",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "emitter",
+        "type": "str",
+        "help": "which platform to render for",
+        "required": false,
+        "choices": [
+          "compose",
+          "helm",
+          "kubernetes",
+          "pipelines",
+          "systemd",
+          "terraform"
+        ]
+      },
+      {
+        "name": "out",
+        "type": "str",
+        "help": "write it here, e.g. docs/INSTALL.md",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "deploy-manual",
+      "deploy-manual --out docs/INSTALL.md"
+    ]
+  },
+  "deploy-plan": {
+    "group": "deploy",
+    "summary": "the diff between the declared topology and the running one",
+    "consumes": "nothing",
+    "produces": "report",
+    "mutates": false,
+    "source": true,
+    "params": [
+      {
+        "name": "manifest",
+        "type": "str",
+        "help": "a deployment manifest elsewhere than ./slpie.deployment.yaml",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "deploy-plan",
+      "deploy-plan --manifest ./ops/prod.yaml"
+    ]
+  },
+  "deploy-render": {
+    "group": "deploy",
+    "summary": "emit the deployment artifacts, reviewable before anything runs",
+    "consumes": "nothing",
+    "produces": "report",
+    "mutates": false,
+    "source": true,
+    "params": [
+      {
+        "name": "manifest",
+        "type": "str",
+        "help": "a deployment manifest elsewhere than ./slpie.deployment.yaml",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "emitter",
+        "type": "str",
+        "help": "which platform to render for",
+        "required": false,
+        "choices": [
+          "compose",
+          "helm",
+          "kubernetes",
+          "pipelines",
+          "systemd",
+          "terraform"
+        ]
+      },
+      {
+        "name": "write",
+        "type": "bool",
+        "help": "write the files instead of returning them",
+        "required": false,
+        "choices": []
+      },
+      {
+        "name": "out",
+        "type": "str",
+        "help": "where to write them",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "deploy-render",
+      "deploy-render --emitter terraform",
+      "deploy-render --emitter compose --write"
+    ]
+  },
+  "deploy-status": {
+    "group": "deploy",
+    "summary": "what is declared, and whether anything is running to match",
+    "consumes": "nothing",
+    "produces": "report",
+    "mutates": false,
+    "source": true,
+    "params": [
+      {
+        "name": "manifest",
+        "type": "str",
+        "help": "a deployment manifest elsewhere than ./slpie.deployment.yaml",
+        "required": false,
+        "choices": []
+      }
+    ],
+    "examples": [
+      "deploy-status"
+    ]
+  },
   "discover": {
     "group": "analysis",
     "summary": "read a tree and record what every discoverer finds",
@@ -1511,6 +1678,13 @@ export const GROUPS = Object.freeze({
     "context",
     "lexicon"
   ],
+  "deploy": [
+    "deploy-apply",
+    "deploy-manual",
+    "deploy-plan",
+    "deploy-render",
+    "deploy-status"
+  ],
   "dispatch": [
     "history",
     "tool",
@@ -2181,6 +2355,40 @@ export const SCREENS = Object.freeze([
     ],
     "events": [],
     "action": "context.*",
+    "resource": "*",
+    "crumbs": [
+      "verbs"
+    ],
+    "parent": "verbs",
+    "summary": "",
+    "authored": false,
+    "blocks": [
+      {
+        "component": "runner",
+        "source": "",
+        "select": "",
+        "title": "",
+        "columns": [],
+        "options": {}
+      }
+    ],
+    "requires": []
+  },
+  {
+    "key": "group-deploy",
+    "path": "/inspect/deploy",
+    "title": "Deploy",
+    "section": "build",
+    "reads": [],
+    "verbs": [
+      "deploy-apply",
+      "deploy-manual",
+      "deploy-plan",
+      "deploy-render",
+      "deploy-status"
+    ],
+    "events": [],
+    "action": "deploy.*",
     "resource": "*",
     "crumbs": [
       "verbs"
@@ -3068,6 +3276,11 @@ export const LEXICON = Object.freeze({
     "plural": "demos",
     "gloss": "one script, projected to a terminal or to screens."
   },
+  "deploy": {
+    "word": "deploy",
+    "plural": "deploys",
+    "gloss": "the same move the environment manifest makes."
+  },
   "discovery": {
     "word": "discovery",
     "plural": "discoveries",
@@ -3629,6 +3842,31 @@ export const ROUTES = Object.freeze([
   {
     "method": "POST",
     "path": "/api/v/declare",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/deploy-apply",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/deploy-manual",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/deploy-plan",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/deploy-render",
+    "transport": "json"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v/deploy-status",
     "transport": "json"
   },
   {

@@ -388,6 +388,81 @@ def drive_real_tree(run: Run, verbs: Any, workspace: Path) -> None:
         drive("lexicon", **here)
         drive("lexicon | count", **here)
 
+    # The throwaway workspace, not the checkout: a deployment manifest and a
+    # rendered `./deploy/` tree have no business appearing in somebody's repo
+    # because they ran the acceptance script.
+    drive_deployment(run, drive, workspace)
+
+
+def drive_deployment(run: Run, drive: Driver, root: Path) -> None:
+    """The platform deploying itself, up to the point where it would touch something.
+
+    A deployment manifest is written, planned, rendered through every emitter and
+    turned into an install document — and then the run **stops**, because the next
+    step changes infrastructure and this script is not the place to find out
+    whether the confirmation works. That it refuses is asserted in
+    `tests/test_slpie_deploy.py`, through the real guard.
+
+    Rendering every emitter rather than one is the point: an emitter nobody runs
+    is an emitter that has stopped working, and the acceptance run exists to
+    notice exactly that.
+    """
+    from slpie.deploy import emitters
+
+    here = {"root": str(root)}
+    (root / "slpie.deployment.yaml").write_text(DEPLOYMENT, encoding="utf-8")
+
+    with timed(run, "deploy itself, up to the gate"):
+        planned = drive("deploy-plan", **here)
+        run.facts["deploy_changes"] = (
+            planned.flow.facts.get("changes", 0) if planned else 0
+        )
+        drive("deploy-status", **here)
+        for emitter in emitters.names():
+            drive(f"deploy-render --emitter {emitter}", **here)
+        drive("deploy-render --emitter compose --write", **here)
+        drive("deploy-manual --emitter compose", **here)
+
+        # `deploy-apply`, reached rather than merely refused — and it cannot
+        # apply anything, for a reason that is structural rather than lucky:
+        #
+        #   * no engine is passed, so `apply_through` finds no adapter and
+        #     returns a capability gap before touching a command;
+        #   * ring 0 does not shell out at all, so there is nothing for it to
+        #     reach even if it wanted to.
+        #
+        # The refusal path is asserted in `tests/test_slpie_deploy.py` through
+        # the real guard, which is where a *gate* belongs. What this run is for
+        # is coverage: a verb nobody executes is a verb nobody would notice
+        # breaking, and that includes the dangerous one.
+        applying = root / "applying"
+        applying.mkdir(exist_ok=True)
+        (applying / "slpie.deployment.yaml").write_text(
+            DEPLOYMENT.replace("target: plan", "target: apply"), encoding="utf-8")
+        outcome = drive("deploy-apply", root=str(applying), confirmed=True)
+        if outcome and outcome.flow.value.get("applied"):
+            run.note("deploy-apply reported success with no adapter installed")
+
+
+#: What this platform declares about itself. Compose, because it is the one a
+#: single machine can actually stand up — which is what §18's acceptance needs.
+DEPLOYMENT = """
+apiVersion: slpie/v1
+kind: Deployment
+environment: slpie-acceptance
+target: plan
+
+topology:
+  api: { replicas: 1, cpu: 1, memory: 1Gi, ingress: slpie.local }
+  workers: { min: 1, max: 4, cpu: 2, memory: 2Gi, queues: [scan, reason] }
+
+persistence:
+  graph: { engine: postgres, size: 10Gi }
+
+platform: compose
+cloud: onprem
+"""
+
 
 # --- the claims -------------------------------------------------------------
 

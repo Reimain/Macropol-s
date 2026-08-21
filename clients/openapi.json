@@ -2901,6 +2901,464 @@
         }
       }
     },
+    "/api/v/deploy-apply": {
+      "post": {
+        "summary": "make it so \u2014 gated by the same guard as `target --to live`",
+        "description": "Refused without confirmation by `binding/guard.py`, which is the object that refuses an unconfirmed live binding. There is no second gate: a second implementation of a confirmation is a second set of bugs, and only one of them gets patched. Ring 0 emits text and does not shell out, so absent the enterprise adapter this reports a capability gap naming what is missing rather than failing or, worse, appearing to succeed.",
+        "operationId": "verb_deploy_apply",
+        "tags": [
+          "deploy"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": true,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "manifest": {
+                    "type": "string",
+                    "description": "a deployment manifest elsewhere than ./slpie.deployment.yaml"
+                  },
+                  "emitter": {
+                    "type": "string",
+                    "description": "which platform to render for",
+                    "enum": [
+                      "compose",
+                      "helm",
+                      "kubernetes",
+                      "pipelines",
+                      "systemd",
+                      "terraform"
+                    ]
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  },
+                  "confirmed": {
+                    "type": "boolean",
+                    "description": "required: this verb changes the environment and is refused without it, by the same guard the CLI hits"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/deploy-manual": {
+      "post": {
+        "summary": "the install document, generated so it cannot drift",
+        "description": "A hand-written install document is wrong within two releases: it names a port the manifest no longer opens and a flag that was renamed. This one is wrong only if the model is \u2014 the prerequisites are the chosen emitter's, the ports are the manifest's, and the commands are the ones the CLI accepts.",
+        "operationId": "verb_deploy_manual",
+        "tags": [
+          "deploy"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "text",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": false,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "manifest": {
+                    "type": "string",
+                    "description": "a deployment manifest elsewhere than ./slpie.deployment.yaml"
+                  },
+                  "emitter": {
+                    "type": "string",
+                    "description": "which platform to render for",
+                    "enum": [
+                      "compose",
+                      "helm",
+                      "kubernetes",
+                      "pipelines",
+                      "systemd",
+                      "terraform"
+                    ]
+                  },
+                  "out": {
+                    "type": "string",
+                    "description": "write it here, e.g. docs/INSTALL.md"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/deploy-plan": {
+      "post": {
+        "summary": "the diff between the declared topology and the running one",
+        "description": "Touches nothing, and *reaches* nothing: a plan is computed from two models, so it costs a file read and can be produced for a cluster nobody has credentials to. Changes are typed \u2014 add, remove, scale, alter \u2014 because an apply that quietly deletes a component is the failure this model exists to make visible, and reporting it as `1 change` would be complete and useless.",
+        "operationId": "verb_deploy_plan",
+        "tags": [
+          "deploy"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "manifest": {
+                    "type": "string",
+                    "description": "a deployment manifest elsewhere than ./slpie.deployment.yaml"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/deploy-render": {
+      "post": {
+        "summary": "emit the deployment artifacts, reviewable before anything runs",
+        "description": "Six emitters over one model \u2014 compose, kubernetes, systemd, helm, terraform and CI pipelines \u2014 so a fourth platform is a registration rather than a fork. Nothing reads the clock or the environment, so the same manifest renders byte-identically twice and a change is reviewable in a diff. What an emitter cannot express is reported as a gap rather than quietly left out of the file.",
+        "operationId": "verb_deploy_render",
+        "tags": [
+          "deploy"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "manifest": {
+                    "type": "string",
+                    "description": "a deployment manifest elsewhere than ./slpie.deployment.yaml"
+                  },
+                  "emitter": {
+                    "type": "string",
+                    "description": "which platform to render for",
+                    "enum": [
+                      "compose",
+                      "helm",
+                      "kubernetes",
+                      "pipelines",
+                      "systemd",
+                      "terraform"
+                    ]
+                  },
+                  "write": {
+                    "type": "boolean",
+                    "description": "write the files instead of returning them"
+                  },
+                  "out": {
+                    "type": "string",
+                    "description": "where to write them",
+                    "default": "./deploy"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v/deploy-status": {
+      "post": {
+        "summary": "what is declared, and whether anything is running to match",
+        "description": "The summary form of `deploy plan`. Absent a platform adapter it reports that nothing was asked rather than assuming an empty estate \u2014 a blind plan and a first install produce the same diff and are not the same confidence.",
+        "operationId": "verb_deploy_status",
+        "tags": [
+          "deploy"
+        ],
+        "x-slpie-consumes": "nothing",
+        "x-slpie-produces": "report",
+        "x-slpie-mutates": false,
+        "x-slpie-cacheable": true,
+        "x-slpie-successors": [
+          "accept",
+          "count",
+          "dismiss",
+          "explain",
+          "filter",
+          "findings",
+          "head",
+          "json",
+          "quarantine",
+          "sort",
+          "suggest",
+          "tool",
+          "unique"
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "manifest": {
+                    "type": "string",
+                    "description": "a deployment manifest elsewhere than ./slpie.deployment.yaml"
+                  },
+                  "upstream": {
+                    "$ref": "#/components/schemas/Flow",
+                    "description": "the flow to continue from; omit for a source verb"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "the answer, with its reasoning and its gaps",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Flow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "the request or the composition was invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "refused \u2014 a guard declined it, and the reason is given",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v/discover": {
       "post": {
         "summary": "read a tree and record what every discoverer finds",
@@ -6665,6 +7123,10 @@
         "chain",
         "changed",
         "context",
+        "deploy-apply",
+        "deploy-plan",
+        "deploy-render",
+        "deploy-status",
         "enterprise",
         "fire",
         "history",
@@ -6686,6 +7148,7 @@
     {
       "kind": "text",
       "produced_by": [
+        "deploy-manual",
         "tool"
       ],
       "consumed_by": []

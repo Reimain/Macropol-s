@@ -1,30 +1,27 @@
 {
   "generator": "slpie context --skill",
-  "digest": "15d107f38d9a3bbad3c1565f0af12e53d741843da0f74ce460649e1c700c2417",
+  "digest": "0c898162cfb3761fce844b7e6e5be6e4a4cd51106c3c107f4ee5b92fa4540cd7",
   "summary": {
-    "digest": "15d107f38d9a3bbad3c1565f0af12e53d741843da0f74ce460649e1c700c2417",
-    "facets": 713,
+    "digest": "0c898162cfb3761fce844b7e6e5be6e4a4cd51106c3c107f4ee5b92fa4540cd7",
+    "facets": 744,
     "counts": {
       "component": 52,
       "kind": 21,
-      "module": 297,
-      "package": 68,
-      "route": 93,
-      "screen": 35,
-      "section": 17,
-      "test": 79,
-      "verb": 51
+      "module": 311,
+      "package": 70,
+      "route": 98,
+      "screen": 36,
+      "section": 19,
+      "test": 81,
+      "verb": 56
     },
-    "coverage": 0.9874,
+    "coverage": 0.9919,
     "unanchored": [
       "section:12",
       "section:14",
-      "section:16",
-      "section:18",
       "section:19",
       "section:25",
       "section:26",
-      "section:27",
       "section:6"
     ],
     "dangling": []
@@ -3880,6 +3877,65 @@
       "tags": []
     },
     {
+      "id": "module:slpie.compose.verbs.deploy",
+      "kind": "module",
+      "name": "slpie.compose.verbs.deploy",
+      "title": "deploy",
+      "summary": "Deployment as verbs \u2014 plan, render, manual, status, and the gated apply.",
+      "source": "slpie/compose/verbs/deploy.py:1",
+      "links": [
+        {
+          "relation": "claims",
+          "target": "section:16"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.compose.flow"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.compose.verb"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy._apply"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy._render"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manual"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.plan"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.finding"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.domain.reasoning"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.errors"
+        },
+        {
+          "relation": "imports",
+          "target": "package:slpie.deploy"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "module:slpie.compose.verbs.dispatch",
       "kind": "module",
       "name": "slpie.compose.verbs.dispatch",
@@ -4689,6 +4745,284 @@
         {
           "relation": "claims",
           "target": "section:19"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy._apply",
+      "kind": "module",
+      "name": "slpie.deploy._apply",
+      "title": "_apply",
+      "summary": "The dangerous half \u2014 refused here, performed elsewhere.",
+      "source": "slpie/deploy/_apply.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.errors"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.binding.guard"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.binding.target"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.environment.manifest"
+        },
+        {
+          "relation": "claims",
+          "target": "section:16"
+        },
+        {
+          "relation": "claims",
+          "target": "section:27"
+        },
+        {
+          "relation": "claims",
+          "target": "section:3"
+        },
+        {
+          "relation": "claims",
+          "target": "section:30"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy._render",
+      "kind": "module",
+      "name": "slpie.deploy._render",
+      "title": "_render",
+      "summary": "Where rendered files land, and the one rule about landing them.",
+      "source": "slpie/deploy/_render.py:1",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.emitters._common",
+      "kind": "module",
+      "name": "slpie.deploy.emitters._common",
+      "title": "_common",
+      "summary": "What every emitter needs and none of them should restate.",
+      "source": "slpie/deploy/emitters/_common.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.emitters.compose",
+      "kind": "module",
+      "name": "slpie.deploy.emitters.compose",
+      "title": "compose",
+      "summary": "`docker-compose.yaml` \u2014 a single host, and the emitter the acceptance run uses.",
+      "source": "slpie/deploy/emitters/compose.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.emitters._common"
+        },
+        {
+          "relation": "claims",
+          "target": "section:18"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.emitters.helm",
+      "kind": "module",
+      "name": "slpie.deploy.emitters.helm",
+      "title": "helm",
+      "summary": "A real chart \u2014 `Chart.yaml`, values, templates \u2014 not a directory of manifests.",
+      "source": "slpie/deploy/emitters/helm.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.emitters._common"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.emitters.kubernetes",
+      "kind": "module",
+      "name": "slpie.deploy.emitters.kubernetes",
+      "title": "kubernetes",
+      "summary": "Raw manifests, for clusters without Helm \u2014 and the only emitter with elasticity.",
+      "source": "slpie/deploy/emitters/kubernetes.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.emitters._common"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.emitters.pipelines",
+      "kind": "module",
+      "name": "slpie.deploy.emitters.pipelines",
+      "title": "pipelines",
+      "summary": "CI workflows \u2014 the same model, applied by the CI system rather than a person.",
+      "source": "slpie/deploy/emitters/pipelines.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.emitters._common"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.emitters.systemd",
+      "kind": "module",
+      "name": "slpie.deploy.emitters.systemd",
+      "title": "systemd",
+      "summary": "Units and an install script \u2014 on-prem, with no orchestrator at all.",
+      "source": "slpie/deploy/emitters/systemd.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.emitters._common"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.emitters.terraform",
+      "kind": "module",
+      "name": "slpie.deploy.emitters.terraform",
+      "title": "terraform",
+      "summary": "HCL \u2014 the infrastructure under the workloads, per cloud.",
+      "source": "slpie/deploy/emitters/terraform.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.emitters._common"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.manifest",
+      "kind": "module",
+      "name": "slpie.deploy.manifest",
+      "title": "manifest",
+      "summary": "The deployment topology, as declared. Frozen, ordered, and cheap to read.",
+      "source": "slpie/deploy/manifest.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.errors"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.schema"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.manual",
+      "kind": "module",
+      "name": "slpie.deploy.manual",
+      "title": "manual",
+      "summary": "`docs/INSTALL.md`, emitted from the topology model rather than written.",
+      "source": "slpie/deploy/manual.py:1",
+      "links": [
+        {
+          "relation": "claims",
+          "target": "section:18"
+        },
+        {
+          "relation": "claims",
+          "target": "section:25"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy._render"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.emitters._common"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "package:slpie.deploy"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.plan",
+      "kind": "module",
+      "name": "slpie.deploy.plan",
+      "title": "plan",
+      "summary": "The diff between what was declared and what is running. It touches nothing.",
+      "source": "slpie/deploy/plan.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "module:slpie.deploy.schema",
+      "kind": "module",
+      "name": "slpie.deploy.schema",
+      "title": "schema",
+      "summary": "The deployment manifest's shape, refused rather than guessed.",
+      "source": "slpie/deploy/schema.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.environment.schema"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.errors"
         }
       ],
       "tags": []
@@ -9524,6 +9858,10 @@
         },
         {
           "relation": "owns",
+          "target": "package:slpie.deploy"
+        },
+        {
+          "relation": "owns",
           "target": "package:slpie.discovery"
         },
         {
@@ -10048,6 +10386,10 @@
         },
         {
           "relation": "owns",
+          "target": "module:slpie.compose.verbs.deploy"
+        },
+        {
+          "relation": "owns",
           "target": "module:slpie.compose.verbs.dispatch"
         },
         {
@@ -10265,6 +10607,104 @@
         {
           "relation": "owns",
           "target": "module:slpie.demo.world"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "package:slpie.deploy",
+      "kind": "package",
+      "name": "slpie.deploy",
+      "title": "deploy",
+      "summary": "Deployment as a declaration \u2014 the same move the environment manifest makes.",
+      "source": "slpie/deploy/__init__.py:1",
+      "links": [
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.schema"
+        },
+        {
+          "relation": "claims",
+          "target": "section:18"
+        },
+        {
+          "relation": "claims",
+          "target": "section:24"
+        },
+        {
+          "relation": "claims",
+          "target": "section:29"
+        },
+        {
+          "relation": "owns",
+          "target": "package:slpie.deploy.emitters"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.manual"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.plan"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.schema"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "package:slpie.deploy.emitters",
+      "kind": "package",
+      "name": "slpie.deploy.emitters",
+      "title": "emitters",
+      "summary": "One model, many emitters \u2014 so a fourth platform is a registration, not a fork.",
+      "source": "slpie/deploy/emitters/__init__.py:1",
+      "links": [
+        {
+          "relation": "claims",
+          "target": "section:18"
+        },
+        {
+          "relation": "imports",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "imports",
+          "target": "package:slpie.deploy"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.emitters.compose"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.emitters.helm"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.emitters.kubernetes"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.emitters.pipelines"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.emitters.systemd"
+        },
+        {
+          "relation": "owns",
+          "target": "module:slpie.deploy.emitters.terraform"
         }
       ],
       "tags": []
@@ -12299,6 +12739,66 @@
       ]
     },
     {
+      "id": "route:POST /api/v/deploy-apply",
+      "kind": "route",
+      "name": "POST /api/v/deploy-apply",
+      "title": "POST /api/v/deploy-apply",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/deploy.py:341",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/deploy-manual",
+      "kind": "route",
+      "name": "POST /api/v/deploy-manual",
+      "title": "POST /api/v/deploy-manual",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/deploy.py:311",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/deploy-plan",
+      "kind": "route",
+      "name": "POST /api/v/deploy-plan",
+      "title": "POST /api/v/deploy-plan",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/deploy.py:270",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/deploy-render",
+      "kind": "route",
+      "name": "POST /api/v/deploy-render",
+      "title": "POST /api/v/deploy-render",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/deploy.py:286",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
+      "id": "route:POST /api/v/deploy-status",
+      "kind": "route",
+      "name": "POST /api/v/deploy-status",
+      "title": "POST /api/v/deploy-status",
+      "summary": "Generated from the verb registry.",
+      "source": "slpie/compose/verbs/deploy.py:328",
+      "links": [],
+      "tags": [
+        "generated"
+      ]
+    },
+    {
       "id": "route:POST /api/v/discover",
       "kind": "route",
       "name": "POST /api/v/discover",
@@ -13220,6 +13720,45 @@
       ]
     },
     {
+      "id": "screen:group-deploy",
+      "kind": "screen",
+      "name": "group-deploy",
+      "title": "Deploy",
+      "summary": "",
+      "source": "slpie/ui/contract.py:1160",
+      "links": [
+        {
+          "relation": "runs",
+          "target": "verb:deploy-apply"
+        },
+        {
+          "relation": "runs",
+          "target": "verb:deploy-manual"
+        },
+        {
+          "relation": "runs",
+          "target": "verb:deploy-plan"
+        },
+        {
+          "relation": "runs",
+          "target": "verb:deploy-render"
+        },
+        {
+          "relation": "runs",
+          "target": "verb:deploy-status"
+        },
+        {
+          "relation": "parent",
+          "target": "screen:verbs"
+        }
+      ],
+      "tags": [
+        "build",
+        "generated",
+        "view"
+      ]
+    },
+    {
       "id": "screen:group-dispatch",
       "kind": "screen",
       "name": "group-dispatch",
@@ -13791,7 +14330,7 @@
       "name": "16",
       "title": "\u00a716",
       "summary": "A plan section claimed by at least one module.",
-      "source": "",
+      "source": "docs/PHASE18.md:74",
       "links": [],
       "tags": []
     },
@@ -13801,7 +14340,7 @@
       "name": "18",
       "title": "\u00a718",
       "summary": "A plan section claimed by at least one module.",
-      "source": "",
+      "source": "docs/PHASE18.md:17",
       "links": [],
       "tags": []
     },
@@ -13881,7 +14420,27 @@
       "name": "27",
       "title": "\u00a727",
       "summary": "A plan section claimed by at least one module.",
-      "source": "",
+      "source": "docs/PHASE18.md:13",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "section:29",
+      "kind": "section",
+      "name": "29",
+      "title": "\u00a729",
+      "summary": "A plan section claimed by at least one module.",
+      "source": "docs/AUDIT.md:131",
+      "links": [],
+      "tags": []
+    },
+    {
+      "id": "section:3",
+      "kind": "section",
+      "name": "3",
+      "title": "\u00a73",
+      "summary": "A plan section claimed by at least one module.",
+      "source": "docs/AUDIT.md:125",
       "links": [],
       "tags": []
     },
@@ -14841,6 +15400,61 @@
       "tags": []
     },
     {
+      "id": "test:test_slpie_deploy",
+      "kind": "test",
+      "name": "test_slpie_deploy",
+      "title": "slpie deploy",
+      "summary": "Deployment as a declaration \u2014 the manifest, the diff, the six emitters.",
+      "source": "tests/test_slpie_deploy.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.pipeline"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.registry"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.compose.verb"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.deploy.emitters._common"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.deploy.plan"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.discovery.base"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.discovery.infrastructure.compose"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.discovery.infrastructure.kubernetes"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.errors"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.deploy"
+        }
+      ],
+      "tags": []
+    },
+    {
       "id": "test:test_slpie_discovery",
       "kind": "test",
       "name": "test_slpie_discovery",
@@ -15157,6 +15771,33 @@
         {
           "relation": "covers",
           "target": "module:slpie.engine"
+        }
+      ],
+      "tags": []
+    },
+    {
+      "id": "test:test_slpie_enterprise_deploy",
+      "kind": "test",
+      "name": "test_slpie_enterprise_deploy",
+      "title": "slpie enterprise deploy",
+      "summary": "Applying \u2014 dispatch, refusal, and the failure that must stop the sequence.",
+      "source": "tests/test_slpie_enterprise_deploy.py:1",
+      "links": [
+        {
+          "relation": "covers",
+          "target": "module:slpie.deploy._apply"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.deploy.manifest"
+        },
+        {
+          "relation": "covers",
+          "target": "module:slpie.dispatch.tool"
+        },
+        {
+          "relation": "covers",
+          "target": "package:slpie.deploy"
         }
       ],
       "tags": []
@@ -16715,6 +17356,137 @@
       ],
       "tags": [
         "environment",
+        "source"
+      ]
+    },
+    {
+      "id": "verb:deploy-apply",
+      "kind": "verb",
+      "name": "deploy-apply",
+      "title": "deploy-apply",
+      "summary": "make it so \u2014 gated by the same guard as `target --to live`",
+      "source": "slpie/compose/verbs/deploy.py:341",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:nothing"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/deploy-apply"
+        }
+      ],
+      "tags": [
+        "deploy",
+        "mutates",
+        "source"
+      ]
+    },
+    {
+      "id": "verb:deploy-manual",
+      "kind": "verb",
+      "name": "deploy-manual",
+      "title": "deploy-manual",
+      "summary": "the install document, generated so it cannot drift",
+      "source": "slpie/compose/verbs/deploy.py:311",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:nothing"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:text"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/deploy-manual"
+        }
+      ],
+      "tags": [
+        "deploy",
+        "source"
+      ]
+    },
+    {
+      "id": "verb:deploy-plan",
+      "kind": "verb",
+      "name": "deploy-plan",
+      "title": "deploy-plan",
+      "summary": "the diff between the declared topology and the running one",
+      "source": "slpie/compose/verbs/deploy.py:270",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:nothing"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/deploy-plan"
+        }
+      ],
+      "tags": [
+        "deploy",
+        "source"
+      ]
+    },
+    {
+      "id": "verb:deploy-render",
+      "kind": "verb",
+      "name": "deploy-render",
+      "title": "deploy-render",
+      "summary": "emit the deployment artifacts, reviewable before anything runs",
+      "source": "slpie/compose/verbs/deploy.py:286",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:nothing"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/deploy-render"
+        }
+      ],
+      "tags": [
+        "deploy",
+        "source"
+      ]
+    },
+    {
+      "id": "verb:deploy-status",
+      "kind": "verb",
+      "name": "deploy-status",
+      "title": "deploy-status",
+      "summary": "what is declared, and whether anything is running to match",
+      "source": "slpie/compose/verbs/deploy.py:328",
+      "links": [
+        {
+          "relation": "consumes",
+          "target": "kind:nothing"
+        },
+        {
+          "relation": "produces",
+          "target": "kind:report"
+        },
+        {
+          "relation": "projects",
+          "target": "route:POST /api/v/deploy-status"
+        }
+      ],
+      "tags": [
+        "deploy",
         "source"
       ]
     },
