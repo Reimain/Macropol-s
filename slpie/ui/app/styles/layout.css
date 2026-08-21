@@ -1,0 +1,255 @@
+/* The shell: a left rail, a top bar, and a page.
+ *
+ * ── Why a rail and not a tab strip ───────────────────────────────────────
+ *
+ * The previous shell put six sections in a horizontal strip. That works for six
+ * and breaks at thirty-six, which is what this platform actually has: the strip
+ * either wraps to three lines or scrolls sideways, and in both cases the reader
+ * loses the ability to see where they are in the whole. Every console built for
+ * this much surface area — Databricks, AppDynamics, and the rest — puts
+ * navigation in a vertical rail for the same reason: vertical space is what a
+ * long list of destinations needs, and the rail can carry group headings, which
+ * a strip cannot.
+ *
+ * The rail holds *destinations*. The top bar holds *facts about the current
+ * connection* — which environment, what is answering for it, whether the feed
+ * is live. Those two never mix: a reader looking for somewhere to go looks
+ * left, and a reader asking how much to trust what they see looks up.
+ *
+ * On a phone the rail becomes a drawer, because 240px of a 360px screen is not
+ * navigation, it is an obstruction.
+ */
+
+body {
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-areas:
+    "rail topbar"
+    "rail page";
+  min-height: 100vh;
+}
+
+/* --- the rail ----------------------------------------------------------- */
+
+.rail {
+  grid-area: rail;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4) 0;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-5) var(--sp-4);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  letter-spacing: -0.01em;
+}
+.brand svg { flex: 0 0 auto; }
+
+.rail nav { display: flex; flex-direction: column; gap: 1px; }
+
+/* A group heading, as both references use: small, tracked, muted, and not
+   clickable. It names a region of the product rather than a destination. */
+.rail .group {
+  padding: var(--sp-4) var(--sp-5) var(--sp-2);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* The active item is a filled tint, not an underline. In a vertical rail an
+   underline reads as a separator between two items rather than as a state on
+   one of them. */
+.rail a {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-5);
+  margin: 0 var(--sp-3);
+  border-radius: var(--radius);
+  color: var(--text);
+  text-decoration: none;
+  min-height: var(--control-h);
+  font-size: var(--fs-md);
+  border-left: 2px solid transparent;
+}
+.rail a:hover { background: var(--panel-2); }
+.rail a.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.rail a .glyph {
+  flex: 0 0 auto;
+  width: var(--glyph-w);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+.rail a.active .glyph { color: var(--accent); }
+
+/* --- the top bar -------------------------------------------------------- */
+
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-6);
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* The environment this console is currently describing. It is the leftmost
+   thing in the bar because it qualifies everything to its right — a number is
+   meaningless until you know which environment produced it. */
+.context {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  font-weight: 600;
+}
+.context .what {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: var(--fs-sm);
+}
+/* An environment nobody has opened is *named as absent*, never left as a dash.
+   A field showing a value nobody computed is the one mistake a console about
+   evidence cannot make. */
+.context .unfilled { color: var(--muted); font-weight: 400; font-style: normal; }
+
+.topbar .spacer { flex: 1; }
+
+/* --- the page ----------------------------------------------------------- */
+
+main {
+  grid-area: page;
+  padding: var(--sp-6);
+  max-width: var(--page-w);
+  width: 100%;
+}
+
+/* Breadcrumb, title, primary action — in that order, on one line where there is
+   room. This is the single most load-bearing borrowing from the references:
+   a reader arriving at any screen learns where they are, what it is, and what
+   they can do about it, in one downward glance and before any data loads. */
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-5);
+}
+.page-head h1 {
+  margin: 0;
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.page-head .sub {
+  color: var(--muted);
+  font-size: var(--fs-md);
+  margin-top: var(--sp-2);
+  max-width: var(--measure);
+}
+.page-head .acts { margin-left: auto; display: flex; gap: var(--sp-3); align-items: center; }
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-bottom: var(--sp-2);
+}
+.crumbs a { color: var(--muted); }
+.crumbs a:hover { color: var(--accent); }
+.crumbs .sep { color: var(--line-strong); }
+
+/* --- the primitives screens compose with -------------------------------- */
+
+.grid {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(auto-fit, minmax(var(--card-min), 1fr));
+}
+/* Same reason as `.stack > *`: a tile holding an unbreakable value — a ledger
+   digest is forty hex characters with nowhere to break — refused to shrink,
+   and the auto-fit track grew past the viewport carrying the page with it. */
+.grid > * { min-width: 0; }
+.row { display: flex; gap: var(--sp-4); align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.scroll { overflow-x: auto; }
+.stack { display: grid; gap: var(--gap); }
+
+/* A grid item defaults to `min-width: auto`, which means "never narrower than
+   my content" — so a wide diagram inside a `.scroll` container stretched the
+   whole column instead of scrolling inside it, and the *page* scrolled
+   sideways with the rail and the topbar sliding out of view. The Graph screen
+   measured 2726px of scroll width against a 1400px viewport before this line.
+   Wide content scrolls in its own box; the body never does. */
+.stack > * { min-width: 0; }
+
+/* The measure cap applies to prose, never to tables — a table wants the width
+ * it can get, and capping it would reintroduce the horizontal scroll the cap
+ * exists to avoid. */
+.reading { max-width: var(--measure); }
+
+/* --- narrow ------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* The rail becomes a horizontal scroller pinned under the bar. A drawer would
+ * need a toggle, a focus trap and an overlay; a scroller needs none of those
+ * and costs one swipe. Group headings are dropped here — they are structure for
+ * a vertical list and noise in a horizontal one. */
+@media (max-width: 720px) {
+  body {
+    grid-template-columns: 1fr;
+    grid-template-rows: var(--topbar-h) auto 1fr;
+    grid-template-areas:
+      "topbar"
+      "rail"
+      "page";
+  }
+  .rail {
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rail::-webkit-scrollbar { height: 0; }
+  .rail .brand { display: none; }
+  .rail .group { display: none; }
+  .rail nav { flex-direction: row; gap: var(--sp-2); }
+  .rail a { white-space: nowrap; margin: 0; }
+  .topbar { padding: 0 var(--sp-4); }
+  main { padding: var(--sp-4); }
+  .page-head .acts { margin-left: 0; width: 100%; }
+  .scroll { max-height: 60vh; }
+}

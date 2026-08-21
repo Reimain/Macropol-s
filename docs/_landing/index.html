@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequencing Order</title>
+<meta name="description" content="A deterministic breakthrough built on the reasoning of natural language. Your verbs are useless alone.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* ── The palette is the argument ──────────────────────────────────────────
+   The thesis has exactly two poles that only mean something once composed:
+   the word you are free to invent, and the contract that holds it. So the page
+   has two accents rather than one, and they are warm against cool on purpose —
+   `--utter` is the uttered thing, `--hold` is the thing that holds. Nothing
+   else on the page is allowed either colour.
+
+   The light ground is a cool grey-blue, not cream. The refusal is its own hue
+   because a refusal here is a lesson, not a fault. */
+:root {
+  --ink:      #12151c;
+  --surface:  #ffffff;
+  --raised:   #f2f4f8;
+  --line:     #d9dee7;
+  --text:     #12151c;
+  --mute:     #5d6879;
+  --utter:    #a86a12;   /* amber, stepped for a light ground */
+  --hold:     #0f7d78;   /* teal,  stepped for a light ground */
+  --refuse:   #b7402c;
+  --ground:   #edeff3;
+  --measure:  62ch;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #171b24;
+    --raised:  #1e2430;
+    --line:    #2c3444;
+    --text:    #e7eaf0;
+    --mute:    #8d99ad;
+    --utter:   #e0a33e;
+    --hold:    #4ec5c1;
+    --refuse:  #e2604a;
+    --ground:  #12151c;
+  }
+}
+:root[data-theme="dark"] {
+  --surface: #171b24;
+  --raised:  #1e2430;
+  --line:    #2c3444;
+  --text:    #e7eaf0;
+  --mute:    #8d99ad;
+  --utter:   #e0a33e;
+  --hold:    #4ec5c1;
+  --refuse:  #e2604a;
+  --ground:  #12151c;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+h1, h2, h3 {
+  font-family: Fraunces, Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  text-wrap: balance;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+h1 { font-size: clamp(2.6rem, 6.2vw, 4.6rem); line-height: 1.02; font-weight: 300; }
+h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); line-height: 1.12; }
+h3 { font-size: 1.15rem; }
+p { margin: 0 0 1.05em; max-width: var(--measure); }
+p:last-child { margin-bottom: 0; }
+strong { font-weight: 600; }
+code, .mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--hold); outline-offset: 3px; border-radius: 3px; }
+
+/* ── The staff line ───────────────────────────────────────────────────────
+   One continuous rule runs the height of the page, and every section is a
+   stage pinned to it. The device is not decoration: the whole argument is
+   that meaning lives in the order, so the page is built as a sequence and
+   the numbering is what the reader is meant to follow. */
+.staff { position: relative; }
+@media (min-width: 900px) {
+  .staff::before {
+    content: "";
+    position: absolute;
+    left: calc(50% - 540px + 28px + 22px);
+    top: 0; bottom: 0;
+    width: 1px;
+    background: linear-gradient(var(--line), var(--line) 92%, transparent);
+  }
+  section.stage { padding-left: 96px; }
+  section.stage .ord { position: absolute; left: calc(50% - 540px + 28px); }
+}
+
+section.stage { position: relative; padding-block: clamp(58px, 9vw, 108px); }
+section.stage + section.stage { border-top: 1px solid var(--line); }
+
+.ord {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  color: var(--mute);
+  background: var(--ground);
+  padding: 4px 0 8px;
+  display: block;
+  margin-bottom: 12px;
+}
+@media (min-width: 900px) { .ord { margin-bottom: 0; } }
+
+.lede { font-size: 1.22rem; color: var(--mute); max-width: var(--measure); }
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+
+header.hero { padding: clamp(64px, 11vw, 132px) 0 clamp(40px, 6vw, 72px); }
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-bottom: 26px;
+}
+h1 .utter { color: var(--utter); font-style: italic; }
+h1 .hold  { color: var(--hold); }
+.hero p.lede { margin-top: 28px; font-size: 1.32rem; color: var(--text); }
+
+/* ── The composer: the thesis, playable ───────────────────────────────── */
+
+.composer {
+  margin-top: 46px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.composer-head {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--raised);
+  font-size: 0.84rem; color: var(--mute);
+}
+.composer-head b { color: var(--text); font-weight: 600; }
+.palette { display: flex; flex-wrap: wrap; gap: 8px; padding: 20px; }
+.verb {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.86rem;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.verb:hover { border-color: var(--utter); color: var(--utter); }
+.verb .kind { color: var(--mute); font-size: 0.76rem; margin-left: 8px; }
+
+.line {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 20px; min-height: 74px;
+  border-top: 1px solid var(--line);
+  font-family: "IBM Plex Mono", monospace;
+}
+.line .empty { color: var(--mute); font-family: "IBM Plex Sans", sans-serif; }
+.stagechip {
+  padding: 7px 12px; border-radius: 6px;
+  border: 1px solid var(--hold); color: var(--hold);
+  background: color-mix(in srgb, var(--hold) 10%, transparent);
+}
+.stagechip.bad { border-color: var(--refuse); color: var(--refuse);
+                 background: color-mix(in srgb, var(--refuse) 12%, transparent); }
+.pipe { color: var(--mute); }
+
+.verdict { padding: 0 20px 20px; }
+.verdict .ok, .verdict .no {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.88rem; line-height: 1.55;
+  padding: 13px 16px; border-radius: 6px;
+  border-left: 3px solid;
+}
+.verdict .ok { border-color: var(--hold); background: var(--raised); color: var(--text); }
+.verdict .no { border-color: var(--refuse); background: var(--raised); color: var(--text); }
+.verdict .why { color: var(--mute); font-family: "IBM Plex Sans", sans-serif;
+                font-size: 0.92rem; margin-top: 10px; }
+.reset {
+  background: none; border: 0; color: var(--mute); cursor: pointer;
+  font-family: "IBM Plex Mono", monospace; font-size: 0.8rem;
+  text-decoration: underline; text-underline-offset: 3px; padding: 0;
+}
+
+/* ── Content blocks ───────────────────────────────────────────────────── */
+
+.two { display: grid; gap: clamp(24px, 4vw, 52px); grid-template-columns: 1fr; margin-top: 34px; }
+@media (min-width: 800px) { .two { grid-template-columns: 1fr 1fr; } }
+.two p { max-width: none; }
+
+.pull {
+  font-family: Fraunces, Georgia, serif;
+  font-size: clamp(1.35rem, 2.6vw, 1.95rem);
+  line-height: 1.3;
+  font-weight: 300;
+  max-width: 22ch;
+  color: var(--text);
+}
+.pull em { font-style: italic; color: var(--utter); }
+
+.shot {
+  margin-top: 34px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+/* No `loading="lazy"` on these three. Lazy is right for a long article with
+   twenty images; here the screenshots *are* the argument, and deferring them
+   means a reader scrolling into three empty frames — which was exactly what
+   happened: below the fold, the fetch never started at all. Intrinsic width and
+   height are declared instead, so the space is reserved and nothing shifts. */
+.shot img { display: block; width: 100%; height: auto; }
+
+/* Each screenshot ships in both themes and follows the page's own.
+   A dark screenshot on a light page is as wrong as a light one on a dark page,
+   and the front page is themed three ways — an explicit choice either way, plus
+   the un-stamped system default. So the swap uses exactly the token pattern the
+   palette above uses, rather than a `<picture>` media query, which would honour
+   the operating system and ignore the toggle. */
+/* Specificity matters here and it bit once: `.shot img` is (0,1,1) and a bare
+   `.dim` is (0,1,0), so `display: block` won and *both* images rendered in the
+   light theme. Every rule below is written at `.shot img.…` so the four states
+   are decided by order and theme, never by an accidental weight difference. */
+.shot img.dim { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shot img.lit { display: none; }
+  :root:not([data-theme="light"]) .shot img.dim { display: block; }
+}
+:root[data-theme="dark"] .shot img.lit { display: none; }
+:root[data-theme="dark"] .shot img.dim { display: block; }
+:root[data-theme="light"] .shot img.lit { display: block; }
+:root[data-theme="light"] .shot img.dim { display: none; }
+.shot figcaption {
+  padding: 13px 18px; border-top: 1px solid var(--line);
+  color: var(--mute); font-size: 0.88rem; background: var(--raised);
+}
+.shots { display: grid; gap: 22px; grid-template-columns: 1fr; }
+@media (min-width: 860px) { .shots { grid-template-columns: 1fr 1fr; } }
+.shots .shot { margin-top: 0; }
+
+.rules { list-style: none; padding: 0; margin: 30px 0 0; display: grid; gap: 2px; }
+.rules li {
+  display: grid; grid-template-columns: 1fr; gap: 4px;
+  padding: 17px 0; border-top: 1px solid var(--line);
+}
+@media (min-width: 760px) { .rules li { grid-template-columns: 15rem 1fr; gap: 28px; } }
+.rules b { font-weight: 600; }
+.rules span { color: var(--mute); }
+
+.cta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 38px; }
+.btn {
+  display: inline-block; padding: 13px 24px; border-radius: 7px;
+  text-decoration: none; font-weight: 600; font-size: 0.98rem;
+  border: 1px solid var(--hold); background: var(--hold);
+  color: var(--ground);
+}
+.btn.ghost { background: transparent; color: var(--text); border-color: var(--line); }
+.btn:hover { filter: brightness(1.07); }
+.btn.ghost:hover { border-color: var(--mute); filter: none; }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 44px 0 68px;
+  color: var(--mute);
+  font-size: 0.9rem;
+}
+footer a { color: var(--hold); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="wrap staff">
+
+<header class="hero">
+  <div class="eyebrow">Macropol-s · SLPIE</div>
+  <h1>Your <span class="utter">verbs</span> are useless <span class="hold">alone</span>.</h1>
+  <p class="lede">
+    A deterministic breakthrough built on the reasoning of natural language.
+    Piping shell commands is the same act as piping your own contextual words —
+    each one defined as a meaningful software component.
+  </p>
+
+  <!-- The hero is the thesis, not a picture of it. Five seconds and a click
+       is the whole argument: a verb alone does nothing, two in the wrong order
+       are refused, and the refusal names exactly what you got wrong. The types
+       and the refusal text below are the platform's own. -->
+  <div class="composer">
+    <div class="composer-head">
+      <b>Compose one.</b>
+      <span>Click verbs to build a pipeline. It is checked before anything runs.</span>
+    </div>
+    <div class="palette" id="palette"></div>
+    <div class="line" id="line"><span class="empty">Nothing composed yet.</span></div>
+    <div class="verdict" id="verdict"></div>
+  </div>
+</header>
+
+<section class="stage">
+  <span class="ord">01</span>
+  <h2>Hardware has a guard. Software never did.</h2>
+  <div class="two">
+    <div>
+      <p>
+        Do this with hardware and a vast body of regulatory standards stands in
+        the way — standards that exist precisely to stop you spending your
+        budget before you have deterministic knowledge. You cannot ship a board
+        because it felt right in a meeting.
+      </p>
+      <p>
+        Software has no such guard. Anyone can compose anything, discover it was
+        wrong in production, and never learn which step was the mistake.
+      </p>
+    </div>
+    <div>
+      <p class="pull">So we built the guard, and made it <em>teach</em> rather than merely refuse.</p>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <span class="ord">02</span>
+  <h2>You learn why you fail, not merely that you did.</h2>
+  <p class="lede">
+    We make products that simulate your engagement at the boundary. You come to
+    understand why you fail by composing and piping your own selection of words.
+  </p>
+  <p>
+    Composing without knowledge is exactly what shows you why your brainstormed
+    pipelines fail — and it points you at deterministic teaching material that
+    supplies the context you were missing, pushing the duty of understanding
+    further rather than answering for you.
+  </p>
+  <ul class="rules">
+    <li><b>Refused before it runs</b>
+      <span>An impossible composition names both kinds and executes nothing — so a
+      mutating pipeline never half-happens.</span></li>
+    <li><b>Every answer carries its gaps</b>
+      <span>What the platform could not see is stated as plainly as what it could.</span></li>
+    <li><b>Every claim reaches a file and a line</b>
+      <span>Walk the reasoning backwards and it terminates in evidence, never in a shrug.</span></li>
+    <li><b>Confidence is derived, never assigned</b>
+      <span>No one gets to type a number in. It is a function of the evidence.</span></li>
+  </ul>
+</section>
+
+<section class="stage">
+  <span class="ord">03</span>
+  <h2>An invented word is inert until it is implemented.</h2>
+  <div class="two">
+    <div>
+      <p>
+        You can invent a word. It stays useless until you implement it in
+        detail — exactly as an invented word in a natural language stays useless
+        without mass adoption, capped by the spoken dictionary held in memory and
+        the written one on the page.
+      </p>
+      <p>
+        So a capability here is not a name. It is a typed verb with a stated
+        input, a stated output, a manual page and a runnable example — and if any
+        of those is missing, the build fails rather than the documentation
+        quietly lying.
+      </p>
+    </div>
+    <div>
+      <p class="pull">Forty-eight verbs. One registry. <em>Five</em> projections of it, and none may disagree.</p>
+    </div>
+  </div>
+</section>
+
+<section class="stage">
+  <span class="ord">04</span>
+  <h2>The instrument, and how it reads.</h2>
+  <p class="lede">
+    Most operations surfaces render everything as equally true. This one refuses
+    to: a reviewer has to tell what was <em>read</em> from what was
+    <em>inferred</em> from what was <em>never looked at</em> — at a glance, all
+    day, without reading a number.
+  </p>
+
+  <figure class="shot">
+    <img class="lit" src="assets/graph-selected.png" width="2726" height="1618" alt="The graph screen: a hero figure reading Read directly 100 percent, a certainty split, and the estate drawn as a node-link diagram with one node selected and the rest dimmed">
+      <img class="dim" src="assets/graph-selected-dark.png" width="2726" height="1618" alt="The graph screen: a hero figure reading Read directly 100 percent, a certainty split, and the estate drawn as a node-link diagram with one node selected and the rest dimmed — dark theme">
+    <figcaption>
+      Every rival draws a topology in which every edge is equally true. Here the
+      <strong>stroke carries the evidence</strong> — solid for read directly,
+      dashed for inferred, dotted for guessed — and the page leads with the
+      number none of them can compute: how much of this you actually know.
+    </figcaption>
+  </figure>
+
+  <div class="shots" style="margin-top:22px">
+    <figure class="shot">
+      <img class="lit" src="assets/verbs-dense.png" width="1500" height="950" alt="The dense register: a rich-client data grid with ruled columns, zebra rows, a sorted header and a status bar">
+      <img class="dim" src="assets/verbs-dense-dark.png" width="1500" height="950" alt="The dense register: a rich-client data grid with ruled columns, zebra rows, a sorted header and a status bar — dark theme">
+      <figcaption><strong>Dense.</strong> For working a list all day: ruled columns, a
+      header you sort by, a row you are on, and a status bar saying where.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img class="lit" src="assets/verbs-calm.png" width="1500" height="950" alt="The same screen in the calm register, without rules or stripes and with more space">
+      <img class="dim" src="assets/verbs-calm-dark.png" width="1500" height="950" alt="The same screen in the calm register, without rules or stripes and with more space — dark theme">
+      <figcaption><strong>Calm.</strong> The same data, the same column spec — a
+      document rather than an instrument.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="stage">
+  <span class="ord">05</span>
+  <h2>The challenge will remain the same forever.</h2>
+  <p class="lede">
+    It is sequencing order: the continuity a musical sound has, made native to
+    the discrete geometry of natural language.
+  </p>
+  <p>
+    Notes are not a melody. Words are not a sentence. Verbs are not a pipeline.
+    In all three the elements are finite, ordinary and freely available — and
+    every difference that matters lives in the order they are put in. That
+    problem does not go away when the tooling improves, because it was never a
+    tooling problem.
+  </p>
+  <div class="cta">
+    <a class="btn" href="../demo/index.html">Open the console</a>
+    <a class="btn ghost" href="../docs/index.html">Read the documentation</a>
+  </div>
+</section>
+
+<footer>
+  <p>
+    The interface ships inside the kernel: no build step, no bundler, no
+    third-party package. It runs in an air-gapped network, which is the point.
+    <br>
+    <a href="../docs/UI.html">How the console is built</a> ·
+    <a href="../docs/ARCHITECTURE.html">Architecture</a> ·
+    <a href="https://github.com/Reimain/Macropol-s">Source</a>
+  </p>
+</footer>
+
+</div>
+
+<script>
+/* The verbs, their kinds and the checking rule are the platform's own, copied
+   from the registry rather than invented for the page — including the wording
+   of the refusal. A marketing page that demonstrates a type error the product
+   would not actually produce is a lie with extra steps. */
+const VERBS = {
+  discover:  {c: "NOTHING",      p: "OBSERVATIONS", s: "read a tree and record what every discoverer finds"},
+  capture:   {c: "NOTHING",      p: "OBSERVATIONS", s: "identify files by content and run them past the firewall"},
+  attach:    {c: "NOTHING",      p: "ELEMENTS",     s: "register every declared element and negotiate capabilities"},
+  audit:     {c: "NOTHING",      p: "JUDGEMENTS",   s: "judge a tree against its stated architecture"},
+  link:      {c: "OBSERVATIONS", p: "RESOLUTION",   s: "merge observations onto identities and join across files"},
+  reason:    {c: "OBSERVATIONS", p: "ENRICHMENTS",  s: "run the reasoning layers over what was observed"},
+  govern:    {c: "OBSERVATIONS", p: "FINDINGS",     s: "run every governance rule over what was scanned"},
+  ask:       {c: "ENRICHMENTS",  p: "GUIDANCE",     s: "the answer, its reasoning, its gaps, and what to ask next"},
+  impact:    {c: "NODES",        p: "IMPACT",       s: "what depends on this, and how confidently"},
+  findings:  {c: "ANY",          p: "FINDINGS",     s: "rank everything wrong that is known so far"},
+  explain:   {c: "ANY",          p: "SAME",         s: "render the reasoning, the sources and the gaps behind this"},
+};
+
+let chosen = [];
+
+const palette = document.getElementById("palette");
+const line = document.getElementById("line");
+const verdict = document.getElementById("verdict");
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+for (const [name, spec] of Object.entries(VERBS)) {
+  const button = el("button", "verb");
+  button.type = "button";
+  button.appendChild(document.createTextNode(name));
+  button.appendChild(el("span", "kind",
+    spec.c === "NOTHING" ? "source" : spec.c.toLowerCase() + " →"));
+  button.title = spec.s;
+  button.addEventListener("click", () => { chosen.push(name); draw(); });
+  palette.appendChild(button);
+}
+
+/* The same rule the server applies: a source verb consumes nothing and can only
+   begin a pipeline; ANY takes whatever arrives; SAME passes its input through. */
+function check(names) {
+  let flowing = "NOTHING";
+  for (let index = 0; index < names.length; index += 1) {
+    const spec = VERBS[names[index]];
+    const wants = spec.c;
+    const fits = wants === "ANY" ? flowing !== "NOTHING" || index === 0
+               : wants === flowing;
+    if (!fits) {
+      return {
+        ok: false, at: index,
+        text: "stage " + (index + 1) + " `" + names[index] + "` consumes "
+            + wants + ", but `" + names[index - 1] + "` produces " + flowing,
+      };
+    }
+    flowing = spec.p === "SAME" ? flowing : spec.p;
+  }
+  return {ok: true, kind: flowing};
+}
+
+function draw() {
+  line.replaceChildren();
+  verdict.replaceChildren();
+
+  if (!chosen.length) {
+    line.appendChild(el("span", "empty", "Nothing composed yet."));
+    return;
+  }
+
+  const result = check(chosen);
+  chosen.forEach((name, index) => {
+    if (index) line.appendChild(el("span", "pipe", "|"));
+    const bad = !result.ok && index === result.at;
+    line.appendChild(el("span", "stagechip" + (bad ? " bad" : ""), name));
+  });
+
+  const reset = el("button", "reset", "clear");
+  reset.type = "button";
+  reset.addEventListener("click", () => { chosen = []; draw(); });
+  line.appendChild(reset);
+
+  if (result.ok) {
+    const box = el("div", "ok", "→ produces " + result.kind);
+    box.appendChild(el("div", "why",
+      chosen.length === 1
+        ? "One verb, and it type-checks — but it has told you nothing you did not already know. The value arrives when you compose."
+        : "This one runs. Every stage's output is the next stage's input, and the reasoning and the gaps travel the whole length of the pipe."));
+    verdict.appendChild(box);
+  } else {
+    const box = el("div", "no", result.text);
+    box.appendChild(el("div", "why",
+      "Refused before stage one, so nothing has happened yet. That sentence is the lesson: it names what was flowing and what this verb needed, which is the context you were missing."));
+    verdict.appendChild(box);
+  }
+}
+
+draw();
+</script>
+</body>
+</html>

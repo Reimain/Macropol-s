@@ -1,0 +1,226 @@
+/* The native renderer. Canvas 2D, no dependency, nothing outside this repository.
+ *
+ * This is the engine that makes "air-gapped" literally true rather than
+ * nominally true: the console boots, renders and passes its whole browser tier
+ * with `engine/vendor/` deleted, because this is what draws when nothing else
+ * is present.
+ *
+ * Canvas rather than SVG because density is the point. SVG's DOM cost becomes
+ * the bottleneck somewhere around two thousand nodes — one element per mark,
+ * each with style resolution and layout — and the estates this is for are
+ * larger than that. `ui/graph.js` stays SVG and stays right for what it draws:
+ * a few dozen nodes that must be focusable, selectable and readable by a screen
+ * reader. Two renderers, two jobs, no competition between them.
+ *
+ * ── One measured lesson, encoded ─────────────────────────────────────────
+ *
+ * The prototype that preceded this called `getComputedStyle` inside the
+ * per-node draw loop: twenty thousand style resolutions per frame. It measured
+ * 16fps and very nearly produced the conclusion "we need a 3D engine". Hoisting
+ * the palette to a resolve-once table took the same scene to 60. **That
+ * conclusion would have been a 600KB dependency taken on the strength of a
+ * bug**, which is the whole reason `contract.js` refuses to vendor anything
+ * before there is a number that says it is needed.
+ *
+ * So: every colour this module uses is resolved once, at mount. Nothing inside
+ * `draw()` reads the DOM.
+ *
+ * ── Depth is contrast, never hue ─────────────────────────────────────────
+ *
+ * Distant marks fade toward the surface colour. That is a value change, so it
+ * composes with the confidence ramp and the severity palette instead of
+ * competing with them. Hue in this product means something; a renderer that
+ * spends it on distance makes the two channels that carry meaning unreadable.
+ */
+
+import { aggregate, bundle } from "./aggregate.js";
+import { haze, project } from "./camera.js";
+import { FLOOR, outline, severityToken } from "./glyph.js";
+import { ESTATE, HUES, tokenFor } from "./palette.js";
+
+/** The cap on a mark's radius. A near node is a landmark, not a planet. */
+const FINE = 2.4;
+
+/* Re-exported so a caller can ask where the glyph threshold is without
+ * importing two modules to draw one scene. */
+export { FLOOR };
+
+/** How far into the ground the furthest marks fade. 1 would erase them. */
+const DEEPEST = 0.82;
+
+/* Every colour the renderer will ever use, resolved once. The names come from
+ * `palette.js` and `glyph.js` rather than being spelled here, so the theme axis
+ * stays in CSS and there is exactly one statement of what a severity looks
+ * like — the identical custom property the Findings screen paints with. */
+function tokens(canvas) {
+  const style = getComputedStyle(canvas);
+  const read = (name, fallback) => (style.getPropertyValue(name) || "").trim() || fallback;
+  const resolved = {
+    surface: read("--flight-surface", read("--bg", "#0d1117")),
+    ink: read("--flight-ink", read("--text", "#e6edf3")),
+    line: read("--line", "#30363d"),
+    hue: {},
+  };
+  for (const name of [...HUES, ESTATE, "--ok", "--warn", "--bad", "--crit"]) {
+    resolved.hue[name] = read(name, resolved.ink);
+  }
+  return resolved;
+}
+
+/* Blend toward the surface in sRGB. Approximate, and deliberately so: a correct
+ * perceptual blend costs a colour-space conversion per mark per frame, and the
+ * thing being expressed is "further away", which does not need to be accurate to
+ * a delta-E. */
+function fade(colour, surface, share) {
+  const from = rgb(colour);
+  const to = rgb(surface);
+  if (!from || !to) return colour;
+  const mix = (index) => Math.round(from[index] + (to[index] - from[index]) * share);
+  return `rgb(${mix(0)},${mix(1)},${mix(2)})`;
+}
+
+function rgb(colour) {
+  const hex = String(colour).trim();
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  if (short) return [1, 2, 3].map((index) => parseInt(short[index].repeat(2), 16));
+  const long = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (long) return [1, 2, 3].map((index) => parseInt(long[index], 16));
+  const parts = /^rgba?\(([^)]+)\)$/i.exec(hex);
+  if (parts) return parts[1].split(",").slice(0, 3).map((part) => parseInt(part, 10));
+  return null;
+}
+
+export const canvas2d = {
+  name: "canvas2d",
+  native: true,
+
+  mount(canvas, scene) {
+    this.canvas = canvas;
+    this.scene = scene;
+    this.context = canvas.getContext("2d");
+    this.palette = tokens(canvas);
+    // The renderer's own tally of what it actually put on the surface. Every
+    // number the console reports about this scene comes from here rather than
+    // from a formula over the node count — a figure nobody computed is not
+    // telemetry, it is decoration.
+    this.drawn = {
+      marks: 0, edges: 0, clipped: 0, dots: 0, severe: 0,
+      represented: 0, internal: 0, tiers: { node: 0, lane: 0, cluster: 0 },
+    };
+    return this;
+  },
+
+  draw(camera) {
+    const { context, palette } = this;
+    if (!context) return this.drawn;
+
+    const ratio = this.canvas.ownerDocument.defaultView.devicePixelRatio || 1;
+    const width = camera.width;
+    const height = camera.height;
+    if (this.canvas.width !== Math.round(width * ratio)) {
+      this.canvas.width = Math.round(width * ratio);
+      this.canvas.height = Math.round(height * ratio);
+    }
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.fillStyle = palette.surface;
+    context.fillRect(0, 0, width, height);
+
+    const tally = {
+      marks: 0, edges: 0, clipped: 0, dots: 0, severe: 0,
+      represented: 0, internal: 0, tiers: { node: 0, lane: 0, cluster: 0 },
+    };
+
+    const projected = [];
+    let nearest = Infinity;
+    let furthest = 0;
+
+    for (const point of this.scene.placed.values()) {
+      const at = project(point, camera);
+      if (!at.visible) {
+        tally.clipped += 1;
+        continue;
+      }
+      projected.push({
+        id: point.id, x: at.x, y: at.y, depth: at.depth,
+        radius: Math.min(Math.max(1, at.scale * 2.2), FINE * 4),
+        region: point.region, kind: point.kind, severity: point.severity || "",
+      });
+      if (at.depth < nearest) nearest = at.depth;
+      if (at.depth > furthest) furthest = at.depth;
+    }
+
+    const span = { near: nearest, far: Math.max(furthest, nearest + 1) };
+
+    // Everything below is drawn from *marks*, not from nodes. A lane too small
+    // on screen to have members is one mark carrying its count, and whatever
+    // still overlaps after that is one coarser mark — nothing is dropped, and
+    // every mark knows how many nodes are inside it.
+    const field = aggregate(projected);
+    const drawn = bundle(this.scene.edges || [], field.assignment);
+    tally.represented = field.represented;
+    tally.internal = drawn.internal;
+    tally.tiers = field.tiers;
+
+    // Edges first and unsorted: they sit behind every mark, and sorting them
+    // buys nothing a reader can see while costing a sort of the larger set.
+    context.lineWidth = 1;
+    for (const edge of drawn.edges) {
+      const from = field.marks[edge.from];
+      const to = field.marks[edge.to];
+      const share = haze((from.depth + to.depth) / 2, span) * DEEPEST;
+      context.strokeStyle = fade(palette.line, palette.surface, share);
+      context.beginPath();
+      context.moveTo(from.x, from.y);
+      context.lineTo(to.x, to.y);
+      context.stroke();
+      tally.edges += 1;
+    }
+
+    // Painters' order, far to near, so a near mark covers a far one rather than
+    // whichever happened to be iterated last.
+    const ordered = [...field.marks].sort((left, right) => right.depth - left.depth);
+    const assigned = this.scene.colouring ? this.scene.colouring.assigned : new Map();
+
+    for (const item of ordered) {
+      const share = haze(item.depth, span) * DEEPEST;
+
+      // Hue is the region. Severity, when there is one, replaces it entirely
+      // rather than tinting it: a finding is the one thing on this canvas that
+      // must not be a shade of something else — and severity propagates up
+      // through an aggregate as the worst it contains, so a cluster can never
+      // swallow a critical.
+      const severity = severityToken(item.severity);
+      const token = severity || tokenFor(item.region, assigned);
+      context.fillStyle = fade(palette.hue[token] || palette.ink, palette.surface, share);
+
+      // An aggregate spanning several kinds has no kind, and `outline` answers
+      // a circle for that rather than picking one of them.
+      const glyph = outline(item.kind, item.radius);
+      context.beginPath();
+      if (glyph.points.length) {
+        glyph.points.forEach((corner, index) => {
+          const method = index === 0 ? "moveTo" : "lineTo";
+          context[method](item.x + corner.x, item.y + corner.y);
+        });
+        context.closePath();
+      } else {
+        context.arc(item.x, item.y, Math.max(item.radius, 1), 0, Math.PI * 2);
+      }
+      context.fill();
+
+      tally.marks += 1;
+      if (glyph.shape === "dot") tally.dots += 1;
+      if (severity) tally.severe += 1;
+    }
+
+    this.drawn = tally;
+    return tally;
+  },
+
+  dispose() {
+    this.context = null;
+    this.scene = null;
+    this.canvas = null;
+    return this.drawn;
+  },
+};

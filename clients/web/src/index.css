@@ -1,0 +1,126 @@
+/* The design system, imported rather than restated.
+ *
+ * These are ring 0's own token files — the same declarations the air-gapped
+ * console loads. Not a copy kept in step by discipline: the same files, through
+ * the `@styles` alias, exactly as `@scene` shares the renderer.
+ *
+ * This is load-bearing beyond consistency. `canvas2d.js` reads
+ * `--flight-surface`, `--flight-hue-*` and the confidence ramp off the computed
+ * style of the canvas it was handed, and falls back to constants baked into the
+ * module when they are absent. A shell that restated its own palette would
+ * therefore draw the *fallback* colours while looking entirely fine — two
+ * consoles rendering one graph differently, with no test failing. Sharing the
+ * tokens is what stops that.
+ *
+ * Everything below the imports is layout for this shell's own workbench, and it
+ * declares no colour of its own: every value is a token. A colour literal here
+ * would be the beginning of a second design system, and a test forbids one.
+ */
+
+@import "@styles/tokens.css";
+@import "@styles/density.css";
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: var(--fs-md)/var(--lh) ui-sans-serif, system-ui, sans-serif;
+}
+
+main { display: flex; flex-direction: column; height: 100vh; }
+header { padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--line); }
+h1 { font-size: var(--fs-lg); margin: 0; }
+.muted { color: var(--muted); margin: var(--sp-2) 0 0; }
+.small { font-size: var(--fs-sm); }
+.pad { padding: var(--sp-4) var(--sp-5); }
+section.pad h2 { font-size: var(--fs-md); margin: 0 0 var(--sp-3); }
+
+.workbench { display: grid; flex: 1; min-height: 0; }
+
+/* The stage carries the flight surface, which is deliberately darker than the
+ * console around it — §32's rule: a full-bleed spatial view is allowed its own
+ * ground, and only the *meaning* of a colour is fixed. Severity and confidence
+ * keep the palette they wear on every other screen. */
+.stage { position: relative; min-width: 0; background: var(--flight-surface); }
+.stage canvas { width: 100%; height: 100%; display: block; }
+
+.handle {
+  position: absolute; top: 0; right: calc(-1 * var(--sp-2)); height: 100%;
+  width: var(--sp-4); cursor: col-resize; background: transparent;
+}
+.handle:hover { background: var(--line-strong); }
+
+.panel {
+  border-left: 1px solid var(--line); padding: var(--sp-4) var(--sp-5);
+  overflow: auto; background: var(--panel);
+}
+.panel h2 { font-size: var(--fs-md); margin: 0 0 var(--sp-3); }
+
+/* A refusal is policy, never a fault. It wears the accent, never the danger
+ * colour — rendering a refusal in red teaches people that policy is a bug. */
+.refusal { border-left: 3px solid var(--accent); padding-left: var(--sp-4); }
+
+dl { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2) var(--sp-4); }
+dt { color: var(--muted); }
+dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.mono, code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+code { font-size: var(--fs-sm); }
+
+.field { display: block; margin: var(--sp-5) 0 var(--sp-3); }
+.field > span {
+  display: block; color: var(--muted);
+  font-size: var(--fs-sm); margin-bottom: var(--sp-2);
+}
+.field select {
+  width: 100%; height: var(--control-h); padding: 0 var(--sp-3);
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--line-strong); border-radius: var(--radius);
+}
+
+/* --- the ride ------------------------------------------------------------ */
+
+/* One tick per hop, filled as it is passed. Six hops is a distance a reader can
+ * see, which is the whole reason it is drawn rather than counted in a sentence.
+ * Saturation is spent here and nowhere else: the one vivid thing on screen is
+ * always a finding. */
+.rail { display: flex; gap: var(--sp-1); list-style: none; margin: var(--sp-3) 0; padding: 0; }
+.tick {
+  flex: 1; height: var(--sp-3); border-radius: 1px;
+  background: var(--line-strong);
+}
+.tick.passed { background: var(--ramp-3); }
+.tick.current { background: var(--accent); }
+/* Inference reads as a gap in the rail, not as a colour — hue is already
+ * spoken for by severity, and a fifth meaning for it would be a fifth thing to
+ * learn. */
+.tick.inferred { opacity: 0.45; }
+.tick.sev-low { background: var(--ok); }
+.tick.sev-medium { background: var(--warn); }
+.tick.sev-high { background: var(--bad); }
+.tick.sev-critical { background: var(--crit); }
+
+.transport { display: flex; gap: var(--sp-3); align-items: center; margin: var(--sp-3) 0; }
+.transport button {
+  height: var(--control-h); padding: 0 var(--sp-4);
+  background: var(--accent); color: var(--accent-ink);
+  border: 0; border-radius: var(--radius); cursor: pointer;
+}
+.transport input[type="range"] { flex: 1; accent-color: var(--accent); }
+
+.narration, .stepwise { margin: var(--sp-3) 0; padding-left: var(--sp-5); }
+.narrate { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--fs-sm); }
+.narrate.evidence { color: var(--muted); }
+/* Slowing is the ride telling the reader the ground got soft. It is the accent
+ * rather than a danger colour: weak evidence is a limit on the answer, not a
+ * fault in it. */
+.narrate.slowing { color: var(--accent); }
+.stepwise .inferred { color: var(--muted); }
+
+/* A fault is the platform's problem and wears the danger colour. A refusal is
+ * a decision and wears the accent — the split is above, in `.refusal`, and the
+ * two must never converge. */
+.fault { border-left: 3px solid var(--bad); padding-left: var(--sp-4); }
+.refusal p { margin: var(--sp-2) 0; }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img"
+     aria-label="SLPIE">
+  <!-- A pipeline: three stages, joined. The mark is the philosophy. -->
+  <rect width="512" height="512" rx="96" fill="#0d1117"/>
+  <g fill="none" stroke="#58a6ff" stroke-width="26" stroke-linecap="round">
+    <circle cx="140" cy="256" r="42"/>
+    <circle cx="256" cy="256" r="42"/>
+    <circle cx="372" cy="256" r="42"/>
+    <path d="M182 256h32M298 256h32"/>
+  </g>
+  <path d="M140 356v44M256 356v44M372 356v44" stroke="#8b949e" stroke-width="14"
+        stroke-linecap="round" opacity=".6"/>
+</svg>

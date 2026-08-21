@@ -1,0 +1,127 @@
+/* Elements. Everything here reads tokens and declares no size of its own.
+ *
+ * Two faces, assigned by *what a thing is* rather than by where it sits:
+ *
+ *   mono / .fact   an identifier, a version, a digest, a citation — something
+ *                  the platform read and is quoting back. Monospaced because a
+ *                  purl and a urn cannot be compared at a glance in a
+ *                  proportional face; the content demanded this before any
+ *                  designer did.
+ *   everything else  the system sans.
+ *
+ * That is the split both reference consoles make, and it is the right one: a
+ * third face for "prose the platform wrote" is a distinction the reader has to
+ * be taught, and they will not be.
+ */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--face-chrome);
+  font-size: var(--fs-md);
+  line-height: var(--lh);
+  /* Never pure black on pure white in either theme. An operations surface
+     somebody leaves open all day wants about 12:1, not the 21:1 that maximum
+     contrast would give — that is where eye strain lives. */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 { font-weight: 600; margin: 0 0 var(--sp-3); }
+h1 { font-size: var(--fs-2xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+p { margin: 0 0 var(--sp-3); }
+p:last-child { margin-bottom: 0; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Every interactive element shows where focus is. A console this size is
+   unusable from a keyboard without it, and keyboard use is not a niche: it is
+   how anybody working a list all day actually works it. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: var(--fs-md);
+  color: var(--text);
+}
+
+.mono, .fact, code, pre, td.mono {
+  font-family: var(--face-fact);
+  font-size: var(--fs-sm);
+  font-variant-ligatures: none;
+}
+
+/* --- tables ------------------------------------------------------------- */
+
+/* The densest thing in the product and the thing a reviewer spends the day in,
+   so it gets the references' treatment exactly: a quiet muted header, hairline
+   row rules, no vertical rules at all, and the identifying column set as a
+   link. Vertical rules turn a table into a grid of cells; without them the eye
+   reads rows, which is what a reader is actually scanning. */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-md);
+  font-variant-numeric: var(--numerals);
+}
+
+th, td {
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  height: var(--row-h);
+  vertical-align: middle;
+}
+
+th {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 1;
+  white-space: nowrap;
+  border-bottom-color: var(--line-strong);
+}
+
+tbody tr:hover { background: var(--accent-soft); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* The identifying column carries the link, so a reader always knows which cell
+   in a row is the way into it. */
+td .name { font-weight: 500; }
+
+.muted { color: var(--muted); }
+.right { text-align: right; font-variant-numeric: tabular-nums; }
+.nowrap { white-space: nowrap; }
+
+/* Motion is capped rather than banned: 150ms is below the threshold at which
+   movement reads as movement. A surface people leave open all day should not
+   animate at them, and a reduced-motion preference is a statement about health
+   rather than about taste. */
+button, a, input, select, .facet, .chip, .rail a, .tabs a, .tabs button {
+  transition: background-color 120ms ease, border-color 120ms ease,
+    color 120ms ease, box-shadow 120ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

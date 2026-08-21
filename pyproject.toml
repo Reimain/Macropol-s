@@ -1,0 +1,154 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gratimos"
+version = "0.1.0"
+description = "Gratimos generator and SLPIE — a self-building agent kernel plus a universal package and architecture intelligence engine."
+readme = "docs/README.md"
+# 3.11 for stdlib tomllib: SLPIE reads pyproject.toml and Cargo.toml during
+# discovery, and a third-party TOML parser would breach the zero-dependency rule.
+requires-python = ">=3.11"
+license = { text = "Macropol-s Non-Commercial Source-Available Licence 1.0" }
+# Source-available, not open source. Non-commercial use only; commercial use
+# needs a separate written licence. Full terms in LICENSE.
+authors = [{ name = "Macropol-s" }]
+dependencies = []
+
+[project.optional-dependencies]
+xlsx = ["openpyxl>=3.1"]
+sql = ["SQLAlchemy>=2.0", "alembic>=1.13"]
+s3 = ["boto3>=1.34"]
+# Ring 1. The kernel needs none of this — `pip install -e .` still installs with
+# zero third-party packages, which a CI job asserts.
+workspaces = ["kubernetes>=29.0", "PyYAML>=6.0", "sphinx>=7.2", "furo>=2024.1", "myst-parser>=2.0", "sphinx-copybutton>=0.5"]
+# Phase 16's ring. §22 has specified this since the enterprise path was
+# decided and it was never declared, so `pip install -e '.[enterprise]'` failed
+# with "does not provide the extra" — which reads like an architectural blocker
+# and is five lines of packaging.
+enterprise = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "celery>=5.3",
+              "redis>=5.0", "SQLAlchemy>=2.0", "alembic>=1.13",
+              "psycopg[binary]>=3.1"]
+cloud = ["boto3>=1.34"]
+delta = ["deltalake>=0.17"]
+media = ["Pillow>=10.0"]
+dev = ["pytest>=8.0", "pytest-timeout>=2.3", "coverage[toml]>=7.4", "black>=24.3", "isort>=5.13", "pre-commit>=3.7"]
+# Deliberately not in `dev`. Four claims about the interface cannot be
+# string-matched — that it boots, that the density axis changes geometry and
+# only geometry, that a deep link is a location, and that a refusal reads as a
+# refusal — and all four are facts about what a browser does with the files.
+# Chromium is already present in CI images; this is the driver for it.
+e2e = ["playwright>=1.44"]
+# The documentation builds from a kernel-only install: `autodoc_mock_imports`
+# in docs/conf.py stands in for every ring-1 and optional-extra package, so
+# `pip install -e '.[docs]'` never drags in kubernetes or boto3 to render them.
+docs = ["sphinx>=7.2", "furo>=2024.1", "myst-parser>=2.0", "sphinx-copybutton>=0.5"]
+all = ["fastapi>=0.110", "uvicorn[standard]>=0.29", "celery>=5.3", "redis>=5.0", "psycopg[binary]>=3.1", "openpyxl>=3.1", "SQLAlchemy>=2.0", "alembic>=1.13", "boto3>=1.34", "deltalake>=0.17", "Pillow>=10.0", "pytest>=8.0", "pytest-timeout>=2.3", "coverage[toml]>=7.4", "black>=24.3", "isort>=5.13", "pre-commit>=3.7", "kubernetes>=29.0", "PyYAML>=6.0", "sphinx>=7.2", "furo>=2024.1", "myst-parser>=2.0", "sphinx-copybutton>=0.5", "playwright>=1.44"]
+
+[project.scripts]
+gratimos = "gratimos.cli:main"
+slpie = "slpie.cli:main"
+
+[tool.setuptools]
+# So `pip install` puts the terms in the wheel metadata rather than leaving
+# them only in a repository the installer may never have seen.
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["gratimos*", "slpie*", "slpie_enterprise*"]
+
+# The interface ships as data files. Without this the UI installs with no
+# assets and `slpie ui` serves a 404 from a working server. The webmanifest and
+# the icon are listed too: omitting them installs a page that looks fine and
+# silently cannot be installed as an app, which is the worst kind of missing.
+#
+# Both the flat and the recursive form are listed. `**` needs at least one
+# directory segment, so it does not match a top-level file, and the flat globs
+# are not redundant with it. `setuptools>=68` is already required by the build
+# system, and it passes these through `glob(recursive=True)`.
+#
+# `tests/test_slpie_ui_assets.py` runs these patterns and asserts the result
+# equals every file under `app/`, because an editable install never exercises
+# them — a missing glob is only discovered by somebody installing the wheel and
+# finding the browser 404 on a module no Python test can see.
+[tool.setuptools.package-data]
+"slpie.ui" = [
+    "app/*.html", "app/*.js", "app/*.css",
+    "app/*.webmanifest", "app/*.svg",
+    "app/**/*.js", "app/**/*.css", "app/**/*.svg",
+    # `engine/vendor/DATASHEET.md` — a vendored renderer's licence and provenance
+    # ship with the thing they attribute, or the attribution is a promise the
+    # wheel does not keep.
+    "app/**/*.md",
+]
+# The Postgres store reads its DDL from disk at build time, and Alembic reads
+# its migrations the same way. Without these a wheel installs a persistence
+# package that cannot create its own schema — the packaging failure §30 already
+# caught once for the interface's nested modules.
+"slpie_enterprise.persistence" = [
+    "schema.sql", "alembic.ini",
+    "migrations/*.py", "migrations/*.mako", "migrations/versions/*.py",
+]
+
+# --- tooling ---------------------------------------------------------------
+#
+# Shaped after python-rope/rope's `pyproject.toml`, which is a good model for a
+# stdlib-only library: the tools are configured in one file, they are declared
+# rather than assumed, and the settings say what they are for.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# A hung test is worse than a failing one: it burns a CI runner and reports
+# nothing. Nothing here should take thirty seconds — the slowest suites
+# materialise a temp filesystem and run a subprocess plugin, which is seconds.
+timeout = 300
+markers = [
+    "browser: needs a real browser; install the e2e extra and select with -m browser",
+    "slow: materializes a large tree or runs a real subprocess",
+    "corpus: needs the fetched corpus tier; skipped when the cache is cold",
+    "network: needs outbound access — never run in the default suite",
+    "postgres: needs a real Postgres; set SLPIE_DATABASE_URL and select with -m postgres",
+]
+# The browser tier is opt-in. `-m browser` selects it; the default run skips it,
+# so a machine with no Chromium still gets a green suite that means something.
+addopts = "-m 'not browser and not postgres'"
+filterwarnings = ["error::DeprecationWarning:slpie.*"]
+
+[tool.coverage.run]
+branch = true
+source = ["gratimos", "slpie"]
+
+[tool.coverage.report]
+# `exclude_also` rather than `exclude_lines`, so these add to coverage's
+# defaults instead of replacing them — replacing silently drops `# pragma: no
+# cover`, which is the one everything already relies on.
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.$",                  # Protocol method bodies
+    "if __name__ == .__main__.:",
+]
+show_missing = true
+skip_covered = true
+
+[tool.isort]
+profile = "black"
+# Keep `from x import A, b as c` on one line. Splitting it into three, which is
+# isort's default, fights a house style that puts a module's imports where they
+# can be read at a glance.
+combine_as_imports = true
+# `slpie_enterprise` was missing until phase 17 and isort filed it as
+# third-party, which put ring 1 *above* ring 0 in every file that imports both
+# — the exact inversion of the layering the ring rule exists to state.
+known_first_party = ["gratimos", "slpie", "slpie_enterprise"]
+# The test helpers live beside the tests and are imported by bare name through
+# the path insert in `tests/conftest.py`. Without this isort reads them as
+# third-party and files them above `slpie`, which reverses the actual layering.
+known_local_folder = ["_trees", "_walk", "fixtures"]
+
+# No `[tool.black]`, and that is deliberate rather than an omission. Running it
+# would reformat 337 of this repository's 383 Python files: the code is written
+# to be read top to bottom, with aligned tuples and deliberate line breaks that
+# black flattens. isort is adopted because its diff is mechanical and its
+# ordering is genuinely worth enforcing; black's is neither, here.

@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+node_modules/
+.venv/
+venv/
+
+# Test and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Gratimos workspaces: generated code, staged payloads, and traces are run
+# artifacts. Check in a workspace deliberately if you want its history.
+.gratimos/
+
+# Notebook checkpoints. The notebooks themselves are committed (they are
+# generated and verified); Jupyter's autosave copies are not.
+.ipynb_checkpoints/
+notebooks/**/.ipynb_checkpoints/
+
+# Written by the notebooks and the demo into temp directories, but a stray
+# `slpie init` in the repository root would leave this behind.
+.slpie/
+
+# Recorded per machine, so committing one would make CI compare a laptop
+# against a runner and call the difference a regression.
+acceptance-baseline.json
+
+# Sphinx: the rendered site and the per-module stubs autosummary writes.
+# Both are derived from the source, so committing them would put a full-site
+# diff in front of a reviewer who changed one docstring.
+docs/_build/
+docs/reference/generated/
+
+# The assembled Pages site. Built by `.github/workflows/docs.yml`, never
+# committed: it is 340 generated pages plus a 600KB baked console, and a
+# generated tree in git is re-diffed on every commit that touches a source file.
+_site/

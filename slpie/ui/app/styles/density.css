@@ -1,0 +1,132 @@
+/* The geometry. One axis, and it carries no colours.
+ *
+ * Two registers, user-switchable, selected by `data-density` on the root:
+ *
+ *   bench    dense and tabular — the register for somebody working a list all
+ *            day, and the one the interface opens in.
+ *   reading  calm — more leading, taller rows, a capped measure. For reading an
+ *            answer rather than scanning a table.
+ *
+ * This is a token axis rather than two layouts on purpose. Two layouts would
+ * double every screen and drift by the second release; forty declarations
+ * cannot drift from anything, because no component knows the axis exists.
+ *
+ * `tests/test_slpie_ui_assets.py` asserts no component file declares a raw size,
+ * which is the single test that keeps that true rather than aspirational.
+ */
+
+:root,
+[data-density="bench"] {
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 6px;
+  --sp-4: 10px;
+  --sp-5: 14px;
+  --sp-6: 20px;
+
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 26px;
+  --ring-size: 116px;   /* the analytics ring */
+  --fs-2xl: 22px;   /* the page title */
+
+  --lh: 1.45;
+  --row-h: 30px;
+  --control-h: 30px;
+  --radius: 6px;
+  --radius-lg: 8px;
+
+  --card-pad: var(--sp-5);
+  --gap: var(--sp-5);
+  --measure: 78ch;
+  --numerals: tabular-nums;
+
+  /* The shell's own frame. Geometry like any other, so the rail and the bar
+     breathe with the register instead of staying fixed while the type grows —
+     which is the tell that a register was bolted on rather than designed in. */
+  --rail-w: 216px;
+  --topbar-h: 52px;
+  --page-w: 1600px;
+  --card-min: 260px;
+  --glyph-w: 16px;
+  --hero-w: 240px;
+  --stat-w: 110px;
+  --chart-w: 720px;
+  --grid-h: 560px;
+  --head-h: 28px;
+  --cell-max: 320px;
+
+  /* Named widths for fields that must line up column-to-column. */
+  --field-w: 100px;
+  --label-w: 96px;
+  --seq-w: 48px;
+  --kind-w: 180px;
+  --feed-h: 420px;
+
+  --tracking: 0.04em;
+}
+
+[data-density="reading"] {
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 34px;
+  --ring-size: 148px;
+  --fs-2xl: 28px;
+
+  --lh: 1.65;
+  --row-h: 44px;
+  --control-h: 38px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  --card-pad: var(--sp-6);
+  --gap: var(--sp-5);
+  --measure: 68ch;
+  --numerals: normal;
+
+  --rail-w: 248px;
+  --topbar-h: 64px;
+  --page-w: 1360px;
+  --card-min: 300px;
+  --glyph-w: 18px;
+  --hero-w: 280px;
+  --stat-w: 130px;
+  --chart-w: 640px;
+  --grid-h: 640px;
+  --head-h: 40px;
+  --cell-max: 460px;
+
+  --field-w: 150px;
+  --label-w: 124px;
+  --seq-w: 60px;
+  --kind-w: 220px;
+  --feed-h: 380px;
+
+  --tracking: 0.06em;
+}
+
+/* Hit targets, whatever the register. 44px is the floor below which a thumb
+ * misses, and that is a property of fingers rather than of taste — so it
+ * applies to `bench` on a phone exactly as it does to `reading`. */
+@media (pointer: coarse) {
+  :root {
+    --control-h: max(var(--control-h), 44px);
+    --row-h: max(var(--row-h), 40px);
+  }
+}
+
+/* Explanatory prose is shown in `reading` and moved to a `title=` in `bench`.
+ * One rule, rather than a second copy of every screen. */
+.prose { display: none; }
+[data-density="reading"] .prose { display: block; }

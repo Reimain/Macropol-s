@@ -1,0 +1,158 @@
+name: docs
+
+# Publishes the Sphinx site to GitHub Pages. Separate from `tests.yml` on
+# purpose: that workflow *checks* the documentation builds on every push and
+# every pull request, which is the part that must gate a merge. This one
+# publishes, and publishing from a pull request would put an unreviewed branch
+# on the public URL.
+on:
+  push:
+    branches:
+      - "main"
+      # TEMPORARY — remove once this branch is merged.
+      #
+      # `docs.yml` does not exist on `main` yet, so nothing can deploy: a push
+      # trigger only fires for branches that carry the workflow, and
+      # `workflow_dispatch` needs it on the default branch before the button
+      # appears at all. This entry exists so the site can be seen live before
+      # the merge, at the owner's explicit request.
+      #
+      # It is worth removing afterwards. Publishing from an unreviewed branch is
+      # what the `main`-only trigger was for — whatever is on this branch goes
+      # to the public URL, review or no review — and a "temporary" exception
+      # nobody deletes is just the rule changing without anyone deciding to.
+      - "claude/interactive-notebooks"
+      # TEMPORARY, for the same reason and with the same expiry as the entry
+      # above: the interface documentation and the interactive demo are on this
+      # branch, and there is no way to see either published until it deploys.
+      # Delete both entries when this merges.
+      - "claude/gratimos-agent-meta-pc9xnt"
+  workflow_dispatch:
+
+# Least privilege. `contents: read` to check out, `pages`/`id-token` for the
+# deploy — nothing that can write to the repository.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and a running deploy is not cancelled: cancelling
+# mid-publish is how a site ends up half-written.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # `.[docs]` only. `autodoc_mock_imports` stands in for kubernetes, boto3
+      # and the optional extras, so the published documentation is produced from
+      # the same kernel-only install invariant 4 exists to protect.
+      - run: pip install -e '.[docs]'
+
+      # No `SPHINX_INTERSPHINX`, and no `-W`. Both were mistakes, in different
+      # ways.
+      #
+      # The env var made CI a *different configuration* from the one anybody
+      # runs locally, and the branch it selected had never been executed once —
+      # so the first thing to exercise it was this deploy, which died on 181
+      # cross-reference ambiguities. A build that only CI performs is a build
+      # nobody has tested.
+      #
+      # `-W` is gone from the publish path because publishing and checking are
+      # different jobs. The strict build still runs in `tests.yml`, on every
+      # push and every pull request, where a warning should block a merge. Here
+      # the job is to get the site up; a documentation warning is not a reason
+      # to leave the published site stale.
+      # The published tree, laid out so nothing displaces anything:
+      #
+      #   /          the marketing page that is on `main` today — visitors who
+      #              already have the link keep landing where they landed
+      #   /docs/     the Sphinx reference
+      #   /start/    the front page
+      #   /demo/     the console, playable
+      #
+      # `main` is not touched to achieve this. Every one of these files is
+      # already on this branch, so the site is assembled here rather than by
+      # moving anything on the default branch.
+      - name: Build the site
+        run: python -m sphinx -b html --keep-going docs _site/docs
+
+      # The interactive console, baked into one self-contained page and
+      # published at /demo/. It needs no browser and no bundler: the API
+      # recording is captured in Python through `Api.handle`, and the interface
+      # modules are plain text — so this runs on the same kernel-only install
+      # the documentation builds from, and adds no dependency to the job.
+      #
+      # It is built rather than committed because it embeds a scan: a
+      # 600KB generated artefact in git would be re-diffed on every commit that
+      # touched a single interface module.
+      - name: Bake the interactive demo
+        run: python -m tools.ui.demo --out _site/demo/index.html
+
+      # The front page, published at /start/. It lives in `docs/_landing/` as
+      # ordinary HTML rather than as a Sphinx document because it is a designed
+      # page rather than a chapter: putting it through the theme would give it
+      # the reference site's furniture, which is the opposite of the point.
+      - name: Render the front page
+        run: python -m tools.ui.landing --out _site/start/index.html
+
+      # The existing landing page, kept exactly where visitors expect it. It is
+      # copied rather than regenerated: it is hand-authored marketing, not
+      # something this repository builds.
+      - name: Keep the marketing page at the root
+        run: |
+          cp index.html _site/index.html
+          # `[ -s CNAME ]` is not the right test: the file holds a single
+          # newline, so it is one byte and "non-empty" by that measure — which
+          # would publish a *blank* custom domain and take the site down. Only
+          # copy it when it names something.
+          if [ -n "$(tr -d '[:space:]' < CNAME 2>/dev/null)" ]; then
+            cp CNAME _site/CNAME
+          else
+            echo "CNAME holds no domain; not published"
+          fi
+
+      # Jekyll would otherwise skip `_static/` and `_modules/`, and the site
+      # would render without stylesheets or source links.
+      - run: touch _site/.nojekyll
+
+      # `actions/configure-pages` used to sit here and was the only thing
+      # failing. It is **not needed by this workflow**, which is why it is gone
+      # rather than worked around:
+      #
+      #   * nothing consumes its outputs. It exists to hand `base_url` and
+      #     `base_path` to generators that must bake an absolute prefix into
+      #     their output; Sphinx builds with relative URLs, and the step carried
+      #     no `id:`, so those outputs were unreachable anyway.
+      #   * with `enablement: true` it is the one step that asks GitHub to
+      #     *create* the Pages site, which needs a permission this token does
+      #     not have — observed across four runs:
+      #
+      #         Get Pages site failed.    Error: Not Found
+      #         Create Pages site failed. Error: Resource not accessible by integration
+      #
+      # Upload and deploy do not require it. If Pages is enabled with source
+      # "GitHub Actions", they now succeed; if it is not, `deploy-pages` says so
+      # directly instead of a step we do not need failing first and hiding it.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

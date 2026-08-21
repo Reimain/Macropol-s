@@ -1,0 +1,40 @@
+{
+  "note": [
+    "What is vendored into the interface, declared rather than remembered.",
+    "`python -m tools.vendor` fetches and writes; `python -m tools.vendor --check`",
+    "verifies the committed bytes against `sha256` with no network, which is the",
+    "gate CI runs. A file whose digest moved is either a corrupted checkout or",
+    "somebody editing a third party's source in place, and both need to be loud."
+  ],
+  "packages": [
+    {
+      "name": "three",
+      "version": "0.185.1",
+      "registry": "https://registry.npmjs.org",
+      "license": "MIT",
+      "homepage": "https://threejs.org",
+      "why": "WebGL for the flight view: instanced marks, a swept path tube and depth fog, none of which Canvas 2D can do at estate density. Measured against the native renderer in DATASHEET.md.",
+      "destination": "slpie/ui/app/engine/vendor",
+      "files": [
+        {
+          "from": "package/build/three.core.min.js",
+          "to": "three.core.min.js",
+          "sha256": "05b2609338c76cd65daf74f3ac515bc9a5045e1b3b33edc07d8c9bd55250fa90",
+          "bytes": 385386
+        },
+        {
+          "from": "package/build/three.module.min.js",
+          "to": "three.module.min.js",
+          "sha256": "86bcee248b64f44bcfc23c331ae74619061957d59cab040171dcb6fb5900beb6",
+          "bytes": 365552
+        },
+        {
+          "from": "package/LICENSE",
+          "to": "three.LICENSE.md",
+          "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+          "bytes": 1081
+        }
+      ]
+    }
+  ]
+}

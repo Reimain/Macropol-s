@@ -1,0 +1,56 @@
+# Pre-commit, after python-rope/rope's `.pre-commit-config.yaml`.
+#
+# Only hooks that hold for this repository are here. The kernel is stdlib-only
+# and offline-capable (invariant 4), so every hook below runs with no network
+# and no service — the same property the test suite has, for the same reason.
+#
+# Deliberately absent: `black`. It would reformat 337 of 383 files, and this
+# code is written to be read top to bottom. See the note in `pyproject.toml`.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      # A committed 200 MB fixture is how a repository becomes unclonable.
+      - id: check-added-large-files
+        args: [--maxkb=512]
+      # Both directions: an inner `import pdb` left behind blocks CI on a
+      # prompt nobody can answer.
+      - id: debug-statements
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        # Settings live in pyproject.toml, so the hook and a local `isort .`
+        # cannot disagree about what correct looks like.
+        args: [--settings-path, pyproject.toml]
+
+  - repo: local
+    hooks:
+      # The invariants gate the commit, not just the nightly run. These two
+      # suites are seconds; the full suite is two minutes and belongs in CI.
+      #
+      # `slpie audit --strict` would be the better entry — §25 specifies it as
+      # the CI gate — but that flag is not built yet, and a hook naming a flag
+      # the CLI does not have fails in a way that teaches people to skip hooks.
+      # It moves here when the flag lands.
+      - id: boundaries
+        name: kernel boundaries and zero third-party dependencies
+        entry: python -m pytest -q tests/test_slpie_boundaries.py
+        language: system
+        pass_filenames: false
+        files: ^(slpie|gratimos)/.*\.py$
+
+      - id: audit-judge
+        name: the audit judge agrees with the boundary tests
+        entry: python -m pytest -q tests/test_slpie_audit.py
+        language: system
+        pass_filenames: false
+        files: ^slpie/audit/.*\.py$

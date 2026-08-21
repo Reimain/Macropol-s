@@ -1,0 +1,230 @@
+"""Protobuf schema generation from shapes.
+
+Wire schemas are how shapes leave the process — to a peer agent, a queue, a
+schema registry. The hard rule here is **field number stability**: a proto field
+number is a permanent contract, so numbers are assigned from a recorded
+allocation rather than from the current field order. Reordering or removing a
+field must never renumber the ones around it.
+
+Removed fields become ``reserved`` entries, which is what stops a later
+regeneration from reusing a retired number for different data.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Iterable, Mapping
+
+from ..errors import CodegenError
+from ..ids import slug
+from ..meta import DataShape, FieldShape, TypeTag
+
+_PROTO_TYPES: dict[TypeTag, str] = {
+    TypeTag.BOOL: "bool",
+    TypeTag.INT: "int64",
+    TypeTag.FLOAT: "double",
+    TypeTag.DECIMAL: "string",     # decimals go as text; doubles lose precision
+    TypeTag.STRING: "string",
+    TypeTag.BYTES: "bytes",
+    TypeTag.MEDIA: "bytes",
+    TypeTag.DATE: "string",        # ISO-8601; avoids a well-known-types dependency
+    TypeTag.DATETIME: "string",
+    TypeTag.DURATION: "double",
+    TypeTag.UUID: "string",
+    TypeTag.JSON: "string",
+    TypeTag.NULL: "string",
+}
+
+#: Numbers 19000-19999 are reserved by protobuf itself.
+_RESERVED_RANGE = range(19000, 20000)
+
+
+@dataclass(slots=True)
+class FieldAllocation:
+    """The permanent number assigned to a field name."""
+
+    name: str
+    number: int
+    retired: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"name": self.name, "number": self.number, "retired": self.retired}
+
+
+@dataclass(slots=True)
+class ProtoAllocation:
+    """Per-message field-number ledger, carried across regenerations."""
+
+    message: str
+    fields: dict[str, FieldAllocation] = field(default_factory=dict)
+    next_number: int = 1
+
+    def assign(self, name: str) -> int:
+        existing = self.fields.get(name)
+        if existing is not None:
+            existing.retired = False
+            return existing.number
+        while self.next_number in _RESERVED_RANGE or any(
+            a.number == self.next_number for a in self.fields.values()
+        ):
+            self.next_number += 1
+        allocation = FieldAllocation(name=name, number=self.next_number)
+        self.fields[name] = allocation
+        self.next_number += 1
+        return allocation.number
+
+    def retire(self, names: Iterable[str]) -> list[int]:
+        retired: list[int] = []
+        for name in names:
+            if allocation := self.fields.get(name):
+                allocation.retired = True
+                retired.append(allocation.number)
+        return sorted(retired)
+
+    def reserved(self) -> list[int]:
+        return sorted(a.number for a in self.fields.values() if a.retired)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "message": self.message,
+            "next_number": self.next_number,
+            "fields": {n: a.to_dict() for n, a in sorted(self.fields.items())},
+        }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "ProtoAllocation":
+        allocation = cls(message=data["message"], next_number=int(data.get("next_number", 1)))
+        for name, raw in data.get("fields", {}).items():
+            allocation.fields[name] = FieldAllocation(
+                name=raw["name"], number=int(raw["number"]), retired=bool(raw.get("retired", False))
+            )
+        return allocation
+
+
+@dataclass(slots=True)
+class ProtoSchema:
+    """A rendered .proto file plus the allocation that produced it."""
+
+    package: str
+    message: str
+    source: str
+    allocation: ProtoAllocation
+    nested: tuple[str, ...] = ()
+
+    @property
+    def filename(self) -> str:
+        return f"{slug(self.message)}.proto"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "package": self.package,
+            "message": self.message,
+            "filename": self.filename,
+            "nested": list(self.nested),
+            "allocation": self.allocation.to_dict(),
+        }
+
+
+class ProtoEmitter:
+    """Renders proto3 messages from shapes, preserving field numbers."""
+
+    def __init__(self, package: str = "gratimos") -> None:
+        self.package = slug(package).replace("_", ".")
+
+    def emit(self, shape: DataShape, *, allocation: ProtoAllocation | None = None) -> ProtoSchema:
+        if not shape.fields:
+            raise CodegenError(f"cannot generate a proto message for {shape.name!r}: no fields")
+
+        message = shape.symbol
+        ledger = allocation if allocation is not None else ProtoAllocation(message=message)
+        current = {f.ident for f in shape.fields}
+        retired = ledger.retire(name for name in ledger.fields if name not in current)
+
+        nested: list[str] = []
+        lines = [
+            'syntax = "proto3";',
+            "",
+            f"package {self.package};",
+            "",
+            f"// Generated by Gratimos from shape {shape.name!r} (digest {shape.digest}).",
+            "// Field numbers are permanent: they come from a recorded allocation, so",
+            "// adding or removing fields never renumbers the others.",
+            f"message {message} {{",
+        ]
+        if retired:
+            lines.append(f"  reserved {', '.join(str(n) for n in retired)};  // retired fields")
+
+        for f in shape.fields:
+            nested.extend(self._nested(f, message))
+            lines.append(self._field_line(f, ledger))
+        lines.extend(["}", ""])
+
+        body = "\n".join(lines)
+        if nested:
+            body += "\n" + "\n".join(nested)
+        return ProtoSchema(
+            package=self.package, message=message, source=body,
+            allocation=ledger, nested=tuple(_message_names(nested)),
+        )
+
+    def _field_line(self, f: FieldShape, ledger: ProtoAllocation) -> str:
+        number = ledger.assign(f.ident)
+        proto_type, repeated = self._type_of(f)
+        prefix = "repeated " if repeated else ""
+        comment = []
+        if f.nullable:
+            comment.append("nullable")
+        if f.name != f.ident:
+            comment.append(f"source: {f.name}")
+        if f.format_hint:
+            comment.append(f.format_hint)
+        suffix = f"  // {', '.join(comment)}" if comment else ""
+        return f"  {prefix}{proto_type} {f.ident} = {number};{suffix}"
+
+    def _type_of(self, f: FieldShape) -> tuple[str, bool]:
+        if f.tag is TypeTag.LIST:
+            if f.item is None:
+                return "string", True
+            inner, _ = self._type_of(f.item)
+            return inner, True
+        if f.tag in (TypeTag.STRUCT, TypeTag.MAP):
+            if not f.children:
+                # No observed inner structure: a string map is the honest
+                # encoding, rather than inventing a message with no fields.
+                return "map<string, string>", False
+            return _nested_name(f), False
+        return _PROTO_TYPES.get(f.tag, "string"), False
+
+    def _nested(self, f: FieldShape, parent: str) -> list[str]:
+        """Emit a message per observed struct, depth-first."""
+        out: list[str] = []
+        target = f.item if f.tag is TypeTag.LIST and f.item is not None else f
+        if target.tag not in (TypeTag.STRUCT, TypeTag.MAP) or not target.children:
+            return out
+        ledger = ProtoAllocation(message=_nested_name(f))
+        lines = [f"message {_nested_name(f)} {{"]
+        for child in target.children:
+            out.extend(self._nested(child, _nested_name(f)))
+            lines.append(self._field_line(child, ledger))
+        lines.extend(["}", ""])
+        out.append("\n".join(lines))
+        return out
+
+
+def _nested_name(f: FieldShape) -> str:
+    return "".join(part.title() for part in slug(f.name).split("_")) or "Nested"
+
+
+def _message_names(blocks: Iterable[str]) -> list[str]:
+    names = []
+    for block in blocks:
+        for line in block.splitlines():
+            if line.startswith("message "):
+                names.append(line.split()[1])
+    return names
+
+
+def emit_proto(shape: DataShape, *, package: str = "gratimos",
+               allocation: ProtoAllocation | None = None) -> ProtoSchema:
+    """Convenience wrapper over :class:`ProtoEmitter`."""
+    return ProtoEmitter(package).emit(shape, allocation=allocation)

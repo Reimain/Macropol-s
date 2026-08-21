@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "SLPIE",
+  "identifier": "com.slpie.portal",
+  "build": { "frontendDist": "../dist", "devUrl": "http://localhost:5173" },
+  "app": {
+    "windows": [
+      { "title": "SLPIE", "width": 1280, "height": 860, "resizable": true }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:*"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://releases.example.invalid/slpie/{{target}}/{{current_version}}"],
+      "dialog": false
+    }
+  }
+}
